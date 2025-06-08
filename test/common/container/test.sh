@@ -6,6 +6,8 @@ TEST_LOG_DIRECTORY=/tmp
 CLIENT_TEST_LOGFILE=/tmp/cvmfs-client-test.log
 SERVER_TEST_LOGFILE=/tmp/cvmfs-server-test.log
 
+FAILS=''
+
 echo "running CernVM-FS client test cases..."
 ./run.sh $CLIENT_TEST_LOGFILE -s "quick"                                      \
                               -x src/104-concurrent_mounts                    \
@@ -14,7 +16,7 @@ echo "running CernVM-FS client test cases..."
                                  --                                           \
                                  src/0*                                       \
                                  src/1*                                       \
-                              || exit 1
+                              || FAILS+=C
 
 
 echo "running CernVM-FS server test cases..."
@@ -70,5 +72,10 @@ CVMFS_TEST_UNIONFS=overlayfs                                                  \
                                  src/5*                                       \
                                  src/6*                                       \
                                  src/7*                                       \
-                              || exit 1
+                              || FAILS+=S
 
+if [[ "$FAILS" == "" ]]; then
+   exit 0
+else
+   exit 1
+fi
