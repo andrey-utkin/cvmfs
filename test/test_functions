@@ -1032,7 +1032,10 @@ create_listing() {
     }
 
     # print out file information
-    printf $1                     " ";
+
+    # Ignore the trailing dot in permissions field on SELinux-enabled systems.
+    printf substr($1, 1, 10)      " ";
+
     if (show_linkcount == "yes")
     {
       printf $2                   " ";

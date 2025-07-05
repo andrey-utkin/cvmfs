@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # This script builds the RPM packages of CernVM-FS.
 #
 
-set -e
+set -euo pipefail
 
 SCRIPT_LOCATION=$(cd "$(dirname "$0")"; pwd)
 . ${SCRIPT_LOCATION}/../common.sh
@@ -74,7 +74,7 @@ rpmbuild --define="_topdir $CVMFS_RESULT_LOCATION"        \
          -ba $spec_file
 
 # generating package map section for specific platform
-if [ ! -z $CVMFS_CI_PLATFORM_LABEL ]; then
+if [[ -v CVMFS_CI_PLATFORM_LABEL ]]; then
   echo "generating package map section for ${CVMFS_CI_PLATFORM_LABEL}..."
   generate_package_map                                                        \
     "$CVMFS_CI_PLATFORM_LABEL"                                                \
