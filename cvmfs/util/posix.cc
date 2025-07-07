@@ -361,14 +361,17 @@ int MakeSocket(const std::string &path, const int mode) {
     goto make_socket_failure;
 #endif
 
-  if (bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sock_addr),
-           sizeof(sock_addr.sun_family) + sizeof(sock_addr.sun_path))
-      < 0) {
+  int ret;
+  ret = bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sock_addr),
+      sizeof(sock_addr.sun_family) + sizeof(sock_addr.sun_path));
+  LogCvmfs(kLogCvmfs, kLogStdout, "binding socket '%s' failed (%d)", short_path.c_str(), errno);
+  if (ret < 0) {
     if ((errno == EADDRINUSE) && (unlink(path.c_str()) == 0)) {
       // Second try, perhaps the file was left over
-      if (bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sock_addr),
-               sizeof(sock_addr.sun_family) + sizeof(sock_addr.sun_path))
-          < 0) {
+      ret = bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sock_addr),
+          sizeof(sock_addr.sun_family) + sizeof(sock_addr.sun_path));
+      LogCvmfs(kLogCvmfs, kLogStdout, "after unlink(), binding socket '%s' still failed (%d)", short_path.c_str(), errno);
+      if (ret < 0) {
         LogCvmfs(kLogCvmfs, kLogDebug, "binding socket failed (%d)", errno);
         goto make_socket_failure;
       }
