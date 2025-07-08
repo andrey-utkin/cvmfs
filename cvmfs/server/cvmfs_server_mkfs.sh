@@ -370,6 +370,10 @@ cvmfs_server_mkfs() {
   fi
   echo "done"
 
+  id || true
+  ls -ltr "$CVMFS_SPOOL_DIR" || true
+  ls -ltr "$CVMFS_SPOOL_DIR"/cache || true
+  ls -ltr "$CVMFS_SPOOL_DIR"/rdonly || true
   echo -n "Mounting CernVM-FS Storage... "
   setup_and_mount_new_repository $name || die "fail"
   echo "done"
