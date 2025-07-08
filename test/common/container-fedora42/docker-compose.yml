@@ -1,0 +1,19 @@
+# This file is part of the CernVM File System.
+
+services:
+    cvmfs-dev:
+        container_name: cvmfs-dev
+        hostname: cvmfs-dev
+        privileged: true
+        cgroup: host # required to run sbin/init with cgroups v2
+        build:
+            context: ../../..
+            dockerfile: test/common/container-fedora42/Dockerfile-dev
+        volumes:
+            - /sys/fs/cgroup:/sys/fs/cgroup
+            - var_spool_cvmfs:/var/spool/cvmfs
+            - ../../../:/home/sftnight/cvmfs
+
+volumes:
+    var_spool_cvmfs:
+

@@ -35,6 +35,7 @@ Makefile:
 		-DBUILD_SNAPSHOTTER=$(shell if go version >/dev/null 2>&1; then echo "yes"; else echo "no"; fi) \
 		-DBUILD_LIBFUSE2=$(BUILD_LIBFUSE2) \
 		-DCMAKE_INSTALL_PREFIX:PATH=/usr \
+		-DCMAKE_STRIP=/bin/true \
 		.
 
 build: build-stamp
