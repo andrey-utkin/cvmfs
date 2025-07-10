@@ -6,6 +6,7 @@
 
 #include "monitor.h"
 #include "reactor.h"
+#include "sanitizers_options.h"
 #include "swissknife.h"
 #include "util/exception.h"
 #include "util/logging.h"

@@ -24,6 +24,7 @@
 
 #include "cvmfs_suid_util.h"
 #include "sanitizer.h"
+#include "sanitizers_options.h"
 #include "util/platform.h"
 
 using namespace std;  // NOLINT

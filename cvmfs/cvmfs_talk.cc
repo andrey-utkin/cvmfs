@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "options.h"
+#include "sanitizers_options.h"
 #include "util/logging.h"
 #include "util/pointer.h"
 #include "util/posix.h"

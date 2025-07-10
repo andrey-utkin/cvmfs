@@ -22,6 +22,7 @@
 #include <cstring>
 #include <string>
 
+#include "sanitizers_options.h"
 #include "compression/compression.h"
 #include "crypto/hash.h"
 #include "util/atomic.h"
