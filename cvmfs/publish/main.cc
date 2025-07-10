@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "sanitizers_options.h"
 #include "publish/cmd_abort.h"
 #include "publish/cmd_commit.h"
 #include "publish/cmd_diff.h"
