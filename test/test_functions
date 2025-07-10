@@ -475,6 +475,8 @@ wait_for_umount() {
 }
 
 cvmfs_clean() {
+  pkill   openwaitprint || true
+  pidwait openwaitprint || true
   sudo env CVMFS_USE_MACFUSE_KEXT="$CVMFS_TEST_USE_MACFUSE_KEXT" cvmfs_config umount > /dev/null  || return 100
   sudo sh -c "rm -rf /var/lib/cvmfs/*"                  || return 101
   sudo rm -f /etc/cvmfs/default.local                    || return 102
@@ -1032,7 +1034,10 @@ create_listing() {
     }
 
     # print out file information
-    printf $1                     " ";
+
+    # Ignore the trailing dot in permissions field on SELinux-enabled systems.
+    printf substr($1, 1, 10)      " ";
+
     if (show_linkcount == "yes")
     {
       printf $2                   " ";

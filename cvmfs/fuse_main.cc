@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "sanitizers_options.h"
 #include "util/logging.h"
 #include "util/platform.h"
 #include "util/smalloc.h"

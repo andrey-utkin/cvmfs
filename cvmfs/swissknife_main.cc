@@ -5,6 +5,7 @@
 #include <cassert>
 #include <string>
 
+#include "sanitizers_options.h"
 #include "statistics_database.h"
 #include "swissknife.h"
 #include "swissknife_check.h"

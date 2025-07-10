@@ -23,7 +23,7 @@ RUN cd /home/sftnight/cvmfs; ./ci/build_package.sh $PWD $PWD/../buildpackage/ cv
 RUN cd /home/sftnight/cvmfs; ./ci/build_package.sh $PWD $PWD/../buildpackage_config/ cvmfs-config
 
 # Stage 2: Final
-FROM almalinux:9
+FROM fedora:42
 
 USER root
 
@@ -38,7 +38,6 @@ RUN dnf -y install /tmp/*.rpm
 
 # cloudtest dependencies
 RUN dnf install -y sudo gcc autofs fuse fuse3 httpd  lsof \
-    e2fsprogs \
     python python3-pip attr nc sqlite python3-mod_wsgi jq usbutils
 
 RUN pip3 install flask
