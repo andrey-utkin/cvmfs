@@ -141,6 +141,9 @@ if [ $CVMFS_SERVER_DEBUG -ne 0 ]; then
         # do not attach gdb just run debug version
         CVMFS_SERVER_SWISSKNIFE_DEBUG="cvmfs_swissknife_debug"
       ;;
+      4|rr)
+        CVMFS_SERVER_SWISSKNIFE_DEBUG="rr cvmfs_swissknife_debug"
+      ;;
     esac
   else
     echo -e "WARNING: compile with CVMFS_SERVER_DEBUG to allow for debug mode!\nFalling back to release mode [cvmfs_swissknife]...."
@@ -159,6 +162,9 @@ if [ $CVMFS_SERVER_DEBUG -ne 0 ]; then
       3)
         # do not attach gdb just run debug version
         CVMFS_SERVER_PUBLISH_DEBUG="/usr/bin/cvmfs_publish_debug"
+      ;;
+      4|rr)
+        CVMFS_SERVER_PUBLISH_DEBUG="rr /usr/bin/cvmfs_publish_debug"
       ;;
     esac
   else
