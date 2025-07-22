@@ -1,0 +1,240 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+export DEBUG=1
+
+mkdir -p /var/{spool,run}/cvmfs/
+[[ -d /etc/cvmfs/default.d ]]
+[[ "$(whoami)" == root ]]
+echo CVMFS_HTTP_PROXY=DIRECT | sudo tee /etc/cvmfs/default.d/98-proxy-direct.conf
+echo CVMFS_USER=$(whoami) | sudo tee /etc/cvmfs/default.d/98-user.conf
+export CVMFS_TEST_USER=$(whoami)
+export CVMFS_TEST_PROXY=DIRECT
+if ! [[ -v TEST_ROOT ]]; then
+    this_script_dir=$(dirname "$(readlink -f "$0")")
+    TEST_ROOT=$(readlink -f "$this_script_dir/../..")
+fi
+this_script_dir=$TEST_ROOT/src/902-cvmfs-posix-tools
+build_dir=$(dirname "$TEST_ROOT")
+: ${CVMFS_TEST_REPO:=test.repo}
+: ${CVMFS_TEST_MOUNTPOINT:=/cvmfs/$CVMFS_TEST_REPO}
+
+export DEBUG
+CVMFS2=cvmfs2
+#if [[ -v DEBUG ]]; then
+#    CVMFS2="$this_script_dir"/cvmfs2-wrapper
+#    export CVMFS_SERVER_DEBUG=1
+#fi
+
+rsyslogd &
+
+
+# It would be beautiful to illustrate the usecase with logical hostnames.
+# /etc/hosts entries won't work: swissknife-upload uses c-ares resolver which
+# doesn't look at /etc/hosts. So we use variables as a substitute.
+S3_HOST=127.0.0.1
+PROXY_HOST=127.0.0.1
+
+echo keepcache=true >> /etc/dnf/dnf.conf
+dnf install -y wget
+[[ -f minio.rpm ]] || wget https://dl.min.io/server/minio/release/linux-amd64/minio.rpm
+dnf install -y minio.rpm
+[[ -f mc ]] || wget https://dl.min.io/client/mc/release/linux-amd64/mc
+install mc /usr/local/bin/mc
+getent passwd minio-user || useradd minio-user -m --home-dir /var/local/minio
+cat > /etc/default/minio <<EOF
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin	
+MINIO_VOLUMES="/var/local/minio"
+MINIO_OPTS="--address 0.0.0.0:9000"
+EOF
+systemctl enable --now minio
+mc alias set myminio http://"$S3_HOST":9000 minioadmin minioadmin
+mc admin user add myminio minioaccesskey miniosecretkey
+mc admin policy attach myminio readwrite --user minioaccesskey
+mc mb myminio/mybucket
+mc anonymous set download myminio/mybucket
+dnf install -y ngrep
+#ngrep port 9000
+
+dnf install -y varnish
+cat > /etc/varnish/default.vcl <<-EOF
+vcl 4.1;
+backend default {
+    .host = "$S3_HOST";
+    .port = "9000";
+}
+EOF
+systemctl enable --now varnish
+# ngrep port 6081
+
+cat > /etc/cvmfs/s3.conf <<-EOF
+CVMFS_S3_ACCESS_KEY=minioaccesskey
+CVMFS_S3_SECRET_KEY=miniosecretkey
+CVMFS_S3_HOST=$S3_HOST
+CVMFS_S3_PORT=9000
+CVMFS_S3_DNS_BUCKETS=false
+CVMFS_S3_BUCKET=mybucket
+EOF
+cat > ~/.s3cfg <<-EOF
+host_base = $S3_HOST:9000
+host_bucket = $S3_HOST:9000
+use_https = False
+access_key = minioaccesskey
+secret_key = miniosecretkey
+EOF
+systemctl enable --now httpd
+CVMFS_TEST_REPO=test.repo
+cvmfs_server mkfs -s /etc/cvmfs/s3.conf -w http://$S3_HOST:9000/mybucket -X -o root "$CVMFS_TEST_REPO"
+cat >> /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<EOF
+CVMFS_HTTP_PROXY=http://$PROXY_HOST:6081
+CVMFS_EXTERNAL_HTTP_PROXY="http://$PROXY_HOST:6081"
+CVMFS_EXTERNAL_URL=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO/external
+EOF
+
+cat > /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw <<-EOF
+plain_text PUBLISHER_KEY_ID SECRET
+EOF
+mkdir -p /etc/cvmfs/gateway/"$CVMFS_TEST_REPO"
+cat > /etc/cvmfs/gateway/"$CVMFS_TEST_REPO"/repo.json <<-EOF
+{ "version": 2, "repos": [ "$CVMFS_TEST_REPO" ] }
+EOF
+
+run_gateway() {
+    while true; do
+        MAYBE_TRACER=''
+        RECEIVER=$(which cvmfs_receiver)
+        if [[ -v DEBUG ]]; then
+            MAYBE_TRACER=rr
+            RECEIVER="$this_script_dir/receiver-wrapper"
+        fi
+        $MAYBE_TRACER cvmfs_gateway --access_config_file /etc/cvmfs/gateway/"$CVMFS_TEST_REPO"/repo.json --work_dir /var/lib/cvmfs-gateway/"$CVMFS_TEST_REPO" --receiver_path "$RECEIVER" &>> /var/log/gateway.log
+    done
+}
+run_gateway &
+gateway_up() {
+    fuser -n tcp 4929
+}
+for seconds in {1..10}; do
+    if gateway_up; then break; fi
+    sleep 1
+done
+gateway_up
+
+echo HELLO > hello_ingestsql.txt
+SHA1SUM=$(sha1sum hello_ingestsql.txt  | cut -f1 -d' ')
+NB_BYTES=$(wc --bytes hello_ingestsql.txt  | cut -f1 -d' ')
+DB_FILE=$(mktemp --suffix=.cvmfs-ingestsql.db)
+cvmfs_swissknife ingestsql -D '' -N '' -n "$DB_FILE"
+sqlite3 "$DB_FILE" <<< "insert into files (name, size, hashes) values ('hello_ingestsql.txt', $NB_BYTES, '$SHA1SUM');"
+
+dnf install -y s3cmd
+s3cmd put hello_ingestsql.txt s3://mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt
+curl --fail --no-progress-meter -H 'Cache-Control: no-cache'                                    http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt | sha1sum | grep "^$SHA1SUM  -$"
+curl --fail --no-progress-meter -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt | sha1sum | grep "^$SHA1SUM  -$"
+
+revision() {
+    attr -q -g revision /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+}
+LAST_REPO_REVISION=$(revision)
+cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ http://"$PROXY_HOST":6081 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp
+TIME_START=$(date +%s)
+while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
+    sleep 1
+    cvmfs_config umount
+    # drop cache:
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    cvmfs_server mount "$CVMFS_TEST_REPO"
+done
+echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
+
+[[ -f "$CVMFS_TEST_MOUNTPOINT"/hello_ingestsql.txt ]]
+[[ "$(sha1sum < "$CVMFS_TEST_MOUNTPOINT"/hello_ingestsql.txt)" == "$SHA1SUM  -" ]]
+
+mkdir -p /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"
+cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/pubkey
+
+cat > /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/config <<EOF
+CVMFS_GATEWAY=http://127.0.0.1:4929/api/v1
+CVMFS_STRATUM0=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO
+CVMFS_HTTP_PROXY=http://$PROXY_HOST:6081
+EOF
+cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/gatewaykey
+cp /etc/cvmfs/s3.conf /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/
+cat > /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/cvmfs-rsync.yaml <<EOF
+repos:
+  $CVMFS_TEST_REPO:
+    dot-scheme: false
+    content-addressable: true
+    groups:
+      DEFAULT:
+        DEFAULT:
+          allow-delete: true
+          allow-purge: true
+          allow-upload: true
+          allow-acl: true
+          check-permissions: true
+          directory-mode: 511
+          file-mode: 438
+          group: 0
+          user: 0
+    proxy: http://$PROXY_HOST:6081
+    external-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external
+    internal-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/data
+    s3_access_key: minioaccesskey
+    s3_secret_key: miniosecretkey
+EOF
+
+touch /tmp/touched
+LAST_REPO_REVISION=$(revision)
+cvmfs_rsync /tmp/touched "$CVMFS_TEST_MOUNTPOINT"/touched
+TIME_START=$(date +%s)
+while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
+    sleep 1
+    cvmfs_config umount
+    # drop cache:
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    cvmfs_server mount "$CVMFS_TEST_REPO"
+done
+echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
+
+[[ -f "$CVMFS_TEST_MOUNTPOINT"/touched ]]
+TOUCHED_MTIME=$(date "+%F %T.%N %z" --reference="$CVMFS_TEST_MOUNTPOINT"/touched)
+
+LAST_REPO_REVISION=$(revision)
+cvmfs_touch "$CVMFS_TEST_MOUNTPOINT"/touched
+TIME_START=$(date +%s)
+while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
+    sleep 1
+    cvmfs_config umount
+    # drop cache:
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    cvmfs_server mount "$CVMFS_TEST_REPO"
+done
+echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
+
+TOUCHED_MTIME_NEW=$(date "+%F %T.%N %z" --reference="$CVMFS_TEST_MOUNTPOINT"/touched)
+[[ "$TOUCHED_MTIME_NEW" != "$TOUCHED_MTIME" ]]
+
+export CVMFS_RSYNC_FULLY_CONTAINERIZED=true
+#pushd /usr/local/src/cvmfs/cvmfs-posix-tools/cmd/cvmfs_rsync
+#./cvmfs_rsync.test
+
+pushd /usr/local/src/cvmfs/cvmfs-posix-tools/cmd
+FAILED=
+for cmd in cvmfs_*; do
+	pushd $cmd
+	set +o pipefail
+	./$cmd.test |& tee /tmp/$cmd.test.log
+	if [[ ${PIPESTATUS[0]} != 0 ]]; then
+		echo "$cmd test failed"
+		FAILED+=" $cmd"
+	fi
+	set -o pipefail
+	popd
+done
+if [[ "$FAILED" != '' ]]; then
+	echo Failed tests: "$FAILED"
+	exit 1
+fi
