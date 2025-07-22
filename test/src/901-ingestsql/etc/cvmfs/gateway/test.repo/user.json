@@ -1,0 +1,9 @@
+{
+  "log_level": "info",
+  "log_timestamps": false,
+  "max_lease_time": 200,
+  "num_receivers": 1,
+  "port": 4929,
+  "receiver_path": "/usr/bin/cvmfs_receiver",
+  "work_dir": "/var/lib/cvmfs-gateway/test.repo"
+}
