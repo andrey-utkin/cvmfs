@@ -53,27 +53,14 @@ XattrList *XattrList::CreateFromFile(const std::string &path) {
 
   // Retrieve extended attribute values
   XattrList *result = new XattrList();
-  char value_smallbuf[255];
+  char value[64 * 1024];
   for (unsigned i = 0; i < keys.size(); ++i) {
     if (keys[i].empty())
       continue;
-
-    char *buffer = value_smallbuf;
-    size_t sz_buffer = 255;
-    ssize_t sz_value = platform_lgetxattr(path.c_str(), keys[i].c_str(), buffer,
-                                          sz_buffer);
-    while ((sz_value < 0) && (errno == ERANGE)) {
-      if (buffer != value_smallbuf)
-        free(buffer);
-      sz_buffer *= 2;
-      buffer = reinterpret_cast<char *>(smalloc(sz_buffer));
-      sz_value = platform_lgetxattr(path.c_str(), keys[i].c_str(), buffer,
-                                    sz_buffer);
-    }
-    if (sz_value >= 0)
-      result->Set(keys[i], string(buffer, sz_value));
-    if (buffer != value_smallbuf)
-        free(buffer);
+    const ssize_t sz_value = platform_lgetxattr(path.c_str(), keys[i].c_str(), value, sizeof(value));
+    if (sz_value < 0)
+      continue;
+    result->Set(keys[i], string(value, sz_value));
   }
   return result;
 }
