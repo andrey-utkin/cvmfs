@@ -7,10 +7,9 @@ export DEBUG=1
 mkdir -p /var/{spool,run}/cvmfs/
 [[ -d /etc/cvmfs/default.d ]]
 [[ "$(whoami)" == root ]]
-echo CVMFS_HTTP_PROXY=DIRECT | sudo tee /etc/cvmfs/default.d/98-proxy-direct.conf
 echo CVMFS_USER=$(whoami) | sudo tee /etc/cvmfs/default.d/98-user.conf
 export CVMFS_TEST_USER=$(whoami)
-export CVMFS_TEST_PROXY=DIRECT
+
 if ! [[ -v TEST_ROOT ]]; then
     this_script_dir=$(dirname "$(readlink -f "$0")")
     TEST_ROOT=$(readlink -f "$this_script_dir/../..")
@@ -35,6 +34,11 @@ rsyslogd &
 # doesn't look at /etc/hosts. So we use variables as a substitute.
 S3_HOST=127.0.0.1
 PROXY_HOST=127.0.0.1
+PROXY_SPEC=http://"$PROXY_HOST":6081
+PROXY_SPEC=DIRECT
+export CVMFS_HTTP_PROXY=$PROXY_SPEC
+export CVMFS_EXTERNAL_HTTP_PROXY=$PROXY_SPEC
+echo CVMFS_HTTP_PROXY="$PROXY_SPEC" | sudo tee /etc/cvmfs/default.d/98-proxy.conf
 
 echo keepcache=true >> /etc/dnf/dnf.conf
 dnf install -y wget
@@ -58,16 +62,18 @@ mc anonymous set download myminio/mybucket
 dnf install -y ngrep
 #ngrep port 9000
 
-dnf install -y varnish
-cat > /etc/varnish/default.vcl <<-EOF
+if [[ "$PROXY_SPEC" != DIRECT ]]; then
+    dnf install -y varnish
+    cat > /etc/varnish/default.vcl <<-EOF
 vcl 4.1;
 backend default {
     .host = "$S3_HOST";
     .port = "9000";
 }
 EOF
-systemctl enable --now varnish
-# ngrep port 6081
+    systemctl enable --now varnish
+    # ngrep port 6081
+fi
 
 cat > /etc/cvmfs/s3.conf <<-EOF
 CVMFS_S3_ACCESS_KEY=minioaccesskey
@@ -88,8 +94,8 @@ systemctl enable --now httpd
 CVMFS_TEST_REPO=test.repo
 cvmfs_server mkfs -s /etc/cvmfs/s3.conf -w http://$S3_HOST:9000/mybucket -X -o root "$CVMFS_TEST_REPO"
 cat >> /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<EOF
-CVMFS_HTTP_PROXY=http://$PROXY_HOST:6081
-CVMFS_EXTERNAL_HTTP_PROXY="http://$PROXY_HOST:6081"
+CVMFS_HTTP_PROXY='$PROXY_SPEC'
+CVMFS_EXTERNAL_HTTP_PROXY='$PROXY_SPEC'
 CVMFS_EXTERNAL_URL=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO/external
 CVMFS_KCACHE_TIMEOUT=0
 CVMFS_MAX_TTL_SEC=1
@@ -136,19 +142,25 @@ sqlite3 "$DB_FILE" <<< "insert into files (name, size, hashes) values ('hello_in
 dnf install -y s3cmd
 s3cmd put hello_ingestsql.txt s3://mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt
 curl --fail --no-progress-meter -H 'Cache-Control: no-cache'                                    http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt | sha1sum | grep "^$SHA1SUM  -$"
-curl --fail --no-progress-meter -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt | sha1sum | grep "^$SHA1SUM  -$"
+if [[ "$PROXY_SPEC" != DIRECT ]]; then
+    curl --fail --no-progress-meter -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external/hello_ingestsql.txt | sha1sum | grep "^$SHA1SUM  -$"
+fi
 
 revision() {
     attr -q -g revision /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 }
 LAST_REPO_REVISION=$(revision)
-cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ http://"$PROXY_HOST":6081 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ "$PROXY_SPEC" -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
     cvmfs_config umount
     # drop cache:
-    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    if [[ "$PROXY_SPEC" != DIRECT ]]; then
+        curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    fi
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     cvmfs_server mount "$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
@@ -162,7 +174,7 @@ cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub /etc/cvmfs/gateway-client/"$CVMFS_TEST
 cat > /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/config <<EOF
 CVMFS_GATEWAY=http://127.0.0.1:4929/api/v1
 CVMFS_STRATUM0=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO
-CVMFS_HTTP_PROXY=http://$PROXY_HOST:6081
+CVMFS_HTTP_PROXY='$PROXY_SPEC'
 EOF
 cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/gatewaykey
 cp /etc/cvmfs/s3.conf /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/
@@ -183,7 +195,7 @@ repos:
           file-mode: 438
           group: 0
           user: 0
-    proxy: http://$PROXY_HOST:6081
+    proxy: "$PROXY_SPEC"
     external-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external
     internal-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/data
     s3_access_key: minioaccesskey
@@ -198,7 +210,10 @@ while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
     cvmfs_config umount
     # drop cache:
-    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    if [[ "$PROXY_SPEC" != DIRECT ]]; then
+        curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    fi
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     cvmfs_server mount "$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
@@ -213,7 +228,10 @@ while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
     cvmfs_config umount
     # drop cache:
-    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy http://"$PROXY_HOST":6081  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    if [[ "$PROXY_SPEC" != DIRECT ]]; then
+        curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
+    fi
+    curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     cvmfs_server mount "$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds

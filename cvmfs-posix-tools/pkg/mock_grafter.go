@@ -38,16 +38,14 @@ func Mock_graft(db DB, repo string, debug bool, baseDir string) (GraftMetrics, e
 		return GraftMetrics{}, err
 	}
 	defer os.RemoveAll(cvmfsRsyncTempDir)
-	proxy := "http://127.0.0.1:6081"
 	configPrefix := "/etc/cvmfs/gateway-client/test.repo/"
 	args_add := []string{"-B", FullyContainerizedTestMountWAttr}
 	if !FullyContainerized() {
-		proxy = "DIRECT"
 		configPrefix = baseDir + "/pkg/etc/cvmfs-gateway-client/test.repo/"
 		args_add = []string{}
 	}
-	args := append([]string{"ingestsql", "-@", proxy, "-N", "test.repo",
-		"-D", db.GetPath(), "-w", "http://127.0.0.1:8000/test.repo/test.repo", "-k", configPrefix + "pubkey",
+	args := append([]string{"ingestsql", "-N", "test.repo",
+		"-D", db.GetPath(), "-w", "http://127.0.0.1:9000/test.repo/test.repo", "-k", configPrefix + "pubkey",
 		"-s", configPrefix + "gatewaykey", "-3", configPrefix + "s3.conf", "-g", "http://127.0.0.1:4929/api/v1",
 		"-t", cvmfsRsyncTempDir, "-a", "-d"}, args_add...)
 
