@@ -138,7 +138,7 @@ revision() {
     attr -q -g revision /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 }
 LAST_REPO_REVISION=$(revision)
-cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ http://"$PROXY_HOST":6081 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp
+cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ http://"$PROXY_HOST":6081 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1

@@ -68,6 +68,7 @@ const (
 
 	LocalTestMount                  = "/tmp/cvmfs_rsync_test_mount"
 	FullyContainerizedTestMount     = "/cvmfs/test.repo"
+	FullyContainerizedTestMountWAttr= "/var/spool/cvmfs/test.repo/rdonly"
 	LocalTestMountName              = "cvmfs_rsync_test_mount"
 	FullyContainerizedTestMountName = "test.repo"
 

@@ -40,7 +40,7 @@ func Mock_graft(db DB, repo string, debug bool, baseDir string) (GraftMetrics, e
 	defer os.RemoveAll(cvmfsRsyncTempDir)
 	proxy := "http://127.0.0.1:6081"
 	configPrefix := "/etc/cvmfs/gateway-client/test.repo/"
-	args_add := []string{"-B", TestMount()}
+	args_add := []string{"-B", FullyContainerizedTestMountWAttr}
 	if !FullyContainerized() {
 		proxy = "DIRECT"
 		configPrefix = baseDir + "/pkg/etc/cvmfs-gateway-client/test.repo/"
