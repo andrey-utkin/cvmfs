@@ -42,10 +42,14 @@ echo CVMFS_HTTP_PROXY="$PROXY_SPEC" | sudo tee /etc/cvmfs/default.d/98-proxy.con
 
 echo keepcache=true >> /etc/dnf/dnf.conf
 dnf install -y wget
-[[ -f minio.rpm ]] || wget https://dl.min.io/server/minio/release/linux-amd64/minio.rpm
-dnf install -y minio.rpm
-[[ -f mc ]] || wget https://dl.min.io/client/mc/release/linux-amd64/mc
-install mc /usr/local/bin/mc
+if ! which minio; then
+    [[ -f minio.rpm ]] || wget https://dl.min.io/server/minio/release/linux-amd64/minio.rpm
+    dnf install -y minio.rpm
+fi
+if ! which mc; then
+    [[ -f mc ]] || wget https://dl.min.io/client/mc/release/linux-amd64/mc
+    install mc /usr/local/bin/mc
+fi
 getent passwd minio-user || useradd minio-user -m --home-dir /var/local/minio
 cat > /etc/default/minio <<EOF
 MINIO_ROOT_USER=minioadmin
@@ -63,7 +67,7 @@ dnf install -y ngrep
 #ngrep port 9000
 
 if [[ "$PROXY_SPEC" != DIRECT ]]; then
-    dnf install -y varnish
+    which varnish || dnf install -y varnish
     cat > /etc/varnish/default.vcl <<-EOF
 vcl 4.1;
 backend default {
