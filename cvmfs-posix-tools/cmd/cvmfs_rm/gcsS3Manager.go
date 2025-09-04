@@ -16,6 +16,9 @@ type ErrorData struct {
 }
 
 func getProxy(proxy string) (func(*http.Request) (*url.URL, error), error) {
+	if proxy == "" || proxy == "DIRECT" {
+		return nil, nil
+	}
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		log.Error().Err(err).Str("Url", proxy).Msg("Failed to parse URL")
