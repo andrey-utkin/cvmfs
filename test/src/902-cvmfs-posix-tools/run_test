@@ -196,7 +196,7 @@ cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub /etc/cvmfs/gateway-client/"$CVMFS_TEST
 cat > /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/config <<EOF
 CVMFS_GATEWAY=http://127.0.0.1:4929/api/v1
 CVMFS_STRATUM0=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO
-CVMFS_HTTP_PROXY='$PROXY_SPEC'
+CVMFS_HTTP_PROXY=$PROXY_SPEC
 EOF
 cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/gatewaykey
 cp /etc/cvmfs/s3.conf /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/
@@ -218,8 +218,8 @@ repos:
           group: 0
           user: 0
     proxy: "$PROXY_SPEC"
-    external-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/external
-    internal-url-prefix: http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/data
+    external-url-prefix: "http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO/external"
+    internal-url-prefix: "http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO/data"
     s3_access_key: minioaccesskey
     s3_secret_key: miniosecretkey
 EOF
