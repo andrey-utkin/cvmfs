@@ -92,7 +92,23 @@ secret_key = miniosecretkey
 EOF
 systemctl enable --now httpd
 CVMFS_TEST_REPO=test.repo
+
 cvmfs_server mkfs -s /etc/cvmfs/s3.conf -w http://$S3_HOST:9000/mybucket -X -o root "$CVMFS_TEST_REPO"
+# cvmfs-posix-tools currently expect to see "revision" attribute at the mountpoint, which is not actually visible at /cvmfs/$CVMFS_TEST_REPO, but only at /var/spool/cvmfs/$CVMFS_TEST_REPO/rdonly.
+# /cvmfs/$CVMFS_TEST_REPO as created by mkfs is FUSE overlayfs.
+# FUSE overlayfs serves extended attributes from the upper dir only.
+# Hack the mounts to accommodate that for now.
+# Hopefully we'll make the tools look for the lower dir of the overlay.
+
+umount /cvmfs/"$CVMFS_TEST_REPO"
+umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+grep ^test.repo /etc/fstab | sed -e s:/var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly:/cvmfs/"$CVMFS_TEST_REPO": > /tmp/fstab.hack
+# comment out relevant fstab lines
+#sed -i /etc/fstab -e "s:/var/spool/cvmfs/$CVMFS_TEST_REPO/rdonly:# &:" -e "s:/cvmfs/$CVMFS_TEST_REPO:# &:"
+#cat /tmp/fstab.hack >> /etc/fstab
+cp /tmp/fstab.hack /etc/fstab
+mount /cvmfs/"$CVMFS_TEST_REPO"
+
 cat >> /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<EOF
 CVMFS_HTTP_PROXY='$PROXY_SPEC'
 CVMFS_EXTERNAL_HTTP_PROXY='$PROXY_SPEC'
@@ -147,7 +163,7 @@ if [[ "$PROXY_SPEC" != DIRECT ]]; then
 fi
 
 revision() {
-    attr -q -g revision /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+    attr -q -g revision /cvmfs/"$CVMFS_TEST_REPO"
 }
 LAST_REPO_REVISION=$(revision)
 cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ "$PROXY_SPEC" -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
@@ -155,13 +171,15 @@ cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://1
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
-    cvmfs_config umount
+    #cvmfs_config umount
+    umount /cvmfs/"$CVMFS_TEST_REPO"
     # drop cache:
     if [[ "$PROXY_SPEC" != DIRECT ]]; then
         curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     fi
     curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
-    cvmfs_server mount "$CVMFS_TEST_REPO"
+    #cvmfs_server mount "$CVMFS_TEST_REPO"
+    mount /cvmfs/"$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
 
@@ -208,13 +226,15 @@ cvmfs_rsync /tmp/touched "$CVMFS_TEST_MOUNTPOINT"/touched
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
-    cvmfs_config umount
+    #cvmfs_config umount
+    umount /cvmfs/"$CVMFS_TEST_REPO"
     # drop cache:
     if [[ "$PROXY_SPEC" != DIRECT ]]; then
         curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     fi
     curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
-    cvmfs_server mount "$CVMFS_TEST_REPO"
+    #cvmfs_server mount "$CVMFS_TEST_REPO"
+    mount /cvmfs/"$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
 
@@ -226,13 +246,15 @@ cvmfs_touch "$CVMFS_TEST_MOUNTPOINT"/touched
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
     sleep 1
-    cvmfs_config umount
+    #cvmfs_config umount
+    umount /cvmfs/"$CVMFS_TEST_REPO"
     # drop cache:
     if [[ "$PROXY_SPEC" != DIRECT ]]; then
         curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache' --proxy "$PROXY_SPEC"  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
     fi
     curl --fail --no-progress-meter -o /dev/null -H 'Cache-Control: no-cache'  http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO"/.cvmfspublished
-    cvmfs_server mount "$CVMFS_TEST_REPO"
+    #cvmfs_server mount "$CVMFS_TEST_REPO"
+    mount /cvmfs/"$CVMFS_TEST_REPO"
 done
 echo Revision incremented after $(( "$(date +%s)" - TIME_START )) seconds
 

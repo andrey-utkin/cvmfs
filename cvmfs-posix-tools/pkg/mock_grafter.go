@@ -45,7 +45,7 @@ func Mock_graft(db DB, repo string, debug bool, baseDir string) (GraftMetrics, e
 		args_add = []string{}
 	}
 	args := append([]string{"ingestsql", "-N", "test.repo",
-		"-D", db.GetPath(), "-w", "http://127.0.0.1:9000/test.repo/test.repo", "-k", configPrefix + "pubkey",
+		"-D", db.GetPath(), "-w", "http://127.0.0.1:9000/mybucket/test.repo", "-k", configPrefix + "pubkey",
 		"-s", configPrefix + "gatewaykey", "-3", configPrefix + "s3.conf", "-g", "http://127.0.0.1:4929/api/v1",
 		"-t", cvmfsRsyncTempDir, "-a", "-d"}, args_add...)
 
