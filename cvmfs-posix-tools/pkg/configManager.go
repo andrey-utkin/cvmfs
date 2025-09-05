@@ -238,7 +238,7 @@ func parseS3BucketInfo(prefix string) (string, string, string, string, error) {
 		log.Error().Err(err).Str("Url", prefix).Msg("Failed to parse URL")
 		return "", "", "", "", err
 	}
-	endpoint := cvmfsUrl.Hostname()
+	endpoint := cvmfsUrl.Host
 	bucketPrefixPath := cvmfsUrl.Path
 	if bucketPrefixPath[0:1] == FileDelimeter {
 		bucketPrefixPath = bucketPrefixPath[1:]
