@@ -12,8 +12,8 @@ file(GLOB_RECURSE TOOL_GO_SOURCES LIST_DIRECTORIES false ./*.go)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${TOOL_NAME}
-  COMMAND ${GO_COMPILER} build -modfile=../../go.mod -o ${CMAKE_CURRENT_BINARY_DIR}/${TOOL_NAME} -ldflags='-X main.Version=${CernVM-FS_VERSION_STRING}'
-  COMMAND ${GO_COMPILER} test -c -modfile=../../go.mod -o ${CMAKE_CURRENT_BINARY_DIR}/${TOOL_NAME}.test -ldflags='-X main.Version=${CernVM-FS_VERSION_STRING}'
+  COMMAND ${GO_COMPILER} build -modfile=../../go.mod -o ${CMAKE_CURRENT_BINARY_DIR}/${TOOL_NAME} -ldflags='-X main.Version=${CernVM-FS_VERSION_STRING}' -gcflags='-N -l'
+  COMMAND ${GO_COMPILER} test -c -modfile=../../go.mod -o ${CMAKE_CURRENT_BINARY_DIR}/${TOOL_NAME}.test -ldflags='-X main.Version=${CernVM-FS_VERSION_STRING}' -gcflags='-N -l'
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS ${TOOL_GO_SOURCES}
   COMMENT "Build ${TOOL_NAME} using the Go Compiler"
