@@ -63,7 +63,7 @@ mc admin user add myminio minioaccesskey miniosecretkey
 mc admin policy attach myminio readwrite --user minioaccesskey
 mc mb myminio/mybucket
 mc anonymous set download myminio/mybucket
-dnf install -y ngrep
+#dnf install -y ngrep
 #ngrep port 9000
 
 if [[ "$PROXY_SPEC" != DIRECT ]]; then
