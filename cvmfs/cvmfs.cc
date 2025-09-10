@@ -1006,6 +1006,7 @@ static void cvmfs_opendir(fuse_req_t req, fuse_ino_t ino,
   // reads with rewinddir() between them).  A new opendir on the same directory
   // will trigger readdir calls independently of this setting.
   fi->cache_readdir = 1;
+  fi->keep_cache = 0;
 #endif
 #endif
   fuse_reply_open(req, fi);
