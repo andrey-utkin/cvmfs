@@ -91,7 +91,7 @@ func GraftWithOptions(db DB, repo string, options GraftOptions) (graftingMetrics
 		"-t", cvmfsRsyncTempDir, /* temporary directory */
 		"-a",                                          /* Allow additions */
 		"-d",                                          /* Allow deletions */
-		"-B", fmt.Sprintf("/var/spool/cvmfs/%s/rdonly", repo), /* mount point to block on pending visibility of update */
+		"-B", fmt.Sprintf("/cvmfs/%s", repo), /* mount point to block on pending visibility of update */
 		"-P", strconv.FormatInt(options.PriorityVal, 10),
 	}
 

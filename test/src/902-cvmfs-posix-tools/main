@@ -8,6 +8,8 @@ cleanup() {
 }
 
 cvmfs_run_test() {
+  export   CVMFS_DEBUGLOG="/log"
+
   [[ -v TEST_ROOT ]] # expected /home/sftnight/cvmfs/test
   this_script_dir=$TEST_ROOT/src/902-cvmfs-posix-tools
   # We want strict mode here, to catch any failure.

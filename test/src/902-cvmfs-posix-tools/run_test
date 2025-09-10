@@ -2,7 +2,7 @@
 set -euo pipefail
 set -x
 
-export DEBUG=1
+#export DEBUG=1
 
 mkdir -p /var/{spool,run}/cvmfs/
 [[ -d /etc/cvmfs/default.d ]]
@@ -61,7 +61,7 @@ systemctl enable --now minio
 mc alias set myminio http://"$S3_HOST":9000 minioadmin minioadmin
 mc admin user add myminio minioaccesskey miniosecretkey
 mc admin policy attach myminio readwrite --user minioaccesskey
-mc mb myminio/mybucket
+mc mb myminio/mybucket || /bin/true 
 mc anonymous set download myminio/mybucket
 #dnf install -y ngrep
 #ngrep port 9000
@@ -97,23 +97,32 @@ EOF
 systemctl enable --now httpd
 CVMFS_TEST_REPO=test.repo
 
-cvmfs_server mkfs -s /etc/cvmfs/s3.conf -w http://$S3_HOST:9000/mybucket -X -o root "$CVMFS_TEST_REPO"
+yum install -y usbutils
+
+rm -rf /var/spool/cvmfs/test.repo
+
+cvmfs_server mkfs -s /etc/cvmfs/s3.conf -w http://$S3_HOST:9000/mybucket -X -o root "$CVMFS_TEST_REPO" || /bin/true
 # cvmfs-posix-tools currently expect to see "revision" attribute at the mountpoint, which is not actually visible at /cvmfs/$CVMFS_TEST_REPO, but only at /var/spool/cvmfs/$CVMFS_TEST_REPO/rdonly.
 # /cvmfs/$CVMFS_TEST_REPO as created by mkfs is FUSE overlayfs.
 # FUSE overlayfs serves extended attributes from the upper dir only.
 # Hack the mounts to accommodate that for now.
 # Hopefully we'll make the tools look for the lower dir of the overlay.
 
-umount /cvmfs/"$CVMFS_TEST_REPO"
-umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
-grep ^test.repo /etc/fstab | sed -e s:/var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly:/cvmfs/"$CVMFS_TEST_REPO": > /tmp/fstab.hack
-# comment out relevant fstab lines
-#sed -i /etc/fstab -e "s:/var/spool/cvmfs/$CVMFS_TEST_REPO/rdonly:# &:" -e "s:/cvmfs/$CVMFS_TEST_REPO:# &:"
-#cat /tmp/fstab.hack >> /etc/fstab
-cp /tmp/fstab.hack /etc/fstab
-mount /cvmfs/"$CVMFS_TEST_REPO"
+#umount /cvmfs/"$CVMFS_TEST_REPO" || /bin/true
+#umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly || /bin/true
+# grep ^test.repo /etc/fstab | sed -e s:/var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly:/cvmfs/"$CVMFS_TEST_REPO": > /tmp/fstab.hack
 
-cat >> /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<EOF
+umount /cvmfs/$CVMFS_TEST_REPO
+umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+
+echo "cvmfs2#test.repo /cvmfs/test.repo fuse debug,disable_watchdog,allow_other,fsname=test.repo,config=/etc/cvmfs/repositories.d/test.repo/client.conf:/var/spool/cvmfs/test.repo/client.local,cvmfs_suid,noauto 0 0" > /etc/fstab
+
+systemctl daemon-reload
+
+
+mount
+
+cat >> /etc/cvmfs/repositories.d/test.repo/client.conf <<EOF
 CVMFS_HTTP_PROXY=$PROXY_SPEC
 CVMFS_EXTERNAL_HTTP_PROXY=$PROXY_SPEC
 CVMFS_EXTERNAL_URL=http://$S3_HOST:9000/mybucket/$CVMFS_TEST_REPO/external
@@ -121,7 +130,16 @@ CVMFS_KCACHE_TIMEOUT=0
 CVMFS_MAX_TTL_SEC=1
 CVMFS_MAX_TTL_SECS=1
 CVMFS_AUTO_UPDATE=yes
+CVMFS_DEBUGLOG=/log
 EOF
+
+cat /etc/cvmfs/repositories.d/test.repo/client.conf
+# remove config file with CVMFS_ROOT_HASH which prevents updating
+echo "" >  /var/spool/cvmfs/test.repo/client.local
+
+
+mount /cvmfs/"$CVMFS_TEST_REPO"
+
 
 cat > /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw <<-EOF
 plain_text PUBLISHER_KEY_ID SECRET
@@ -170,7 +188,7 @@ revision() {
     attr -q -g revision /cvmfs/"$CVMFS_TEST_REPO"
 }
 LAST_REPO_REVISION=$(revision)
-cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ "$PROXY_SPEC" -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+cvmfs_swissknife_debug ingestsql -D "$DB_FILE" -N "$CVMFS_TEST_REPO" -g http://127.0.0.1:4929/api/v1 -w http://$S3_HOST:9000/mybucket/"$CVMFS_TEST_REPO" -@ "$PROXY_SPEC" -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub -s /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -3 /etc/cvmfs/s3.conf -t /tmp -B /cvmfs/$CVMFS_TEST_REPO
 
 TIME_START=$(date +%s)
 while [[ "$(revision)" == "$LAST_REPO_REVISION" ]]; do
@@ -268,6 +286,7 @@ TOUCHED_MTIME_NEW=$(date "+%F %T.%N %z" --reference="$CVMFS_TEST_MOUNTPOINT"/tou
 export CVMFS_RSYNC_FULLY_CONTAINERIZED=true
 #pushd /usr/local/src/cvmfs/cvmfs-posix-tools/cmd/cvmfs_rsync
 #./cvmfs_rsync.test
+
 
 pushd /usr/local/src/cvmfs/cvmfs-posix-tools/cmd
 FAILED=
