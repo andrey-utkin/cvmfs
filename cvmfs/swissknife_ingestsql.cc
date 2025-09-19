@@ -1873,7 +1873,7 @@ static int wait_for_update(std::string path, long revision, int timeout_sec) {
   }
 
   while (-1 != getxattr(path.c_str(), "user.revision", val, 100)) {
-    long x = atol(val);
+    long const x = atol(val);
     if (x >= revision) {
       LogCvmfs(kLogCvmfs, kLogStdout, "Mount reached revision %ld", x);
       return 0;
