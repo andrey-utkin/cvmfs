@@ -1249,6 +1249,8 @@ WritableCatalogManager::CatalogInfo WritableCatalogManager::SnapshotCatalogs(
 
 void WritableCatalogManager::FinalizeCatalog(WritableCatalog *catalog,
                                              const bool stop_for_tweaks) {
+  // Multiple catalogs might query the parent concurrently
+  SyncLock();
   // update meta information of this catalog
   LogCvmfs(kLogCatalog, kLogVerboseMsg, "creating snapshot of catalog '%s'",
            catalog->mountpoint().c_str());
@@ -1265,14 +1267,11 @@ void WritableCatalogManager::FinalizeCatalog(WritableCatalog *catalog,
              base_hash().ToStringWithSuffix().c_str());
     catalog->SetPreviousRevision(base_hash());
   } else {
-    // Multiple catalogs might query the parent concurrently
-    SyncLock();
     shash::Any hash_previous;
     uint64_t size_previous;
     const bool retval = catalog->parent()->FindNested(
         catalog->mountpoint(), &hash_previous, &size_previous);
     assert(retval);
-    SyncUnlock();
 
     LogCvmfs(kLogCatalog, kLogVerboseMsg,
              "found '%s' as previous revision "
@@ -1315,6 +1314,7 @@ void WritableCatalogManager::FinalizeCatalog(WritableCatalog *catalog,
 
   // compaction of bloated catalogs (usually after high database churn)
   catalog->VacuumDatabaseIfNecessary();
+  SyncUnlock();
 }
 
 

@@ -72,6 +72,7 @@ WritableCatalog::~WritableCatalog() {
 void WritableCatalog::Transaction() {
   LogCvmfs(kLogCatalog, kLogVerboseMsg, "opening SQLite transaction for '%s'",
            mountpoint().c_str());
+  const MutexLockGuard m(lock_);
   const bool retval = database().BeginTransaction();
   assert(retval == true);
 }
@@ -80,6 +81,7 @@ void WritableCatalog::Transaction() {
 void WritableCatalog::Commit() {
   LogCvmfs(kLogCatalog, kLogVerboseMsg, "closing SQLite transaction for '%s'",
            mountpoint().c_str());
+  const MutexLockGuard m(lock_);
   const bool retval = database().CommitTransaction();
   assert(retval == true);
   dirty_ = false;
