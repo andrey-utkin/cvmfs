@@ -1885,7 +1885,7 @@ static int wait_for_update(std::string path, long revision, int timeout_sec) {
     if (timeout_sec >= 0) {
       int const waited_seconds = time(NULL) - waiting_since;
       if ((waited_seconds >= 0) && (waited_seconds > timeout_sec)) {
-        LogCvmfs(kLogCvmfs, kLogStdout, "Out of time waiting for the mount to reach revision %ld (waited %u seconds)", x, waited_seconds);
+        LogCvmfs(kLogCvmfs, kLogStdout, "Out of time waiting for the mount to reach revision %ld (waited %u seconds)", revision, waited_seconds);
         return 1;
       }
     }
