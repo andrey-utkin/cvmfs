@@ -661,6 +661,10 @@ void *TalkManager::MainResponder(void *data) {
           ->Lookup("page_cache_tracker.n_open_cached")
           ->Set(page_cache_stats.n_open_cached);
 
+#ifdef CVMFS_PROXY_CACHE_METRICS
+      mount_point->UpdateTotalProxyCachePerformance();
+#endif
+
       if (file_system->cache_mgr()->id() == kPosixCacheManager) {
         PosixCacheManager *cache_mgr = reinterpret_cast<PosixCacheManager *>(
             file_system->cache_mgr());
