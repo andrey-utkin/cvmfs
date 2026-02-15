@@ -4,6 +4,9 @@
 script_location=$(dirname $(readlink --canonicalize $0))
 . ${script_location}/common_setup.sh
 
+# use archive, see https://linux.web.cern.ch/els7/
+sudo sed -i 's#http://linuxsoft.cern.ch/epel/7/#http://linuxsoft.cern.ch/internal/archive/epel/7/#g' /etc/yum.repos.d/epel.repo || die "fail (patching epel mirror)"
+
 # # Place the overlay directories on ftype=1 16GB xfs partition
 # sudo dd if=/dev/zero of=/xfs-backend bs=$((1024*1024)) count=$((16*1024))
 # sudo mkfs.xfs -n ftype=1 /xfs-backend
@@ -87,6 +90,8 @@ install_from_repo perl
 # building preloader
 install_from_repo cmake
 install_from_repo zlib-devel
+install_from_repo libzstd-devel
+install_from_repo cmake  # for zstd
 install_from_repo libattr-devel
 install_from_repo openssl-devel
 install_from_repo libuuid-devel

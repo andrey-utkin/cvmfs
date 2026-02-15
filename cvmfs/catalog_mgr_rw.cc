@@ -16,7 +16,11 @@
 
 #include "catalog_balancer.h"
 #include "catalog_rw.h"
+#include "compression/compressor.h"
+#include "compression/input_path.h"
 #include "manifest.h"
+#include "network/sink_null.h"
+#include "network/sink_path.h"
 #include "statistics.h"
 #include "upload.h"
 #include "util/exception.h"
@@ -41,9 +45,10 @@ WritableCatalogManager::WritableCatalogManager(
   perf::Statistics          *statistics,
   bool                       is_balanceable,
   unsigned                   max_weight,
-  unsigned                   min_weight)
+  unsigned                   min_weight,
+  const                      std::string &dir_cache)
   : SimpleCatalogManager(base_hash, stratum0, dir_temp, download_manager,
-      statistics)
+      statistics, false, dir_cache, true /* copy to tmpdir */)
   , spooler_(spooler)
   , enforce_limits_(enforce_limits)
   , nested_kcatalog_limit_(nested_kcatalog_limit)
@@ -151,9 +156,14 @@ manifest::Manifest *WritableCatalogManager::CreateRepository(
   }
   string file_path_compressed = file_path + ".compressed";
   shash::Any hash_catalog(hash_algorithm, shash::kSuffixCatalog);
-  bool retval = zlib::CompressPath2Path(file_path, file_path_compressed,
-                                        &hash_catalog);
-  if (!retval) {
+
+  const UniquePtr<zip::Compressor>
+                      compress(zip::Compressor::Construct(zip::kZlibDefault));
+  zip::InputPath in_path(file_path);
+  cvmfs::PathSink out_path(file_path_compressed);
+  const zip::StreamStates retval = compress->Compress(&in_path, &out_path,
+                                                                 &hash_catalog);
+  if (retval != zip::kStreamEnd) {
     LogCvmfs(kLogCatalog, kLogStderr, "compression of catalog '%s' failed",
              file_path.c_str());
     unlink(file_path.c_str());
@@ -1229,6 +1239,38 @@ void WritableCatalogManager::ScheduleCatalogProcessing(
   spooler_->ProcessCatalog(catalog->database_path());
 }
 
+/**
+ * Copy catalog to local cache.server
+ * Must be an atomic write into the cache_dir
+ * As such: create a temporary copy in cache_dir/txn and then do a
+ * `rename` (which is atomic) to the actual cache path
+ *
+ * @returns true on success, otherwise false
+ */
+bool WritableCatalogManager::CopyCatalogToLocalCache(
+                                          const upload::SpoolerResult &result) {
+  std::string tmp_catalog_path;
+  const std::string cache_catalog_path = dir_cache_ + "/"
+                                  + result.content_hash.MakePathWithoutSuffix();
+  FILE *fcatalog = CreateTempFile(dir_cache_ + "/txn/catalog", 0666,
+                                                        "w", &tmp_catalog_path);
+  if (!fcatalog) {
+    PANIC(kLogDebug | kLogStderr,
+                               "Creating file for temporary catalog failed: %s",
+                               tmp_catalog_path.c_str());
+  }
+
+  zip::InputPath in_path(result.local_path.c_str());
+  cvmfs::FileSink out_file(fcatalog, true);
+  copy_->DecompressStream(&in_path, &out_file);
+
+  if (rename(tmp_catalog_path.c_str(), cache_catalog_path.c_str()) != 0) {
+    PANIC(kLogDebug | kLogStderr,
+                         "Failed to copy catalog from %s to cache %s",
+                         result.local_path.c_str(), cache_catalog_path.c_str());
+  }
+  return true;
+}
 
 void WritableCatalogManager::CatalogUploadCallback(
                           const upload::SpoolerResult &result,
@@ -1251,6 +1293,10 @@ void WritableCatalogManager::CatalogUploadCallback(
 
   uint64_t catalog_size = GetFileSize(result.local_path);
   assert(catalog_size > 0);
+
+  if (UseLocalCache()) {
+    CopyCatalogToLocalCache(result);
+  }
 
   SyncLock();
   if (catalog->HasParent()) {
@@ -1404,6 +1450,11 @@ void WritableCatalogManager::CatalogUploadSerializedCallback(
     PANIC(kLogStderr, "failed to upload '%s' (retval: %d)",
           result.local_path.c_str(), result.return_code);
   }
+
+  if (UseLocalCache()) {
+    CopyCatalogToLocalCache(result);
+  }
+
   unlink(result.local_path.c_str());
 }
 
@@ -1425,15 +1476,19 @@ WritableCatalogManager::SnapshotCatalogsSerialized(
   CatalogInfo root_catalog_info;
   WritableCatalogList::const_iterator i = catalogs_to_snapshot.begin();
   const WritableCatalogList::const_iterator iend = catalogs_to_snapshot.end();
+
+  const UniquePtr<zip::Compressor>
+                        compress(zip::Compressor::Construct(zip::kZlibDefault));
   for (; i != iend; ++i) {
     FinalizeCatalog(*i, stop_for_tweaks);
 
     // Compress and upload catalog
     shash::Any hash_catalog(spooler_->GetHashAlgorithm(),
                             shash::kSuffixCatalog);
-    if (!zlib::CompressPath2Null((*i)->database_path(),
-                                 &hash_catalog))
-    {
+    zip::InputPath input((*i)->database_path());
+    cvmfs::NullSink out_null;
+    if (compress->Compress(&input, &out_null, &hash_catalog)
+                                                           != zip::kStreamEnd) {
       PANIC(kLogStderr, "could not compress catalog %s",
             (*i)->mountpoint().ToString().c_str());
     }

@@ -104,7 +104,8 @@ if (MACOSX)
   set (CMAKE_INSTALL_LIBDIR "lib")
   set (CMAKE_MOUNT_INSTALL_BINDIR "${CMAKE_INSTALL_PREFIX}/sbin")
   set (CVMFS_LIBEXEC_DIR "libexec/cvmfs")
-  set (CMAKE_MACOSX_RPATH false)
+  set (CMAKE_MACOSX_RPATH true)
+  list( APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib )
 else (MACOSX) # --> Linux
   if (DEBIAN OR ARCHLINUX)
     if (ARCHLINUX)
@@ -279,7 +280,8 @@ set (REQUIRED_HEADERS sys/xattr.h zlib.h netinet/in.h arpa/inet.h sys/socket.h
                       sys/un.h sys/time.h sys/uio.h sys/stat.h sys/types.h
                       sys/wait.h sys/select.h pthread.h termios.h utime.h
                       signal.h errno.h dirent.h unistd.h fcntl.h netdb.h
-                      syslog.h sys/resource.h execinfo.h poll.h pwd.h grp.h)
+                      syslog.h sys/resource.h execinfo.h poll.h pwd.h grp.h
+                      zstd.h)
 set (OPTIONAL_HEADERS )
 if (NOT MACOSX)
   set (REQUIRED_HEADERS ${REQUIRED_HEADERS}
@@ -360,6 +362,9 @@ if (BUILD_CVMFS OR BUILD_LIBCVMFS OR BUILD_SERVER OR BUILD_SERVER_DEBUG OR
 
   find_package (SHA3 REQUIRED)
   set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${SHA3_INCLUDE_DIRS})
+
+  find_package (ZSTD REQUIRED)
+  set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${ZSTD_INCLUDE_DIRS})
 endif ()
 
 
@@ -419,8 +424,11 @@ endif ()
 if (BUILD_CVMFS)
   if (MACOSX)
     find_package (OSXFuse REQUIRED)
-    set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${OSXFUSE_INCLUDE_DIR})
-    set (FUSE_LIBRARIES ${OSXFUSE_LIBRARIES}) # just abstract the difference here... they are compatible
+    set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${MACOS_FUSE_INCLUDE_DIR})
+    set (FUSE_LIBRARIES ${MACOS_FUSE_LIBRARIES}) # just abstract the difference here... they are compatible
+    if (USE_MACFUSE_KEXT)
+      add_definitions(-DUSE_MACFUSE_KEXT)
+    endif()
   else (MACOSX)
     find_package (FUSE REQUIRED)
     set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${FUSE_INCLUDE_DIR})

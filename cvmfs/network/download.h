@@ -18,7 +18,7 @@
 
 #include "gtest/gtest_prod.h"
 
-#include "compression.h"
+#include "compression/decompressor.h"
 #include "crypto/hash.h"
 #include "duplex_curl.h"
 #include "network/dns.h"
@@ -351,7 +351,7 @@ class DownloadManager {  // NOLINT(clang-analyzer-optin.performance.Padding)
   /**
    * Sorted list of currently active proxy URLs (for log messages)
    */
-  std::vector<std::string> opt_proxy_urls_;
+  std::vector<std::string> opt_proxies_;
   /**
    * Shard requests across multiple proxies via consistent hashing
    */

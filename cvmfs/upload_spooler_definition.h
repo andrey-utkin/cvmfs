@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "compression.h"
+#include "compression/compressor.h"
 #include "crypto/hash.h"
 
 namespace upload {
@@ -37,7 +37,7 @@ struct SpoolerDefinition {
   SpoolerDefinition(
       const std::string& definition_string,
       const shash::Algorithms hash_algorithm,
-      const zlib::Algorithms compression_algorithm = zlib::kZlibDefault,
+      const zip::Algorithms compression_algorithm = zip::kZlibDefault,
       const bool generate_legacy_bulk_chunks = false,
       const bool use_file_chunking = false,
       const size_t min_file_chunk_size = 0,
@@ -65,7 +65,7 @@ struct SpoolerDefinition {
   std::string spooler_configuration;
 
   shash::Algorithms hash_algorithm;
-  zlib::Algorithms compression_alg;
+  zip::Algorithms compression_alg;
   /**
    * If a file is chunked, clients >= 2.1.7 do not need the bulk chunk.  We can
    * force creating the bulk chunks for backwards compatibility.

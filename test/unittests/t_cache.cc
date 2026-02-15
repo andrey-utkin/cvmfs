@@ -15,7 +15,7 @@
 #include <string>
 
 #include "cache_posix.h"
-#include "compression.h"
+#include "compression/compressor.h"
 #include "crypto/hash.h"
 #include "quota.h"
 #include "testutil.h"
@@ -28,6 +28,7 @@ using namespace std;  // NOLINT
 class T_CacheManager : public ::testing::Test {
  protected:
   virtual void SetUp() {
+    copy_ = zip::Compressor::Construct(zip::kNoCompression);
     used_fds_ = GetNoUsedFds();
 
     tmp_path_ = CreateTempDir("./cvmfs_ut_cache_manager");
@@ -109,6 +110,7 @@ class T_CacheManager : public ::testing::Test {
   shash::Any hash_one_;
   shash::Any hash_page_;
   unsigned used_fds_;
+  UniquePtr<zip::Compressor> copy_;
 };
 
 
@@ -218,6 +220,7 @@ class TestQuotaManager : public QuotaManager {
   virtual uint64_t GetCapacity() { return 100*1024*1024; }
   virtual uint64_t GetSize() { return size; }
   virtual uint64_t GetSizePinned() { return 0; }
+  virtual bool     SetLimit(uint64_t limit) { return false; } // NOLINT
   virtual uint64_t GetCleanupRate(uint64_t period_s) { return 0; }
 
   virtual void Spawn() { }
@@ -467,13 +470,12 @@ TEST_F(T_CacheManager, CommitTxnSizeMismatch) {
   EXPECT_GE(cache_mgr_->StartTxn(rnd_hash, 2, txn), 0);
   EXPECT_EQ(1U, cache_mgr_->Write(&content, 1, txn));
   EXPECT_EQ(-EIO, cache_mgr_->CommitTxn(txn));
-  unsigned char *buf;
-  unsigned buf_size;
-  EXPECT_TRUE(CopyPath2Mem(tmp_path_ + "/quarantaine/" + rnd_hash.ToString(),
-                           &buf, &buf_size));
-  EXPECT_EQ(1U, buf_size);
-  EXPECT_EQ(content, buf[0]);
-  free(buf);
+
+  zip::InputPath in_path(tmp_path_ + "/quarantaine/" + rnd_hash.ToString());
+  cvmfs::MemSink out_mem(0);
+  EXPECT_EQ(copy_->Compress(&in_path, &out_mem), zip::kStreamEnd);
+  EXPECT_EQ(1U, out_mem.pos());
+  EXPECT_EQ(content, out_mem.data()[0]);
 }
 
 
@@ -606,8 +608,9 @@ TEST_F(T_CacheManager, Create) {
   delete mgr;
   umask(mask_save);
 
-  CopyPath2Path(tmp_path_ + "/" + hash_null_.MakePath(),
-                path + "/cvmfscatalog.cache");
+  zip::InputPath in_path(tmp_path_ + "/" + hash_null_.MakePath());
+  cvmfs::PathSink out_path(path + "/cvmfscatalog.cache");
+  EXPECT_EQ(copy_->Compress(&in_path, &out_path), zip::kStreamEnd);
   EXPECT_EQ(NULL, PosixCacheManager::Create(path, false));
 }
 
@@ -725,7 +728,9 @@ TEST_F(T_CacheManager, Rename) {
   EXPECT_TRUE(FileExists(path_one));
   EXPECT_EQ(-ENOENT, cache_mgr_->Rename(path_null.c_str(), path_one.c_str()));
 
-  EXPECT_TRUE(CopyPath2Path(path_one, path_null));
+  zip::InputPath in_path(path_one);
+  cvmfs::PathSink out_path(path_null);
+  EXPECT_EQ(copy_->Compress(&in_path, &out_path), zip::kStreamEnd);
   cache_mgr_->rename_workaround_ = PosixCacheManager::kRenameLink;
   EXPECT_EQ(0, cache_mgr_->Rename(path_null.c_str(), path_one.c_str()));
   EXPECT_FALSE(FileExists(path_null));

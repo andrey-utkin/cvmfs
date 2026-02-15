@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "compression.h"
+#include "compression/compressor.h"
 #include "repository_tag.h"
 #include "swissknife.h"
 #include "upload.h"
@@ -27,6 +27,7 @@ struct SyncParameters {
       : spooler(NULL),
         union_fs_type("aufs"),
         to_delete(""),
+        cache_dir(""),
         print_changeset(false),
         dry_run(false),
         mucatalogs(false),
@@ -35,13 +36,14 @@ struct SyncParameters {
         ignore_xdir_hardlinks(false),
         stop_for_catalog_tweaks(false),
         include_xattrs(false),
+        enable_mtime_ns(false),
         external_data(false),
         direct_io(false),
         voms_authz(false),
         virtual_dir_actions(0),
         ignore_special_files(false),
         branched_catalog(false),
-        compression_alg(zlib::kZlibDefault),
+        compression_alg(zip::kZlibDefault),
         enforce_limits(false),
         nested_kcatalog_limit(0),
         root_kcatalog_limit(0),
@@ -78,6 +80,7 @@ struct SyncParameters {
   std::string tar_file;
   std::string base_directory;
   std::string to_delete;
+  std::string cache_dir;
   bool print_changeset;
   bool dry_run;
   bool mucatalogs;
@@ -86,13 +89,14 @@ struct SyncParameters {
   bool ignore_xdir_hardlinks;
   bool stop_for_catalog_tweaks;
   bool include_xattrs;
+  bool enable_mtime_ns;
   bool external_data;
   bool direct_io;
   bool voms_authz;
   int virtual_dir_actions;  // bit field
   bool ignore_special_files;
   bool branched_catalog;
-  zlib::Algorithms compression_alg;
+  zip::Algorithms compression_alg;
   bool enforce_limits;
   unsigned nested_kcatalog_limit;
   unsigned root_kcatalog_limit;
@@ -251,6 +255,7 @@ class CommandSync : public Command {
     return "Pushes changes from scratch area back to the repository.";
   }
   virtual ParameterList GetParams() const {
+    // unused characters: J, 1-9, all special characters but @
     ParameterList r;
     r.push_back(Parameter::Mandatory('b', "base hash"));
     r.push_back(Parameter::Mandatory('c', "r/o volume"));
@@ -291,12 +296,18 @@ class CommandSync : public Command {
                                     "virtual directory options "
                                     "[snapshots, remove]"));
 
+
+    r.push_back(
+        Parameter::Switch('G', "Use persistent caching for all catalogs "
+                                 "used during the publishing process"
+                                 " Warning: No automatic garbage collection!"));
     r.push_back(Parameter::Switch('d',
                                   "pause publishing to allow for catalog "
                                   "tweaks"));
     r.push_back(Parameter::Switch('i', "ignore x-directory hardlinks"));
     r.push_back(Parameter::Switch('g', "ignore special files"));
     r.push_back(Parameter::Switch('k', "include extended attributes"));
+    r.push_back(Parameter::Switch('j', "enable nanosecond timestamps"));
     r.push_back(Parameter::Switch('m', "create micro catalogs"));
     r.push_back(Parameter::Switch('n', "create new repository"));
     r.push_back(Parameter::Switch('p', "enable file chunking"));

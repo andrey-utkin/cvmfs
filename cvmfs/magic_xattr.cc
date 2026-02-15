@@ -351,8 +351,7 @@ bool CompressionMagicXattr::PrepareValueFenced() {
 }
 
 void CompressionMagicXattr::FinalizeValue() {
-  result_pages_.push_back(zlib::AlgorithmName(
-                                             dirent_->compression_algorithm()));
+  result_pages_.push_back(zip::AlgorithmName(dirent_->compression_algorithm()));
 }
 
 bool DirectIoMagicXattr::PrepareValueFenced() {
@@ -476,7 +475,7 @@ void LogBufferXattr::FinalizeValue() {
       itr->message.resize(kMaxLogLine);
       itr->message += " <snip>";
     }
-    result += "[" + StringifyTime(itr->timestamp, true /* UTC */) + " UTC] " +
+    result += "[" + StringifyLocalTime(itr->timestamp) + "] " +
               itr->message + "\n";
   }
   result_pages_.push_back(result);

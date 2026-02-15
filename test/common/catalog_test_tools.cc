@@ -10,9 +10,12 @@
 #include <sstream>
 
 #include "catalog_rw.h"
-#include "compression.h"
+#include "compression/compressor.h"
+#include "compression/input_mem.h"
 #include "crypto/hash.h"
 #include "directory_entry.h"
+#include "network/sink_file.h"
+#include "network/sink_null.h"
 #include "options.h"
 #include "testutil.h"
 #include "util/posix.h"
@@ -309,8 +312,7 @@ void CatalogTestTool::UpdateManifest() {
 }
 
 // Note: we always apply the dir spec to the revision corresponding to the
-// original,
-//       empty repository.
+// original, empty repository.
 bool CatalogTestTool::Apply(const std::string& id, const DirSpec& spec) {
   statistics_ = new perf::Statistics();
   catalog_mgr_ =
@@ -463,9 +465,9 @@ bool CatalogTestTool::DirSpecAtRootHash(const shash::Any& root_hash,
 CatalogTestTool::~CatalogTestTool() {}
 
 upload::Spooler* CatalogTestTool::CreateSpooler(const std::string& config) {
-  upload::SpoolerDefinition definition(config, shash::kSha1, zlib::kZlibDefault,
-                                       false, true, 4194304, 8388608, 16777216,
-                                       "dummy_token", "dummy_key");
+   upload::SpoolerDefinition definition(config, shash::kSha1, zip::kZlibDefault,
+                                        false, true, 4194304, 8388608, 16777216,
+                                        "dummy_token", "dummy_key");
   return upload::Spooler::Construct(definition);
 }
 
@@ -488,7 +490,7 @@ catalog::WritableCatalogManager* CatalogTestTool::CreateCatalogMgr(
   catalog::WritableCatalogManager* catalog_mgr =
       new catalog::WritableCatalogManager(root_hash, stratum0, temp_dir,
                                           spooler, dl_mgr, false, 0, 0, 0,
-                                          stats, false, 0, 0);
+                                          stats, false, 0, 0, "");
   catalog_mgr->Init();
 
   return catalog_mgr;
@@ -512,11 +514,19 @@ void CatalogTestTool::CreateHistory(
     ASSERT_TRUE(history->Insert(tag));
   }
   history_hash->suffix = shash::kSuffixHistory;
-  ASSERT_TRUE(zlib::CompressPath2Null(history_path, history_hash));
-  ASSERT_TRUE(
-    zlib::CompressPath2Path(
-      history_path,
-      repo_path_ + "/data/" + history_hash->MakePath()));
+
+  const UniquePtr<zip::Compressor>
+                        compress(zip::Compressor::Construct(zip::kZlibDefault));
+  zip::InputPath input(history_path);
+  cvmfs::NullSink out_null;
+  // TODO(heretherebedragons) for what do we need the hash here?
+  EXPECT_EQ(compress->Compress(&input, &out_null, history_hash),
+            zip::kStreamEnd);
+
+  zip::InputPath in_path(history_path);
+  cvmfs::PathSink out_path(repo_path_ + "/data/" + history_hash->MakePath());
+  const zip::StreamStates retval = compress->Compress(&in_path, &out_path);
+  EXPECT_EQ(retval, zip::kStreamEnd);
 }
 
 
@@ -666,11 +676,20 @@ void CatalogTestTool::CreateKeys(
   ASSERT_TRUE(SafeWriteToFile(key, repo_path_ + "/testrepo.key", 0600));
 
   hash_cert->suffix = shash::kSuffixCertificate;
-  ASSERT_TRUE(
-    zlib::CompressPath2Null(repo_path_ + "/testrepo.crt", hash_cert));
-  ASSERT_TRUE(
-    zlib::CompressPath2Path(repo_path_ + "/testrepo.crt",
-                            repo_path_ + "/data/" + hash_cert->MakePath()));
+
+  const UniquePtr<zip::Compressor>
+                        compress(zip::Compressor::Construct(zip::kZlibDefault));
+  zip::InputPath in_path(repo_path_ + "/testrepo.crt");
+  cvmfs::NullSink out_null;
+  // TODO(heretherebedragons) for what do we need the hash here?
+  EXPECT_EQ(compress->Compress(&in_path, &out_null, hash_cert),
+            zip::kStreamEnd);
+
+
+  zip::InputPath in_path2(repo_path_ + "/testrepo.crt");
+  cvmfs::PathSink out_path(repo_path_ + "/data/" + hash_cert->MakePath());
+  const zip::StreamStates retval = compress->Compress(&in_path2, &out_path);
+  EXPECT_EQ(retval, zip::kStreamEnd);
 
   *public_key = repo_path_ + string("/testrepo.pub");
 }

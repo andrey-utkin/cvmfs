@@ -10,7 +10,7 @@
 # `export CVMFS_TEST_SRVDEBUG=startup` - for interactive debugging with gdb
 
 CVMFS_SERVER_APACHE_RELOAD_IS_RESTART=true
-
+CVMFS_TEST_USE_MACFUSE_KEXT=${CVMFS_TEST_USE_MACFUSE_KEXT:=no}
 CVMFS_TEST_DEBUGLOG=${CVMFS_TEST_DEBUGLOG:=}
 CVMFS_TEST_PROXY=${CVMFS_TEST_PROXY:=http://ca-proxy.cern.ch:3128}
 CVMFS_TEST_SCRATCH=${CVMFS_TEST_SCRATCH:=/tmp/cvmfs-test}
@@ -70,6 +70,16 @@ else
   CVMFS_TEST_DOCKER=no
 fi
 
+sys_arch=$(uname)
+
+echo "temporary overwrite of CVMFS_SERVER_URL in /etc/cvmfs/domain.d/cern.ch.local due to RAL being unreliable"
+sudo sh -c "echo 'if [ \"\$CVMFS_USE_CDN\" = \"yes\" ]; then' > /etc/cvmfs/domain.d/cern.ch.local" || return 100
+sudo sh -c "echo CVMFS_SERVER_URL=\"http://s1cern-cvmfs.openhtc.io/cvmfs/@fqrn@;http://s1ral-cvmfs.openhtc.io/cvmfs/@fqrn@;http://s1bnl-cvmfs.openhtc.io/cvmfs/@fqrn@;http://s1fnal-cvmfs.openhtc.io/cvmfs/@fqrn@\" >> /etc/cvmfs/domain.d/cern.ch.local" || return 100
+sudo sh -c "echo else >> /etc/cvmfs/domain.d/cern.ch.local" || return 100
+sudo sh -c "echo CVMFS_SERVER_URL=\"http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cvmfs-s1bnl.opensciencegrid.org/cvmfs/@fqrn@;http://cvmfs-s1fnal.opensciencegrid.org/cvmfs/@fqrn@\" >> /etc/cvmfs/domain.d/cern.ch.local" || return 100
+sudo sh -c "echo fi >> /etc/cvmfs/domain.d/cern.ch.local" || return 100
+cat /etc/cvmfs/domain.d/cern.ch.local
+
 die() {
   echo -e $1 >&2
   exit 1
@@ -107,7 +117,10 @@ get_xattr() {
   local extended_attr="$1"
   local path="$2"
   if running_on_osx; then
-    xattr -p user.$extended_attr "$path"
+    # For some reason xattr -p sometimes works after xattr -l
+    if $(xattr -l "$path" > /dev/null 2>&1); then
+      xattr -p "user.$extended_attr" "$path"
+    fi
   else
     attr -qg $extended_attr "$path"
   fi
@@ -151,7 +164,7 @@ stat_wrapper() {
 
 # Find the service binary (or detect systemd)
 SERVICE_BIN="false"
-if ! pidof systemd > /dev/null 2>&1 || ! [ -d /run/systemd/system ]; then
+if ! ps -p 1 -o comm= > /dev/null 2>&1 || ! [ -d /run/systemd/system ]; then
   if [ -x /sbin/service ]; then
     SERVICE_BIN="/sbin/service"
   elif [ -x /usr/sbin/service ]; then
@@ -417,6 +430,23 @@ is_macos() {
   [ x"$(uname)" = x"Darwin" ]
 }
 
+is_macfuse_enabled() {
+  if [ x"$CVMFS_TEST_USE_MACFUSE_KEXT" = x ]; then
+    return 1
+  fi
+  local value=$(echo "$CVMFS_TEST_USE_MACFUSE_KEXT" | tr '[:upper:]' '[:lower:]')
+  case "$value" in
+    yes|on|1|true)
+      return 0 ;;
+    no|off|0|false)
+      return 1 ;;
+    *)
+      echo "Error: invalid value of CVMFS_USE_MACFUSE_KEXT: $CVMFS_TEST_USE_MACFUSE_KEXT"
+      echo "Valid values are: yes, on, 1, true, no, off, 0, false"
+      return 1 ;;
+  esac
+}
+
 
 get_number_of_cpu_cores() {
   if is_linux; then
@@ -453,11 +483,12 @@ wait_for_umount() {
 }
 
 cvmfs_clean() {
-  sudo cvmfs_config umount > /dev/null                   || return 100
-  sudo sh -c "rm -rf /var/lib/cvmfs/*"                   || return 101
+  sudo env CVMFS_USE_MACFUSE_KEXT="$CVMFS_TEST_USE_MACFUSE_KEXT" cvmfs_config umount > /dev/null  || return 100
+  sudo sh -c "rm -rf /var/lib/cvmfs/*"                  || return 101
   sudo rm -f /etc/cvmfs/default.local                    || return 102
   sudo sh -c "rm -f /etc/cvmfs/config.d/*.local"         || return 104
   sudo sh -c "cat /dev/null > $CVMFS_TEST_SYSLOG_TARGET" || return 105
+  sudo sh -c "rm -f /etc/cvmfs/domain.d/cern.ch.local"   || return 106
 
   wait_for_umount || return 99
 
@@ -477,9 +508,11 @@ cvmfs_mount_direct() {
   repositories=$1
   eval $(cvmfs_config showconfig | grep -e ^CVMFS_CONFIG_REPOSITORY=)
   if [ "x$CVMFS_CONFIG_REPOSITORY" != "x" ]; then
+    echo "Show config mount $CVMFS_CONFIG_REPOSITORY" >> "/tmp/cvmfs-integration.log"
     _cvmfs_mount_manually "$CVMFS_CONFIG_REPOSITORY"
   fi
   for i in $(echo "$repositories" | tr "," " "); do
+    echo "manual mount $i" >> "/tmp/cvmfs-integration.log"
     _cvmfs_mount_manually "$i" || return 102
   done
 }
@@ -497,7 +530,11 @@ cvmfs_mount() {
   sudo sh -c 'echo "CVMFS_TIMEOUT=20" >> /etc/cvmfs/default.local' || return 100
   sudo sh -c 'echo "CVMFS_TIMEOUT_DIRECT=20" >> /etc/cvmfs/default.local' || return 100
   sudo sh -c "echo CVMFS_SYSLOG_FACILITY=$CVMFS_TEST_SYSLOG_FACILITY >> /etc/cvmfs/default.local" || return 100
+  sudo sh -c "echo CVMFS_USE_MACFUSE_KEXT=$CVMFS_TEST_USE_MACFUSE_KEXT >> /etc/cvmfs/default.local" || return 100
   sudo sh -c "echo CVMFS_REPOSITORY_TAG=TESTING > /etc/cvmfs/config.d/cvmfs-config.cern.ch.local" || return 100
+  if running_on_osx ; then
+    sudo sh -c 'echo "CVMFS_MAGIC_XATTRS_VISIBILITY=ALWAYS" >> /etc/cvmfs/default.local' || return 100
+  fi
 
   # add additional parameters
   local proberunner
@@ -536,8 +573,10 @@ _cvmfs_mount_manually() {
   cvmfs_config status | grep -q "/cvmfs/$repository" && return 0
   mkdir -p "/cvmfs/$repository" 2>/dev/null || sudo mkdir -p "/cvmfs/$repository"
   sudo mount -t cvmfs "$repository" "/cvmfs/$repository" >/dev/null 2>&1
+  if running_on_osx; then 
+    sleep 3
+  fi
 }
-
 
 cvmfs_umount() {
   if [ x$PARROT_ENABLED = "xTRUE" ]; then
@@ -550,7 +589,11 @@ cvmfs_umount() {
 
   for r in $(echo $repositories | tr , " "); do
     while (( result != 0 && times > 0  )); do
-      sudo umount /cvmfs/$r > /dev/null 2>&1
+      if [ "$sys_arch" = "Darwin" ] && ! is_macfuse_enabled; then
+        sudo umount -f /cvmfs/$r 2>/dev/null
+      else
+        sudo umount /cvmfs/$r > /dev/null 2>&1
+      fi
       result=$?
       times=$(( $times - 1 ))
       if [ $result -ne 0 ] && [ $times -gt 0 ]; then
@@ -1735,6 +1778,18 @@ delete_from_backend() {
   cvmfs_swissknife remove -o $remote_path -r $(get_backend_spooler)
 }
 
+# removes the file given by its hash from the backend storage of a CVMFS repository
+#
+# @param repository    the repository name to uploaded into
+# @param content_hash  hash of the file
+delete_hash_from_backend() {
+  local repo_name="$1"
+  local content_hash="$2"
+
+  load_repo_config $repo_name
+  cvmfs_swissknife remove -o $(make_path $content_hash) -r $(get_backend_spooler)
+}
+
 
 # uploads a random file into the backend storage of a CVMFS repository
 #
@@ -2432,8 +2487,16 @@ purge_disk_cache() {
 
 try_automount() {
   local repo=$1
+  local retval
   if running_on_osx; then
-    mount | grep "$repo" || sudo mount -t cvmfs $repo /cvmfs/$repo >/dev/null 2>&1
+    if mount | grep "$repo"; then
+      retval=0
+    else
+      sudo mount -t cvmfs $repo /cvmfs/$repo >/dev/null 2>&1
+      retval=$?
+    fi
+    sleep 3
+    return $retval
   else
     ls /cvmfs/${repo}
   fi

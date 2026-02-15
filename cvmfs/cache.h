@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "compression.h"
+#include "compression/compressor.h"
 #include "crypto/hash.h"
 #include "manifest.h"
 #include "util/pointer.h"
@@ -95,7 +95,7 @@ class CacheManager : SingleCopy {
   struct Label {
     Label() : flags(0)
             , size(kSizeUnknown)
-            , zip_algorithm(zlib::kZlibDefault)
+            , zip_algorithm(zip::kZlibDefault)
             , range_offset(-1)
     {}
 
@@ -123,7 +123,7 @@ class CacheManager : SingleCopy {
 
     int flags;
     uint64_t size;  ///< unzipped size, if known
-    zlib::Algorithms zip_algorithm;
+    zip::Algorithms zip_algorithm;
     off_t range_offset;
     /**
      * The logical path on the mountpoint connected to the object. For meta-
@@ -233,6 +233,7 @@ class CacheManager : SingleCopy {
    * Never NULL but defaults to NoopQuotaManager.
    */
   QuotaManager *quota_mgr_;
+  UniquePtr<zip::Compressor> compress_;
 
  private:
   static const unsigned kStateVersion = 0;

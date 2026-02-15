@@ -19,7 +19,7 @@ CVMFS_SOURCE_LOCATION="$1"
 CVMFS_RESULT_LOCATION="$2"
 CVMFS_NIGHTLY_BUILD_NUMBER="${3-0}"
 
-CVMFS_CONFIG_PACKAGE="cvmfs-config-default_2.1-1_all.deb"
+CVMFS_CONFIG_PACKAGE="cvmfs-config-default_2.2-1_all.deb"
 
 # retrieve the upstream version string from CVMFS
 cvmfs_version="$(get_cvmfs_version_from_cmake $CVMFS_SOURCE_LOCATION)"
@@ -63,6 +63,7 @@ if [ x"$(lsb_release -sc)" = x"bullseye" -o \
      x"$(lsb_release -sc)" = x"buster" -o \
      x"$(lsb_release -sc)" = x"bookworm" -o \
      x"$(lsb_release -sc)" = x"focal" -o \
+     x"$(lsb_release -sc)" = x"noble" -o \
      x"$(lsb_release -sc)" = x"jammy" ]; then
   sed -i -e "s/^Build-Depends:/Build-Depends: libfuse3-dev,/g" debian/control
   sed -i -e "s/^Recommends:/Recommends: cvmfs-fuse3,/g" debian/control
@@ -72,12 +73,15 @@ else
 fi
 # Depend on python3-dev instead of python-dev on Ubuntu 22.04
 if [ x"$(lsb_release -sc)" = x"jammy" ]; then
-  sed -i -e "s/python-dev/python3-dev/g" debian/control
+  sed -i -e "s/python/python3/g" debian/control
 fi
 # Depend on python3-* instead of python-* on debian12
 if [ x"$(lsb_release -sc)" = x"bookworm" ]; then
-  sed -i -e "s/python-dev/python3-dev/g" debian/control
-  sed -i -e "s/python-setuptools/python3-setuptools/g" debian/control
+  sed -i -e "s/python/python3/g" debian/control
+fi
+# Depend on python3-* instead of python-* on Ubuntu 24.04
+if [ x"$(lsb_release -sc)" = x"noble" ]; then
+  sed -i -e "s/python/python3/g" debian/control
 fi
 # The cvmfs-gateway requires a go compiler
 if ! go version >/dev/null 2>&1; then

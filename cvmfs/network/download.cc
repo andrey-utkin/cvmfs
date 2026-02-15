@@ -50,7 +50,8 @@
 #include <set>
 #include <utility>
 
-#include "compression.h"
+#include "compression/decompressor.h"
+#include "compression/input_mem.h"
 #include "crypto/hash.h"
 #include "duplex_curl.h"
 #include "interrupt.h"
@@ -263,30 +264,9 @@ static size_t CallbackCurlData(void *ptr, size_t size, size_t nmemb,
                   num_bytes, info->hash_context());
   }
 
-  if (info->compressed()) {
-    zlib::StreamStates retval =
-      zlib::DecompressZStream2Sink(ptr, static_cast<int64_t>(num_bytes),
-                                   info->GetZstreamPtr(), info->sink());
-    if (retval == zlib::kStreamDataError) {
-      LogCvmfs(kLogDownload, kLogSyslogErr,
-                                     "(id %" PRId64 ") failed to decompress %s",
-                                     info->id(), info->url()->c_str());
-      info->SetErrorCode(kFailBadData);
-      return 0;
-    } else if (retval == zlib::kStreamIOError) {
-      LogCvmfs(kLogDownload, kLogSyslogErr,
-                            "(id %" PRId64 ") decompressing %s, local IO error",
-                            info->id(), info->url()->c_str());
-      info->SetErrorCode(kFailLocalIO);
-      return 0;
-    }
-  } else {
-    int64_t written = info->sink()->Write(ptr, num_bytes);
-    if (written < 0 || static_cast<uint64_t>(written) != num_bytes) {
-      LogCvmfs(kLogDownload, kLogDebug, "(id %" PRId64 ") "
-              "Failed to perform write of %zu bytes to sink %s with errno %ld",
-              info->id(), num_bytes, info->sink()->Describe().c_str(), written);
-    }
+  zip::InputMem in_mem(reinterpret_cast<unsigned char*>(ptr), num_bytes);
+  if (!info->DecompressToSink(&in_mem)) {
+    return 0;
   }
 
   return num_bytes;
@@ -954,9 +934,7 @@ void DownloadManager::InitializeRequest(JobInfo *info, CURL *handle) {
   } else {
     info->SetNocache(false);
   }
-  if (info->compressed()) {
-    zlib::DecompressInit(info->GetZstreamPtr());
-  }
+  // info->ResetDecompression();
   if (info->expected_hash()) {
     assert(info->hash_context().buffer != NULL);
     shash::Init(info->hash_context());
@@ -1592,9 +1570,7 @@ bool DownloadManager::VerifyAndFinalize(const int curl_error, JobInfo *info) {
     if (info->expected_hash()) {
       shash::Init(info->hash_context());
     }
-    if (info->compressed()) {
-      zlib::DecompressInit(info->GetZstreamPtr());
-    }
+    info->ResetDecompression();
 
     if (sharding_policy_.UseCount() > 0) {  // sharding policy
       ReleaseCredential(info);
@@ -1665,9 +1641,7 @@ bool DownloadManager::VerifyAndFinalize(const int curl_error, JobInfo *info) {
     info->SetErrorCode(kFailLocalIO);
   }
 
-  if (info->compressed())
-    zlib::DecompressFini(info->GetZstreamPtr());
-
+  info->ResetDecompression();
   if (info->headers()) {
     header_lists_->PutList(info->headers());
     info->SetHeaders(NULL);
@@ -2365,7 +2339,7 @@ bool DownloadManager::GeoSortServers(std::vector<std::string> *servers,
       }
     } else {
       LogCvmfs(kLogDownload, kLogDebug | kLogSyslogWarn,
-               "(manager '%s') GeoAPI request %s failed with error %d [%s]",
+               "(manager '%s') GeoAPI request for %s failed with error %d [%s]",
                name_.c_str(), url.c_str(), result, Code2Ascii(result));
     }
   }
@@ -2805,11 +2779,11 @@ void DownloadManager::UpdateProxiesUnlocked(const string &reason) {
   // Identify number of non-burned proxies within the current group
   vector<ProxyInfo> *group = current_proxy_group();
   unsigned num_alive = (group->size() - opt_proxy_groups_current_burned_);
-  string old_proxy = JoinStrings(opt_proxy_urls_, "|");
+  string old_proxy = JoinStrings(opt_proxies_, "|");
 
   // Rebuild proxy map and URL list
   opt_proxy_map_.clear();
-  opt_proxy_urls_.clear();
+  opt_proxies_.clear();
   const uint32_t max_key = 0xffffffffUL;
   if (opt_proxy_shard_) {
     // Build a consistent map with multiple entries for each proxy
@@ -2823,7 +2797,9 @@ void DownloadManager::UpdateProxiesUnlocked(const string &reason) {
         const std::pair<uint32_t, ProxyInfo *> entry(prng.Next(max_key), proxy);
         opt_proxy_map_.insert(entry);
       }
-      opt_proxy_urls_.push_back(proxy->url);
+      std::string proxy_name = proxy->host.name().empty() ?
+                                           "" : " (" + proxy->host.name() + ")";
+      opt_proxies_.push_back(proxy->url + proxy_name);
     }
     // Ensure lower_bound() finds a value for all keys
     ProxyInfo *first_proxy = opt_proxy_map_.begin()->second;
@@ -2835,18 +2811,22 @@ void DownloadManager::UpdateProxiesUnlocked(const string &reason) {
     ProxyInfo *proxy = &(*group)[select];
     const std::pair<uint32_t, ProxyInfo *> entry(max_key, proxy);
     opt_proxy_map_.insert(entry);
-    opt_proxy_urls_.push_back(proxy->url);
+    std::string proxy_name = proxy->host.name().empty() ?
+                                           "" : " (" + proxy->host.name() + ")";
+    opt_proxies_.push_back(proxy->url + proxy_name);
   }
-  sort(opt_proxy_urls_.begin(), opt_proxy_urls_.end());
+  sort(opt_proxies_.begin(), opt_proxies_.end());
 
   // Report any change in proxy usage
-  string new_proxy = JoinStrings(opt_proxy_urls_, "|");
+  string new_proxy = JoinStrings(opt_proxies_, "|");
+  string curr_host = "Current host: " + (opt_host_chain_ ?
+                              (*opt_host_chain_)[opt_host_chain_current_] : "");
   if (new_proxy != old_proxy) {
     LogCvmfs(kLogDownload, kLogDebug | kLogSyslogWarn,
-           "(manager '%s') switching proxy from %s to %s. Reason: %s",
+           "(manager '%s') switching proxy from %s to %s. Reason: %s [%s]",
            name_.c_str(), (old_proxy.empty() ? "(none)" : old_proxy.c_str()),
            (new_proxy.empty() ? "(none)" : new_proxy.c_str()),
-           reason.c_str());
+           reason.c_str(), curr_host.c_str());
   }
 }
 

@@ -13,8 +13,10 @@
 #include "catalog_rw.h"
 #include "catalog_sql.h"
 #include "catalog_virtual.h"
-#include "compression.h"
+#include "compression/compressor.h"
+#include "compression/input_path.h"
 #include "crypto/hash.h"
+#include "network/sink_path.h"
 #include "swissknife_history.h"
 #include "util/concurrency.h"
 #include "util/logging.h"
@@ -34,6 +36,7 @@ CommandMigrate::CommandMigrate() :
   root_catalog_(NULL)
 {
   atomic_init32(&catalogs_processed_);
+  copy_ = zip::Compressor::Construct(zip::kNoCompression);
 }
 
 
@@ -331,10 +334,13 @@ bool CommandMigrate::UpdateUndoTags(
   time_t timestamp,
   shash::Any *history_hash)
 {
-  string filename_old = history_upstream_->filename();
-  string filename_new = filename_old + ".new";
-  bool retval = CopyPath2Path(filename_old, filename_new);
-  if (!retval) return false;
+  const string filename_new = history_upstream_->filename() + ".new";
+
+  zip::InputPath in_path(history_upstream_->filename());
+  cvmfs::PathSink out_path(filename_new);
+  if (copy_->Compress(&in_path, &out_path) != zip::kStreamEnd) {
+    return false;
+  }
   UniquePtr<history::SqliteHistory> history(
     history::SqliteHistory::OpenWritable(filename_new));
   history->TakeDatabaseFileOwnership();
@@ -342,7 +348,7 @@ bool CommandMigrate::UpdateUndoTags(
   history::History::Tag tag_trunk;
   bool exists = history->GetByName(CommandTag::kHeadTag, &tag_trunk);
   if (exists) {
-    retval = history->Remove(CommandTag::kHeadTag);
+    bool retval = history->Remove(CommandTag::kHeadTag);
     if (!retval) return false;
 
     history::History::Tag tag_trunk_previous = tag_trunk;
@@ -859,7 +865,7 @@ bool CommandMigrate::AbstractMigrationWorker<DerivedT>::CleanupNestedCatalogs(
  * both the catalog management and migration classes get updated.
  */
 const float    CommandMigrate::MigrationWorker_20x::kSchema         = 2.5;
-const unsigned CommandMigrate::MigrationWorker_20x::kSchemaRevision = 6;
+const unsigned CommandMigrate::MigrationWorker_20x::kSchemaRevision = 7;
 
 
 template<class DerivedT>
@@ -1106,7 +1112,7 @@ bool CommandMigrate::MigrationWorker_20x::MigrateFileMetadata(
     "         IFNULL(hardlink_group_id, 0) << 32 | "
     "         COALESCE(hardlinks.linkcount, dir_linkcounts.linkcount, 1) "
     "           AS hardlinks, "
-    "         hash, size, mode, mtime, "
+    "         hash, size, mode, mtime, NULL, " // set empty mtimens
     "         flags, name, symlink, "
     "         :uid, "
     "         :gid, "

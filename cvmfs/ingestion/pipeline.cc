@@ -254,7 +254,7 @@ void ScrubbingPipeline::Process(
   FileItem *file_item = new FileItem(
     source,
     0, 0, 0,
-    zlib::kNoCompression,
+    zip::kNoCompression,
     hash_algorithm,
     hash_suffix,
     false,  /* may_have_chunks */

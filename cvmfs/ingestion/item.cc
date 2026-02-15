@@ -19,7 +19,7 @@ FileItem::FileItem(
   uint64_t min_chunk_size,
   uint64_t avg_chunk_size,
   uint64_t max_chunk_size,
-  zlib::Algorithms compression_algorithm,
+  zip::Algorithms compression_algorithm,
   shash::Algorithms hash_algorithm,
   shash::Suffix hash_suffix,
   bool may_have_chunks,
@@ -90,10 +90,10 @@ void ChunkItem::MakeBulkChunk() {
 }
 
 
-zlib::Compressor *ChunkItem::GetCompressor() {
+zip::Compressor *ChunkItem::GetCompressor() {
   if (!compressor_.IsValid()) {
     compressor_ =
-      zlib::Compressor::Construct(file_item_->compression_algorithm());
+      zip::Compressor::Construct(file_item_->compression_algorithm());
   }
   return compressor_.weak_ref();
 }

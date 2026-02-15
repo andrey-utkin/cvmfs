@@ -36,7 +36,7 @@ SyncItem::SyncItem() :
   external_data_(false),
   direct_io_(false),
   graft_chunklist_(NULL),
-  compression_algorithm_(zlib::kZlibDefault),
+  compression_algorithm_(zip::kZlibDefault),
   has_compression_algorithm_(false) {}
 
 SyncItem::SyncItem(const std::string  &relative_parent_path,
@@ -58,7 +58,7 @@ SyncItem::SyncItem(const std::string  &relative_parent_path,
   direct_io_(false),
   relative_parent_path_(relative_parent_path),
   graft_chunklist_(NULL),
-  compression_algorithm_(zlib::kZlibDefault),
+  compression_algorithm_(zip::kZlibDefault),
   has_compression_algorithm_(false) {
   content_hash_.algorithm = shash::kAny;
 }
@@ -201,7 +201,9 @@ void SyncItem::StatGeneric(const string  &path,
 }
 
 
-catalog::DirectoryEntryBase SyncItemNative::CreateBasicCatalogDirent() const {
+catalog::DirectoryEntryBase SyncItemNative::CreateBasicCatalogDirent(
+  bool enable_mtime_ns) const
+{
   catalog::DirectoryEntryBase dirent;
 
   // inode and parent inode is determined at runtime of client
@@ -234,6 +236,16 @@ catalog::DirectoryEntryBase SyncItemNative::CreateBasicCatalogDirent() const {
 
   if (this->IsCharacterDevice() || this->IsBlockDevice()) {
     dirent.size_ = makedev(GetRdevMajor(), GetRdevMinor());
+  }
+
+  if (enable_mtime_ns) {
+#ifdef __APPLE__
+    dirent.mtime_ns_ = static_cast<int32_t>(
+      this->GetUnionStat().st_mtimespec.tv_nsec);
+#else
+    dirent.mtime_ns_ = static_cast<int32_t>(
+      this->GetUnionStat().st_mtim.tv_nsec);
+#endif
   }
 
   return dirent;
@@ -383,7 +395,7 @@ void SyncItem::CheckGraft() {
         }
       }
     } else if (info[0] == "compression") {
-      SetCompressionAlgorithm(zlib::ParseCompressionAlgorithm(info[1]));
+      SetCompressionAlgorithm(zip::ParseCompressionAlgorithm(info[1]));
     }
   }
   if (!feof(fp)) {

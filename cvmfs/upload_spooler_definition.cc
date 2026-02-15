@@ -17,7 +17,7 @@ const char* SpoolerDefinition::kDriverNames[] =
 SpoolerDefinition::SpoolerDefinition(
     const std::string& definition_string,
     const shash::Algorithms hash_algorithm,
-    const zlib::Algorithms compression_algorithm,
+    const zip::Algorithms compression_algorithm,
     const bool generate_legacy_bulk_chunks,
     const bool use_file_chunking,
     const size_t min_file_chunk_size,
@@ -76,7 +76,7 @@ SpoolerDefinition::SpoolerDefinition(
 
 SpoolerDefinition SpoolerDefinition::Dup2DefaultCompression() const {
   SpoolerDefinition result(*this);
-  result.compression_alg = zlib::kZlibDefault;
+  result.compression_alg = zip::kZlibDefault;
   return result;
 }
 

@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-#include "compression.h"
+#include "compression/compressor.h"
 #include "crypto/hash.h"
 #include "sync_union.h"
 #include "upload_spooler_definition.h"
@@ -136,7 +136,7 @@ class SettingsTransaction {
     : layout_revision_(0)
     , in_enter_session_(false)
     , hash_algorithm_(shash::kShake128)
-    , compression_algorithm_(zlib::kZlibDefault)
+    , compression_algorithm_(zip::kZlibDefault)
     , ttl_second_(240)
     , is_garbage_collectable_(true)
     , is_volatile_(false)
@@ -166,6 +166,7 @@ class SettingsTransaction {
   void SetHashAlgorithm(const std::string &algorithm);
   void SetCompressionAlgorithm(const std::string &algorithm);
   void SetEnforceLimits(bool value);
+  void SetEnableMtimeNs(bool value);
   void SetLimitNestedCatalogKentries(unsigned value);
   void SetLimitRootCatalogKentries(unsigned value);
   void SetLimitFileSizeMb(unsigned value);
@@ -189,13 +190,14 @@ class SettingsTransaction {
   bool in_enter_session() const { return in_enter_session_(); }
   shash::Any base_hash() const { return base_hash_(); }
   shash::Algorithms hash_algorithm() const { return hash_algorithm_(); }
-  zlib::Algorithms compression_algorithm() const {
+  zip::Algorithms compression_algorithm() const {
     return compression_algorithm_();
   }
   uint32_t ttl_second() const { return ttl_second_(); }
   bool is_garbage_collectable() const { return is_garbage_collectable_(); }
   bool is_volatile() const { return is_volatile_(); }
   bool enforce_limits() const { return enforce_limits_(); }
+  bool enable_mtime_ns() const { return enable_mtime_ns_(); }
   unsigned limit_nested_catalog_kentries() const {
     return limit_nested_catalog_kentries_();
   }
@@ -240,11 +242,12 @@ class SettingsTransaction {
    */
   Setting<shash::Any> base_hash_;
   Setting<shash::Algorithms> hash_algorithm_;
-  Setting<zlib::Algorithms> compression_algorithm_;
+  Setting<zip::Algorithms> compression_algorithm_;
   Setting<uint32_t> ttl_second_;
   Setting<bool> is_garbage_collectable_;
   Setting<bool> is_volatile_;
   Setting<bool> enforce_limits_;
+  Setting<bool> enable_mtime_ns_;
   Setting<unsigned> limit_nested_catalog_kentries_;
   Setting<unsigned> limit_root_catalog_kentries_;
   Setting<unsigned> limit_file_size_mb_;

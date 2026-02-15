@@ -6,9 +6,11 @@
 
 #include <cache_posix.h>
 #include <cache_stream.h>
-#include <compression.h>
+#include <compression/compressor.h>
+#include <compression/input_mem.h>
 #include <crypto/hash.h>
 #include <network/download.h>
+#include <network/sink_mem.h>
 #include <statistics.h>
 #include <util/pointer.h>
 #include <util/posix.h>
@@ -16,12 +18,17 @@
 class T_StreamingCacheManager : public ::testing::Test {
  protected:
   void StageFile(const std::string &content, shash::Any *hash) {
-    void *zipped_buf;
-    uint64_t zipped_size;
-    zlib::CompressMem2Mem(content.data(),
-                          static_cast<int64_t>(content.length()),
-                          &zipped_buf, &zipped_size);
-    std::string zipped_data(reinterpret_cast<char *>(zipped_buf), zipped_size);
+    const UniquePtr<zip::Compressor>
+                        compress(zip::Compressor::Construct(zip::kZlibDefault));
+    zip::InputMem in_mem(
+                         reinterpret_cast<const unsigned char*>(content.data()),
+                         content.length());
+    cvmfs::MemSink out_mem(0);
+    const zip::StreamStates retval = compress->Compress(&in_mem, &out_mem);
+    EXPECT_EQ(retval, zip::kStreamEnd);
+
+    const std::string zipped_data(reinterpret_cast<char *>(out_mem.data()),
+                            out_mem.pos() + 1);
     HashString(zipped_data, hash);
     EXPECT_TRUE(SafeWriteToFile(zipped_data, "data/" + hash->MakePath(), 0600));
   }

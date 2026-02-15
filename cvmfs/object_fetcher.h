@@ -10,12 +10,18 @@
 #include <string>
 
 #include "catalog.h"
+#include "compression/decompressor.h"
+#include "compression/input_file.h"
+#include "compression/input_path.h"
 #include "crypto/signature.h"
 #include "history_sqlite.h"
 #include "manifest.h"
 #include "manifest_fetch.h"
 #include "network/download.h"
+#include "network/sink_file.h"
+#include "network/sink_path.h"
 #include "reflog.h"
+#include "util/pointer.h"
 #include "util/posix.h"
 
 /**
@@ -346,7 +352,10 @@ class LocalObjectFetcher :
   LocalObjectFetcher(const std::string &base_path,
                      const std::string &temp_dir)
     : BaseTN(temp_dir)
-    , base_path_(base_path) {}
+    , base_path_(base_path) {
+    copy_ = zip::Decompressor::Construct(zip::kNoCompression);
+    decomp_zlib_ = zip::Decompressor::Construct(zip::kZlibDefault);
+  }
 
   using BaseTN::FetchManifest;  // un-hiding convenience overload
   Failures FetchManifest(manifest::Manifest** manifest) {
@@ -402,10 +411,18 @@ class LocalObjectFetcher :
     }
 
     // decompress or copy the requested object file
-    const bool success = (decompress)
-      ? zlib::DecompressPath2File(source, f)
-      : CopyPath2File(source, f);
-    fclose(f);
+    zip::InputPath in_path(source);
+    cvmfs::FileSink out_file(f, true);
+    zip::Decompressor *decomp;
+
+    if (decompress) {
+      decomp = decomp_zlib_.weak_ref();
+    } else {
+      decomp = copy_.weak_ref();
+    }
+
+    const bool success = (decomp->DecompressStream(&in_path, &out_file)
+                                                            == zip::kStreamEnd);
 
     // check the decompression success and remove the temporary file otherwise
     if (!success) {
@@ -414,6 +431,7 @@ class LocalObjectFetcher :
                source.c_str(), file_path->c_str(), errno);
       unlink(file_path->c_str());
       file_path->clear();
+      decomp->Reset();
       return BaseTN::kFailDecompression;
     }
 
@@ -431,6 +449,8 @@ class LocalObjectFetcher :
 
  private:
   const std::string base_path_;
+  UniquePtr<zip::Decompressor> copy_;
+  UniquePtr<zip::Decompressor> decomp_zlib_;
 };
 
 template <class CatalogT, class HistoryT, class ReflogT>

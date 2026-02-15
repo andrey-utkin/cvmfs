@@ -124,10 +124,10 @@ class SyncItem {
   void SetExternalData(bool val) {external_data_ = val;}
   void SetDirectIo(bool val) {direct_io_ = val;}
 
-  inline zlib::Algorithms GetCompressionAlgorithm() const {
+  inline zip::Algorithms GetCompressionAlgorithm() const {
     return compression_algorithm_;
   }
-  inline void SetCompressionAlgorithm(const zlib::Algorithms &alg) {
+  inline void SetCompressionAlgorithm(const zip::Algorithms &alg) {
     compression_algorithm_ = alg;
     has_compression_algorithm_ = true;
   }
@@ -136,9 +136,15 @@ class SyncItem {
    * Generates a DirectoryEntry that can be directly stored into a catalog db.
    * Note: this sets the inode fields to kInvalidInode as well as the link
    *       count to 1 if MaskHardlink() has been called before (cf. OverlayFS)
+   *
+   * If nanosecond timestamps are off, the directory entry will have a
+   * default initialized, negative nanosecond timestamp and as a result
+   * the corresponding field in the catalog table will be NULL.
+   *
    * @return  a DirectoryEntry structure to be written into a catalog
    */
-  virtual catalog::DirectoryEntryBase CreateBasicCatalogDirent() const = 0;
+  virtual catalog::DirectoryEntryBase CreateBasicCatalogDirent(
+    bool enable_mtime_ns) const = 0;
 
   inline std::string GetRelativePath() const {
     return (relative_parent_path_.empty()) ?
@@ -305,7 +311,7 @@ class SyncItem {
   FileChunkList *graft_chunklist_;
 
   // The compression algorithm for the file
-  zlib::Algorithms compression_algorithm_;
+  zip::Algorithms compression_algorithm_;
   // The compression algorithm has been set explicitly
   bool has_compression_algorithm_;
 
@@ -323,7 +329,8 @@ typedef std::map<std::string, SharedPtr<SyncItem> > SyncItemList;
 
 class SyncItemNative : public SyncItem {
   friend class SyncUnion;
-  virtual catalog::DirectoryEntryBase CreateBasicCatalogDirent() const;
+  virtual catalog::DirectoryEntryBase CreateBasicCatalogDirent(
+    bool enable_mtime_ns) const;
   virtual IngestionSource *CreateIngestionSource() const;
   virtual void MakePlaceholderDirectory() const { assert(false); }
   virtual SyncItemType GetScratchFiletype() const;

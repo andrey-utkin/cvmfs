@@ -78,11 +78,16 @@ class PosixQuotaManager : public QuotaManager {
   virtual uint64_t GetCapacity();
   virtual uint64_t GetSize();
   virtual uint64_t GetSizePinned();
+  virtual bool     SetLimit(uint64_t limit);
   virtual uint64_t GetCleanupRate(uint64_t period_s);
 
   virtual void Spawn();
   virtual pid_t GetPid();
   virtual uint32_t GetProtocolRevision();
+
+  void ManagedReadHalfPipe(int fd, void *buf, size_t nbyte);
+  void SetCacheMgrPid(pid_t pid_) { cachemgr_pid_ = pid_;};
+
 
  private:
   /**
@@ -118,6 +123,7 @@ class PosixQuotaManager : public QuotaManager {
     // as of protocol revision 2
     kListVolatile,
     kCleanupRate,
+    kSetLimit,
   };
 
   /**
@@ -174,6 +180,12 @@ class PosixQuotaManager : public QuotaManager {
   };
 
   /**
+   * Magic number to make reading PIDs from lockfiles more robust and versionable
+   */
+
+  static const unsigned kLockFileMagicNumber = 142857;
+
+  /**
    * Maximum page cache per thread (Bytes).
    */
   static const unsigned kSqliteMemPerThread = 2*1024*1024;
@@ -227,6 +239,7 @@ class PosixQuotaManager : public QuotaManager {
                 const std::string &description, const CommandType command_type);
   std::vector<std::string> DoList(const CommandType list_command);
   void GetSharedStatus(uint64_t *gauge, uint64_t *pinned);
+  bool SetSharedLimit(uint64_t limit);
   void GetLimits(uint64_t *limit, uint64_t *cleanup_threshold);
 
   static void ParseDirectories(const std::string cache_workspace,
@@ -310,6 +323,13 @@ class PosixQuotaManager : public QuotaManager {
    * will be performed in a detached, asynchronous process.
    */
   bool async_delete_;
+
+
+  /**
+   * Record pid of current cache manager in order to check if its process
+   * disappeared.
+   */
+  pid_t cachemgr_pid_;
 
   /**
    * Keeps track of the number of cleanups over time.  Use by

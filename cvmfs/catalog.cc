@@ -424,7 +424,7 @@ bool Catalog::AllChunksBegin() {
 }
 
 
-bool Catalog::AllChunksNext(shash::Any *hash, zlib::Algorithms *compression_alg)
+bool Catalog::AllChunksNext(shash::Any *hash, zip::Algorithms *compression_alg)
 {
   return sql_all_chunks_->Next(hash, compression_alg);
 }

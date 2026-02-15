@@ -12,8 +12,10 @@
 #include <vector>
 
 #include "cache_posix.h"
-#include "compression.h"
+#include "compression/compressor.h"
+#include "compression/input_mem.h"
 #include "crypto/hash.h"
+#include "network/sink_path.h"
 #include "quota_posix.h"
 #include "testutil.h"
 #include "util/algorithm.h"
@@ -341,7 +343,7 @@ TEST_F(T_QuotaManager, CreateShared) {
     PosixQuotaManager::CreateShared("", tmp_path_ + "/noent", 5, 5, false));
 
   // Forking fails
-  EXPECT_EQ(NULL, PosixQuotaManager::CreateShared("", tmp_path_, 5, 5, false));
+  EXPECT_EQ(NULL, PosixQuotaManager::CreateShared("", tmp_path_, 5, 5, true));
   EXPECT_EQ(0, unlink((tmp_path_ + "/cachemgr").c_str()));
 
   // TODO(jblomer): test fork logic (requires changes to __cachemgr__ execve)
@@ -502,9 +504,13 @@ TEST_F(T_QuotaManager, RebuildDatabase) {
   CreateFile(tmp_path_ + "/" + hashes_[0].MakePath(), 0600);
   CreateFile(tmp_path_ + "/" + hashes_[1].MakePath(), 0600);
   unsigned char buf = 'x';
-  EXPECT_TRUE(CopyMem2Path(&buf, 1, tmp_path_ + "/" + hashes_[1].MakePath()));
-  quota_mgr_ =
-    PosixQuotaManager::Create(tmp_path_, limit_, threshold_, true);
+
+  const UniquePtr<zip::Compressor>
+                          copy(zip::Compressor::Construct(zip::kNoCompression));
+  zip::InputMem in_mem(&buf, 1);
+  cvmfs::PathSink out_path(tmp_path_ + "/" + hashes_[1].MakePath());
+  EXPECT_TRUE(copy->Compress(&in_mem, &out_path) == zip::kStreamEnd);
+  quota_mgr_ = PosixQuotaManager::Create(tmp_path_, limit_, threshold_, true);
   ASSERT_TRUE(quota_mgr_ != NULL);
   quota_mgr_->Spawn();
   // The empty file was removed during rebuild
@@ -549,4 +555,10 @@ TEST_F(T_QuotaManager, Touch) {
   quota_mgr_->Touch(hashes_[0]);
   quota_mgr_->Cleanup(1);
   EXPECT_EQ("a\n", PrintStringVector(quota_mgr_->List()));
+}
+
+TEST_F(T_QuotaManager, SetLimit) {
+  quota_mgr_->SetLimit(100);
+  const uint64_t limit = quota_mgr_->GetCapacity();
+  EXPECT_EQ(100ul, limit);
 }

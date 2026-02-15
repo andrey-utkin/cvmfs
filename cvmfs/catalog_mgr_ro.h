@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "compression/decompressor.h"
+
 #include "catalog_mgr.h"
 
 namespace download {
@@ -37,13 +39,9 @@ class SimpleCatalogManager : public AbstractCatalogManager<Catalog> {
     const std::string          &dir_temp,
     download::DownloadManager  *download_manager,
     perf::Statistics           *statistics,
-    const bool                  manage_catalog_files = false)
-    : AbstractCatalogManager<Catalog>(statistics)
-    , base_hash_(base_hash)
-    , stratum0_(stratum0)
-    , dir_temp_(dir_temp)
-    , download_manager_(download_manager)
-    , manage_catalog_files_(manage_catalog_files) { }
+    const bool                  manage_catalog_files = false,
+    const std::string           &dir_cache = "",
+    const bool                  copy_to_tmp_dir = false);
 
  protected:
   virtual LoadReturn GetNewRootCatalogContext(CatalogContext *result);
@@ -66,12 +64,24 @@ class SimpleCatalogManager : public AbstractCatalogManager<Catalog> {
     return (relative_path == "") ? "" : "/" + relative_path;
   }
 
+  bool UseLocalCache() const { return !dir_cache_.empty(); }
+
+  std::string                dir_cache_;  // absolute path to local cache
+                                                // directory
+  bool                       copy_to_tmp_dir_;  // only relevant if using local
+                                                // cache directory:
+                                                // for writeable catalogs a copy
+                                                // must be created in dir_temp_
+  UniquePtr<zip::Decompressor>  copy_;
+
  private:
-  shash::Any                 base_hash_;
-  std::string                stratum0_;
-  std::string                dir_temp_;
-  download::DownloadManager *download_manager_;
-  const bool                 manage_catalog_files_;
+  std::string CopyCatalogToTempFile(const std::string &cache_path);
+
+  shash::Any                     base_hash_;
+  std::string                    stratum0_;
+  std::string                    dir_temp_;
+  download::DownloadManager     *download_manager_;
+  const bool                     manage_catalog_files_;
 };  // class SimpleCatalogManager
 
 }  // namespace catalog

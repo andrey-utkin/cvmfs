@@ -80,11 +80,15 @@ void SettingsTransaction::SetHashAlgorithm(const std::string &algorithm) {
 
 void SettingsTransaction::SetCompressionAlgorithm(const std::string &algorithm)
 {
-  compression_algorithm_ = zlib::ParseCompressionAlgorithm(algorithm);
+  compression_algorithm_ = zip::ParseCompressionAlgorithm(algorithm);
 }
 
 void SettingsTransaction::SetEnforceLimits(bool value) {
   enforce_limits_ = value;
+}
+
+void SettingsTransaction::SetEnableMtimeNs(bool value) {
+  enable_mtime_ns_ = value;
 }
 
 void SettingsTransaction::SetLimitNestedCatalogKentries(unsigned value) {
@@ -557,6 +561,10 @@ void SettingsBuilder::ApplyOptionsFromServerPath(
   }
   if (options_mgr_.GetValue("CVMFS_ENFORCE_LIMITS", &arg)) {
     settings_publisher->GetTransaction()->SetEnforceLimits(
+        options_mgr_.IsOn(arg));
+  }
+  if (options_mgr_.GetValue("CVMFS_ENABLE_MTIME_NS", &arg)) {
+    settings_publisher->GetTransaction()->SetEnableMtimeNs(
         options_mgr_.IsOn(arg));
   }
   if (options_mgr_.GetValue("CVMFS_NESTED_KCATALOG_LIMIT", &arg)) {
