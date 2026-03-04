@@ -276,7 +276,7 @@ class JobInfo {
   void SetAllowFailure(bool allow_failure) { allow_failure_ = allow_failure; }
 
   // needed for fetch.h ThreadLocalStorage
-  JobInfo() { Init(kCreateNone); }
+  JobInfo() { Init(zip::Algorithm::kNoCompression); }
 };  // JobInfo
 
 }  // namespace download
