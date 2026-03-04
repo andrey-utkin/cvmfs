@@ -14,7 +14,7 @@ atomic_int64 JobInfo::next_uuid = 0;
 
 JobInfo::JobInfo(const std::string *u, const bool compressed, const bool ph,
          const shash::Any *h, cvmfs::Sink *s) {
-  JobInfo(u, compressed ? kDefault : kNoCompression, ph, h, s);
+  JobInfo(u, compressed ? zip::Algorithm::kDefault : zip::Algorithm::kNoCompression, ph, h, s);
 }
 
 JobInfo::JobInfo(const std::string *u, zip::Algorithm compression, const bool ph,
