@@ -104,8 +104,8 @@ TEST_F(T_Compressor, ZstdCompressionSinkMem2Mem) {
 
 
 TEST_F(T_Compressor, CompressionSinkMem2Mem) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
 
   // Compress the output
   // unsigned char *input = reinterpret_cast<unsigned char *>(ptr_test_string);
@@ -177,8 +177,8 @@ TEST_F(T_Compressor, ZstdCompressionAndSplitDecompressionSinkMem2MemLarge) {
 }
 
 TEST_F(T_Compressor, CompressionAndSplitDecompressionSinkMem2MemLarge) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
 
   // Compress the output
   const size_t in_size = 16384;
@@ -250,8 +250,8 @@ TEST_F(T_Compressor, ZstdCompressionSinkMemNull2Mem) {
 }
 
 TEST_F(T_Compressor, CompressionSinkMemNull2Mem) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
 
   const size_t chunk_size = 8000;
   const size_t in_size = 0;
@@ -345,8 +345,8 @@ TEST_F(T_Compressor, ZstdCompressionSinkPath2PathLarge) {
 
 // Also tests Input_File and SinkFile because *Path uses it under the hood
 TEST_F(T_Compressor, CompressionSinkPath2PathLarge) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
 
   const size_t in_size = 16384 * 3ul;  // larger than decomp buffer size (32 KB)
   const size_t chunk_size = 8000;
@@ -438,8 +438,8 @@ TEST_F(T_Compressor, ZstdCompressionSinkPathNull2Mem) {
 }
 
 TEST_F(T_Compressor, CompressionSinkPathNull2Mem) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
 
   const size_t in_size = 0;
 
@@ -650,7 +650,7 @@ TEST_F(T_Compressor, ZstdCompressionNewBigEnough) {
 
 TEST_F(T_Compressor, CompressionNewBigEnough) {
   zlib_compressor = static_cast<
-        zip::ZlibCompressor*>(zip::Compressor::Construct(zip::kZlibDefault));
+        zip::ZlibCompressor*>(zip::Compressor::Construct(zip::kZlib));
 
   // Compress the output
   unsigned char *input = reinterpret_cast<unsigned char *>(ptr_test_string);
@@ -665,7 +665,7 @@ TEST_F(T_Compressor, CompressionNewBigEnough) {
   ASSERT_GT(out_mem.pos(), 0U);
 
   // Decompress it, check if it's still the same
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
   zip::InputMem in(out_mem.data(), out_mem.pos());
   cvmfs::MemSink out(0);
   const zip::StreamStates res = decompressor->DecompressStream(&in, &out);
@@ -726,7 +726,7 @@ TEST_F(T_Compressor, ZstdCompressionLongNewOutbufTooSmall) {
 }
 
 TEST_F(T_Compressor, CompressionLongNewOutbufTooSmall) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
   unsigned compress_pos = 0;
   unsigned rounds = 0;
 
@@ -763,7 +763,7 @@ TEST_F(T_Compressor, CompressionLongNewOutbufTooSmall) {
   EXPECT_GT(compress_pos, 0U);
 
   // Decompress it, check if it's still the same
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
   zip::InputMem in(compress_buf, compress_pos);
   cvmfs::MemSink out(0);
   const zip::StreamStates res = decompressor->DecompressStream(&in, &out);
@@ -856,7 +856,7 @@ TEST_F(T_Compressor, ZstdCompressionLongNewOutbufTooSmallMultiInput) {
 }
 
 TEST_F(T_Compressor, CompressionLongNewOutbufTooSmallMultiInput) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
   unsigned compress_pos = 0;
   unsigned rounds = 0;
 
@@ -920,7 +920,7 @@ TEST_F(T_Compressor, CompressionLongNewOutbufTooSmallMultiInput) {
   EXPECT_GT(compress_pos, compress_pos_first);
 
   // Decompress it, check if it's still the same
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
   zip::InputMem in(compress_buf, compress_pos);
   cvmfs::MemSink out(0);
   const zip::StreamStates res = decompressor->DecompressStream(&in, &out);
@@ -975,7 +975,7 @@ TEST_F(T_Compressor, ZstdCompressionLongNew) {
 }
 
 TEST_F(T_Compressor, CompressionLongNew) {
-  compressor = zip::Compressor::Construct(zip::kZlibDefault);
+  compressor = zip::Compressor::Construct(zip::kZlib);
 
   unsigned char *compress_buf =
     new unsigned char[compressor->CompressUpperBound(long_size)];
@@ -1004,7 +1004,7 @@ TEST_F(T_Compressor, CompressionLongNew) {
   EXPECT_GT(compress_pos, 0U);
 
   // Decompress it, check if it's still the same
-  decompressor = zip::Decompressor::Construct(zip::kZlibDefault);
+  decompressor = zip::Decompressor::Construct(zip::kZlib);
   zip::InputMem in(compress_buf, compress_pos);
   cvmfs::MemSink out(0);
   const zip::StreamStates res = decompressor->DecompressStream(&in, &out);
