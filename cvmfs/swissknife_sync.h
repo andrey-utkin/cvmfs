@@ -7,7 +7,6 @@
 
 #include <string>
 #include <vector>
-#include <format>
 
 #include "compression/compressor.h"
 #include "repository_tag.h"
@@ -290,9 +289,9 @@ class CommandSync : public Command {
     r.push_back(Parameter::Optional(
         'J', "tag description (only used when upstream is GW)"));
     r.push_back(Parameter::Optional('X', "maximum weight of the autocatalogs"));
-    r.push_back(Parameter::Optional(
-        'Z', std::format("compression algorithm (default: {})",
-                         zip::AlgorithmName(zip::kDefault))));
+    r.push_back(Parameter::Optional('Z', "compression algorithm (default: " +
+                                             zip::AlgorithmName(zip::kDefault) +
+                                             ")"));
     r.push_back(Parameter::Optional('S',
                                     "virtual directory options "
                                     "[snapshots, remove]"));
