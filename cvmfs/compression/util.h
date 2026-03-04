@@ -26,7 +26,6 @@ enum Algorithm {
   kZlib = 0,
   kNoCompression,
   kZstd,
-  kZlibDefault = kZlib,
   kDefault = kZlib,
 };
 typedef Algorithm Algorithms;
