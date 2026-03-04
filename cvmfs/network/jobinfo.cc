@@ -130,7 +130,7 @@ void JobInfo::Init(zip::Algorithm decompressor_alg) {
 
   allow_failure_ = false;
 
-  SetDecompressor(decompressor_type);
+  SetDecompressor(decompressor_alg);
 }
 
 }  // namespace download
