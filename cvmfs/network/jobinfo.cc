@@ -49,15 +49,10 @@ void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
 }
 
 bool JobInfo::ResetDecompression() {
-  if (decomp_ == NULL) {
-    return true;
-  }
   return decomp_->Reset();
 }
 
 bool JobInfo::DecompressToSink(zip::InputAbstract *in) {
-  assert(decomp_ != NULL);
-
   const zip::StreamStates ret = decomp_->DecompressStream(in, sink_);
 
   switch (ret) {
