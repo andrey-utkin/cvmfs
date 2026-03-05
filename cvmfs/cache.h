@@ -155,8 +155,7 @@ class CacheManager : SingleCopy {
 
   virtual bool AcquireQuotaManager(QuotaManager *quota_mgr) = 0;
 
-  virtual ~CacheManager(
-      zip::Algorithm compression_alg = zip::Algorithm::kDefault);
+  virtual ~CacheManager();
   /**
    * Opening an object might get it from a third-party source, e.g. when the
    * tiered cache manager issues a copy-up operation.  In this case it is
@@ -223,7 +222,7 @@ class CacheManager : SingleCopy {
   }
 
  protected:
-  CacheManager();
+  CacheManager(zip::Algorithm compression_alg = zip::Algorithm::kDefault);
 
   // Unless overwritten, Saving/Restoring states will crash the Fuse module
   virtual void *DoSaveState() { return NULL; }
