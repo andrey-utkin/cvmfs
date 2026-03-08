@@ -7,8 +7,7 @@ cvmfs_run_test() {
   logfile=$1
 
   sudo sh -c 'echo CVMFS_HTTP_PROXY=DIRECT > /etc/cvmfs/default.local' || return 1
-  cd /tmp # provoke INSTALL_BASE=$PWD bug
-  sudo cvmfs_config chksetup || return 2
+  sudo bash -e -c 'cd /tmp; cvmfs_config chksetup' || return 2
   local output=$(sudo cvmfs_config chksetup)
   if [ "x$output" != "xOK" ]; then
     echo "Warning: cvmfs_config chksetup reported warnings"
