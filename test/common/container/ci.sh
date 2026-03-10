@@ -7,8 +7,8 @@ cd test/common/container
 podman build -f Dockerfile-dev . --tag cvmfs-dev-image:clean-slate
 mkdir -p ../../../../ccache
 mkdir -p ./build-and-client-tests.tmp
-mkdir -p ./build-and-client-tests.tmp/tmp_cvmfs-build
-mkdir -p ./build-and-client-tests.tmp/tmp_cvmfs-ext
+mkdir -p ../../../../tmp_cvmfs-build
+mkdir -p ../../../../tmp_cvmfs-ext
 podman run --privileged --name cvmfs-dev \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
