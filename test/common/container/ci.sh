@@ -9,7 +9,7 @@ mkdir -p ../../../../ccache
 mkdir -p ./build-and-client-tests.tmp
 mkdir -p ./build-and-client-tests.tmp/tmp_cvmfs-build
 mkdir -p ./build-and-client-tests.tmp/tmp_cvmfs-ext
-podman start --privileged --name cvmfs-dev \
+podman run --privileged --name cvmfs-dev \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
   -v ../../../../ccache:/home/sftnight/.ccache \
@@ -36,15 +36,15 @@ podman exec -u sftnight -t cvmfs-dev bash -c \
   |& tee ./build-and-client-tests.tmp/cvmfs-client-test.container.log &
 
 
-podman start --privileged --name cvmfs-dev \
+podman run --privileged --name cvmfs-ci-server-test \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
   -v ./server-tests.tmp:/tmp \
   cvmfs-dev-image:chksetup
 
 mkdir -p ./server-tests.tmp
-podman exec -u sftnight -t cvmfs-dev bash -c \
+podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
   "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=0 TEST_SERVER=1 bash test.sh" \
-  |& tee ./server-tests.tmp/cvmfs-client-test.container.log &
+  |& tee ./server-tests.tmp/cvmfs-server-test.container.log &
 
 wait
