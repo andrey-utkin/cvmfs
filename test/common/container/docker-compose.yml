@@ -13,7 +13,8 @@ services:
             - /sys/fs/cgroup:/sys/fs/cgroup
             - var_spool_cvmfs:/var/spool/cvmfs
             - ../../../:/home/sftnight/cvmfs
-
+            - ../../../../ccache:/home/sftnight/.ccache
+            - ../../../../tmp_cvmfs-build:/tmp/cvmfs-build
+            - ../../../../tmp_cvmfs-ext:/tmp/cvmfs-ext
 volumes:
     var_spool_cvmfs:
-
