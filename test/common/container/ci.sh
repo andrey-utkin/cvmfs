@@ -9,7 +9,7 @@ mkdir -p ../../../../ccache
 mkdir -p ./build-and-client-tests.tmp
 mkdir -p ../../../../tmp_cvmfs-build
 mkdir -p ../../../../tmp_cvmfs-ext
-podman run --privileged --name cvmfs-dev \
+podman create --privileged --name cvmfs-dev \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
   -v ../../../../ccache:/home/sftnight/.ccache \
@@ -17,6 +17,7 @@ podman run --privileged --name cvmfs-dev \
   -v ../../../../tmp_cvmfs-build:/tmp/cvmfs-build \
   -v ../../../../tmp_cvmfs-ext:/tmp/cvmfs-ext \
   cvmfs-dev-image:clean-slate
+podman start cvmfs-dev
 
 podman exec -u sftnight -t cvmfs-dev bash -c \
   "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON"
@@ -36,11 +37,12 @@ podman exec -u sftnight -t cvmfs-dev bash -c \
   |& tee ./build-and-client-tests.tmp/cvmfs-client-test.container.log &
 
 
-podman run --privileged --name cvmfs-ci-server-test \
+podman create --privileged --name cvmfs-ci-server-test \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
   -v ./server-tests.tmp:/tmp \
   cvmfs-dev-image:chksetup
+podman start cvmfs-dev-image:chksetup
 
 mkdir -p ./server-tests.tmp
 podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
