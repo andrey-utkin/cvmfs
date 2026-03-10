@@ -5,10 +5,14 @@ set -x
 cd test/common/container
 #podman compose up --build -d cvmfs-dev
 podman build -f Dockerfile-dev . --tag cvmfs-dev-image:clean-slate
-mkdir -p ../../../../ccache
-mkdir -p ./build-and-client-tests.tmp
-mkdir -p ../../../../tmp_cvmfs-build
-mkdir -p ../../../../tmp_cvmfs-ext
+mkdir -p     ../../../../ccache
+chmod -R 777 ../../../../ccache
+mkdir -p     ./build-and-client-tests.tmp
+chmod -R 777 ./build-and-client-tests.tmp
+mkdir -p     ../../../../tmp_cvmfs-build
+chmod -R 777 ../../../../tmp_cvmfs-build
+mkdir -p     ../../../../tmp_cvmfs-ext
+chmod -R 777 ../../../../tmp_cvmfs-ext
 podman create --privileged --name cvmfs-dev \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
@@ -44,7 +48,8 @@ podman create --privileged --name cvmfs-ci-server-test \
   cvmfs-dev-image:chksetup
 podman start cvmfs-dev-image:chksetup
 
-mkdir -p ./server-tests.tmp
+mkdir -p     ./server-tests.tmp
+chmod -R 777 ./server-tests.tmp
 podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
   "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=0 TEST_SERVER=1 bash test.sh" \
   |& tee ./server-tests.tmp/cvmfs-server-test.container.log &
