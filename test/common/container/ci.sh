@@ -3,40 +3,44 @@ set -euo pipefail
 set -x
 
 cd test/common/container
-#podman compose up --build -d cvmfs-dev
-podman build -f Dockerfile-dev . --tag cvmfs-dev-image:clean-slate
-mkdir -p     ../../../../ccache
-chmod -R 777 ../../../../ccache
-mkdir -p     ./build-and-client-tests.tmp
-chmod -R 777 ./build-and-client-tests.tmp
-mkdir -p     ../../../../tmp_cvmfs-build
-chmod -R 777 ../../../../tmp_cvmfs-build
-mkdir -p     ../../../../tmp_cvmfs-ext
-chmod -R 777 ../../../../tmp_cvmfs-ext
-podman create --privileged --name cvmfs-dev \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v ../../../:/home/sftnight/cvmfs \
-  -v ../../../../ccache:/home/sftnight/.ccache \
-  -v ./build-and-client-tests.tmp:/tmp \
-  -v ../../../../tmp_cvmfs-build:/tmp/cvmfs-build \
-  -v ../../../../tmp_cvmfs-ext:/tmp/cvmfs-ext \
-  cvmfs-dev-image:clean-slate
-podman start cvmfs-dev
 
-time podman exec -u sftnight -t cvmfs-dev bash -c \
-  "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON"
+if [[ -v BUILD ]]; then
+  #podman compose up --build -d cvmfs-dev
+  podman build -f Dockerfile-dev . --tag cvmfs-dev-image:clean-slate
+  mkdir -p     ../../../../ccache
+  chmod -R 777 ../../../../ccache
+  mkdir -p     ./build-and-client-tests.tmp
+  chmod -R 777 ./build-and-client-tests.tmp
+  mkdir -p     ../../../../tmp_cvmfs-build
+  chmod -R 777 ../../../../tmp_cvmfs-build
+  mkdir -p     ../../../../tmp_cvmfs-ext
+  chmod -R 777 ../../../../tmp_cvmfs-ext
+  podman create --privileged --name cvmfs-dev \
+    -v /sys/fs/cgroup:/sys/fs/cgroup \
+    -v ../../../:/home/sftnight/cvmfs \
+    -v ../../../../ccache:/home/sftnight/.ccache \
+    -v ./build-and-client-tests.tmp:/tmp \
+    -v ../../../../tmp_cvmfs-build:/tmp/cvmfs-build \
+    -v ../../../../tmp_cvmfs-ext:/tmp/cvmfs-ext \
+    cvmfs-dev-image:clean-slate
+  podman start cvmfs-dev
 
-time podman exec -u sftnight -t cvmfs-dev bash -c \
-  "cd /tmp/cvmfs-build && make -j$(nproc) && sudo make -j$(nproc) install"
+  time podman exec -u sftnight cvmfs-dev bash -c \
+    "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON"
 
-podman commit cvmfs-dev cvmfs-dev-image:build-installed
+  time podman exec -u sftnight cvmfs-dev bash -c \
+    "cd /tmp/cvmfs-build && make -j$(nproc) && sudo make -j$(nproc) install"
 
-podman exec -u sftnight -t cvmfs-dev /bin/bash -c "sudo cvmfs_config setup"
-podman exec -u sftnight -t cvmfs-dev /bin/bash -c "sudo cvmfs_config chksetup"
+  podman commit cvmfs-dev cvmfs-dev-image:build-installed
 
-podman commit cvmfs-dev cvmfs-dev-image:chksetup
-podman stop cvmfs-dev
+  podman exec -u sftnight cvmfs-dev /bin/bash -c "sudo cvmfs_config setup"
+  podman exec -u sftnight cvmfs-dev /bin/bash -c "sudo cvmfs_config chksetup"
 
+  podman commit cvmfs-dev cvmfs-dev-image:chksetup
+  podman stop cvmfs-dev
+fi
+
+podman rm -f $(podman ps -a --format="{{.Names}}" | grep cvmfs-ci-worker- || true) || true
 rm -rf   worker
 : ${NB_WORKERS:=4}
 for worker_i in $(seq 1 "$NB_WORKERS"); do
@@ -59,8 +63,8 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     cvmfs-dev-image:chksetup
   podman start cvmfs-ci-worker-$worker_i # launches systemd
 
-  podman exec -u sftnight -t cvmfs-ci-worker-$worker_i bash -c \
-    "cd /home/sftnight/cvmfs/test/common/container && nohup ./work.sh &> /tmp/work.log &"
+  podman exec -u sftnight cvmfs-ci-worker-$worker_i bash -c \
+    "while ! systemctl status &>/dev/null; do sleep 1; done; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /tmp/work.log &" &
 
   job_file=$(mktemp --tmpdir=worker/$worker_i/orders/.wip)
   cat > "$job_file" <<-EOF
@@ -70,7 +74,7 @@ set -x
 cd "/home/sftnight/cvmfs/test"
 ./run.sh /dev/stdout -- src/000-dummy
 EOF
-  chmod a+x "$job_file"
+  chmod a+rwx "$job_file"
   # reveal:
   mv "$job_file" worker/$worker_i/orders
   touch worker/$worker_i/orders/non-executable-for-quit
