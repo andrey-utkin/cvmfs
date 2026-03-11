@@ -141,7 +141,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
 done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   if ! [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; then
-    podman stop -f cvmfs-ci-worker-$worker_i
+    podman stop --ignore cvmfs-ci-worker-$worker_i
   fi
 done
 tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
