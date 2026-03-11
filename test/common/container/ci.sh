@@ -15,7 +15,7 @@ if [[ -v BUILD ]]; then
   chmod -R 777 ../../../../tmp_cvmfs-build
   mkdir -p     ../../../../tmp_cvmfs-ext
   chmod -R 777 ../../../../tmp_cvmfs-ext
-  podman create --privileged --name cvmfs-dev \
+  podman create --privileged --replace --name cvmfs-dev \
     -v /sys/fs/cgroup:/sys/fs/cgroup \
     -v ../../../:/home/sftnight/cvmfs \
     -v ../../../../ccache:/home/sftnight/.ccache \
