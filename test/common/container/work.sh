@@ -10,5 +10,5 @@ while true; do
   if ! [[ -x "$oldest_job" ]]; then echo "Quitting"; rm -f "$oldest_job"; exit 0; fi
   # execute the file
   time "$PWD"/"$oldest_job" |& tee /tmp/"$oldest_job".log
-  rm -f "$oldest_job"
+  mv "$oldest_job" /tmp
 done
