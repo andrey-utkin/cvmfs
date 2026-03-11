@@ -40,36 +40,38 @@ if [[ -v BUILD ]]; then
   podman stop cvmfs-dev
 fi
 
-podman rm -f $(podman ps -a --format="{{.Names}}" | grep cvmfs-ci-worker- || true) || true
+#time podman rm -f $(podman ps -a --format="{{.Names}}" | grep cvmfs-ci-worker- || true) || true
 rm -rf   worker
-: ${NB_WORKERS:=16}
+
+if ! [[ -v NB_WORKERS ]]; then
+  NB_WORKERS=$(nproc)
+fi
+PRIORITIZE=(nice -n19  ionice -c3)
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   mkdir -p worker/$worker_i/orders
   mkdir -p worker/$worker_i/orders/.wip
   mkdir -p worker/$worker_i/tmp
   chmod -R 777 worker/$worker_i
+done
 
+for worker_i in $(seq 1 "$NB_WORKERS"); do
   # /var/spool/cvmfs should be a bucket (or perhaps a tmpfs),
   # because with a bind-mount dir from host,
   # some overlay features may be unsupported and tests will fail.
   #podman volume rm var_spool_cvmfs-for-server-tests --force
   #  -v var_spool_cvmfs-for-server-tests:/var/spool/cvmfs \
   #  --tmpfs /var/spool/cvmfs \
-  podman create --privileged --name cvmfs-ci-worker-$worker_i \
+  "${PRIORITIZE[@]}" podman create --ulimit nice=20 --replace --privileged --name cvmfs-ci-worker-$worker_i \
     -v /sys/fs/cgroup:/sys/fs/cgroup \
     -v ../../../:/home/sftnight/cvmfs \
     -v ./worker/$worker_i/tmp:/tmp \
     -v ./worker/$worker_i/orders:/orders \
     --tmpfs /var/spool/cvmfs \
-    cvmfs-dev-image:chksetup
-  podman start cvmfs-ci-worker-$worker_i # launches systemd
-
-  #podman exec -u root     cvmfs-ci-worker-$worker_i bash -c \
-  #  "while ! systemctl status &>/dev/null; do sleep 1; done; systemctl start autofs && systemctl start httpd && cvmfs_config setup"
-  podman exec -u root     cvmfs-ci-worker-$worker_i bash -c \
-    "while ! systemctl status &>/dev/null; do sleep 1; done"
-  podman exec -u sftnight cvmfs-ci-worker-$worker_i bash -c \
-    "nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /tmp/work.log &" # &
+    cvmfs-dev-image:chksetup \
+    && "${PRIORITIZE[@]}" podman start cvmfs-ci-worker-$worker_i \
+    && "${PRIORITIZE[@]}" podman exec -u sftnight cvmfs-ci-worker-$worker_i bash -c \
+    "while ! systemctl status &>/dev/null; do sleep 1; done; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /tmp/work.log &" \
+    &
 
 #  # examples:
 #  job_file=$(mktemp --tmpdir=worker/$worker_i/orders/.wip)
@@ -139,7 +141,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
 done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   if ! [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; then
-    podman stop cvmfs-ci-worker-$worker_i
+    podman stop -f cvmfs-ci-worker-$worker_i
   fi
 done
 tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
