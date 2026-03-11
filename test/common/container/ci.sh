@@ -23,10 +23,10 @@ podman create --privileged --name cvmfs-dev \
   cvmfs-dev-image:clean-slate
 podman start cvmfs-dev
 
-podman exec -u sftnight -t cvmfs-dev bash -c \
+time podman exec -u sftnight -t cvmfs-dev bash -c \
   "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON"
 
-podman exec -u sftnight -t cvmfs-dev bash -c \
+time podman exec -u sftnight -t cvmfs-dev bash -c \
   "cd /tmp/cvmfs-build && make -j$(nproc) && sudo make -j$(nproc) install"
 
 podman commit cvmfs-dev cvmfs-dev-image:build-installed
@@ -36,21 +36,26 @@ podman exec -u sftnight -t cvmfs-dev /bin/bash -c "sudo cvmfs_config chksetup"
 
 podman commit cvmfs-dev cvmfs-dev-image:chksetup
 
-podman exec -u sftnight -t cvmfs-dev bash -c \
+time podman exec -u sftnight -t cvmfs-dev bash -c \
   "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=1 TEST_SERVER=0 bash test.sh" \
   |& tee ./build-and-client-tests.tmp/cvmfs-client-test.container.log &
 
 
+mkdir -p     ./server-tests.tmp
+chmod -R 777 ./server-tests.tmp
+# /var/spool/cvmfs should be a bucket (or perhaps a tmpfs),
+# because with a bind-mount dir from host,
+# some overlay features may be unsupported and tests will fail.
+podman volume rm var_spool_cvmfs-for-server-tests --force
 podman create --privileged --name cvmfs-ci-server-test \
   -v /sys/fs/cgroup:/sys/fs/cgroup \
   -v ../../../:/home/sftnight/cvmfs \
   -v ./server-tests.tmp:/tmp \
+  -v var_spool_cvmfs-for-server-tests:/var/spool/cvmfs \
   cvmfs-dev-image:chksetup
-podman start cvmfs-dev-image:chksetup
+podman start cvmfs-ci-server-test
 
-mkdir -p     ./server-tests.tmp
-chmod -R 777 ./server-tests.tmp
-podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
+time podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
   "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=0 TEST_SERVER=1 bash test.sh" \
   |& tee ./server-tests.tmp/cvmfs-server-test.container.log &
 
