@@ -35,28 +35,43 @@ podman exec -u sftnight -t cvmfs-dev /bin/bash -c "sudo cvmfs_config setup"
 podman exec -u sftnight -t cvmfs-dev /bin/bash -c "sudo cvmfs_config chksetup"
 
 podman commit cvmfs-dev cvmfs-dev-image:chksetup
+podman stop cvmfs-dev
 
-time podman exec -u sftnight -t cvmfs-dev bash -c \
-  "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=1 TEST_SERVER=0 bash test.sh" \
-  |& tee ./build-and-client-tests.tmp/cvmfs-client-test.container.log &
+rm -rf   worker
+: ${NB_WORKERS:=4}
+for worker_i in $(seq 1 "$NB_WORKERS"); do
+  mkdir -p worker/$worker_i/orders
+  mkdir -p worker/$worker_i/orders/.wip
+  mkdir -p worker/$worker_i/tmp
+  chmod -R 777 worker/$worker_i
 
+  # /var/spool/cvmfs should be a bucket (or perhaps a tmpfs),
+  # because with a bind-mount dir from host,
+  # some overlay features may be unsupported and tests will fail.
+  #podman volume rm var_spool_cvmfs-for-server-tests --force
+  #  -v var_spool_cvmfs-for-server-tests:/var/spool/cvmfs \
+  podman create --privileged --name cvmfs-ci-worker-$worker_i \
+    -v /sys/fs/cgroup:/sys/fs/cgroup \
+    -v ../../../:/home/sftnight/cvmfs \
+    -v ./worker/$worker_i/tmp:/tmp \
+    -v ./worker/$worker_i/orders:/orders \
+    --tmpfs /var/spool/cvmfs \
+    cvmfs-dev-image:chksetup
+  podman start cvmfs-ci-worker-$worker_i # launches systemd
 
-mkdir -p     ./server-tests.tmp
-chmod -R 777 ./server-tests.tmp
-# /var/spool/cvmfs should be a bucket (or perhaps a tmpfs),
-# because with a bind-mount dir from host,
-# some overlay features may be unsupported and tests will fail.
-podman volume rm var_spool_cvmfs-for-server-tests --force
-podman create --privileged --name cvmfs-ci-server-test \
-  -v /sys/fs/cgroup:/sys/fs/cgroup \
-  -v ../../../:/home/sftnight/cvmfs \
-  -v ./server-tests.tmp:/tmp \
-  -v var_spool_cvmfs-for-server-tests:/var/spool/cvmfs \
-  cvmfs-dev-image:chksetup
-podman start cvmfs-ci-server-test
+  podman exec -u sftnight -t cvmfs-ci-worker-$worker_i bash -c \
+    "cd /home/sftnight/cvmfs/test/common/container && nohup ./work.sh &> /tmp/work.log &"
 
-time podman exec -u sftnight -t cvmfs-ci-server-test bash -c \
-  "cd /home/sftnight/cvmfs/test/common/container && CVMFS_TEST_PROXY=DIRECT TEST_CLIENT=0 TEST_SERVER=1 bash test.sh" \
-  |& tee ./server-tests.tmp/cvmfs-server-test.container.log &
-
-wait
+  job_file=$(mktemp --tmpdir=worker/$worker_i/orders/.wip)
+  cat > "$job_file" <<-EOF
+#!/bin/bash
+set -euo pipefail
+set -x
+cd "/home/sftnight/cvmfs/test"
+./run.sh /dev/stdout -- src/000-dummy
+EOF
+  chmod a+x "$job_file"
+  # reveal:
+  mv "$job_file" worker/$worker_i/orders
+  touch worker/$worker_i/orders/non-executable-for-quit
+done
