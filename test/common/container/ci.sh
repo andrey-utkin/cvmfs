@@ -142,3 +142,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     podman stop cvmfs-ci-worker-$worker_i
   fi
 done
+tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
+grep 'Testcase failed' worker/*/tmp/*.job.log
+echo 'Tests passed: '
+grep 'Test passed' worker/*/tmp/*.job.log | wc -l
