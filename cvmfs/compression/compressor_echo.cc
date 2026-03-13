@@ -36,6 +36,7 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
   }
 
   do {
+    assert(input->IsValid());
     // TODO TODO replace with input->HasInputLeftInChunk()
     if (input->GetIdxInsideChunk() < input->chunk_size()
         && input->chunk_size() != 0) {
@@ -45,6 +46,7 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
     }
 
     const size_t have = input->chunk_size();
+    assert(input->IsValid());
     assert(output->size() - output->pos() > 0); // we are not trying to write into a full output
     assert(have > 0);
     const int64_t written = output->Write(input->chunk(), have);
