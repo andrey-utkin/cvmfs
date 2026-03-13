@@ -33,6 +33,7 @@ MemSink::MemSink(size_t size, size_t max_size) : Sink(true), size_(size),
  *          on failure: -errno.
  */
 int64_t MemSink::Write(const void *buf, uint64_t sz) {
+  assert(sz > 0);
   if (pos_ + sz > size_) {
     if (is_owner_) {
       size_t new_size = pos_ + sz < size_ * 2 ? size_ * 2 : pos_ + sz + 1;
