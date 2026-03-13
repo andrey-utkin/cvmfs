@@ -72,7 +72,13 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
   #podman volume rm var_spool_cvmfs-for-server-tests --force
   #  -v var_spool_cvmfs-for-server-tests:/var/spool/cvmfs \
   #  --tmpfs /var/spool/cvmfs \
-  "${PRIORITIZE[@]}" podman create --ulimit nice=20 --replace --privileged --name "$WORKER_CONTAINER_NAME_BASE"$worker_i \
+
+  # "--security-opt seccomp=unconfined" is for ptrace, so that cvmfs can log its stacktraces
+  "${PRIORITIZE[@]}" podman create --ulimit nice=20 \
+    --replace \
+    --name "$WORKER_CONTAINER_NAME_BASE"$worker_i \
+    --privileged \
+    --security-opt seccomp=unconfined \
     -v /sys/fs/cgroup:/sys/fs/cgroup \
     -v ../../../:/home/sftnight/cvmfs \
     -v ./worker/$worker_i/tmp:/tmp \
