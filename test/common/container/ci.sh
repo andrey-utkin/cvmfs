@@ -2,6 +2,11 @@
 set -euo pipefail
 set -x
 
+if ! [[ -d /sys/module/overlay ]]; then
+  echo "You should 'modprobe overlay' so that tests works"
+  exit 1
+fi
+
 cd test/common/container
 
 if [[ -v BUILD ]]; then
