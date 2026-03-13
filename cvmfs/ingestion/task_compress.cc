@@ -44,6 +44,7 @@ void TaskCompress::Process(BlockItem *input_block) {
     out_comp.Adopt(output_block->capacity(), output_block->size(),
                    output_block->data(), false);
 
+    assert(!output_block->IsFull());
     ret_compress = compressor->CompressStream(&in_comp, &out_comp, flush);
     output_block->set_size(out_comp.pos());
 

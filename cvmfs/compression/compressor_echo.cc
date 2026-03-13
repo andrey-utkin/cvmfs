@@ -45,7 +45,12 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
     }
 
     const size_t have = input->chunk_size();
+    assert(output->size() - output->pos() > 0); // we are not trying to write into a full output
     const int64_t written = output->Write(input->chunk(), have);
+    if (written < 0) {
+      return kStreamIOError;
+    }
+    assert(written != 0);
 
     input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
     if (written != static_cast<int64_t>(have)) {
