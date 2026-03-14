@@ -46,6 +46,7 @@ void TaskCompress::Process(BlockItem *input_block) {
 
     assert(!output_block->IsFull());
     assert(in_comp.IsValid()); // empty InputMem is also valid
+    assert(in_comp.HasInputLeftInChunk());
     ret_compress = compressor->CompressStream(&in_comp, &out_comp, flush);
     output_block->set_size(out_comp.pos());
 
