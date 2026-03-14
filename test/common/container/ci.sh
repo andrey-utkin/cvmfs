@@ -140,6 +140,8 @@ set -euo pipefail
 set -x
 cd /home/sftnight/cvmfs/test
 export CVMFS_TEST_PROXY=DIRECT
+# restrict to only one CPU:
+taskset --cpu-list $(( RANDOM % "$(nproc)" )) \
 ./run.sh /dev/stdout -- $test || true
 EOF
   chmod a+rwx "$job_file"
