@@ -35,20 +35,20 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
     return kStreamError;
   }
 
-  do {
+  while (true) {
     assert(input->IsValid());
-    // TODO TODO replace with input->HasInputLeftInChunk()
-    if (input->GetIdxInsideChunk() < input->chunk_size()
-        && input->chunk_size() != 0) {
-      // still stuff to process in the current chunk
-    } else if (!input->NextChunk() && !output_full_) {
-      return kStreamIOError;
+
+    if (!input->HasInputLeftInChunk()) {
+      bool got_next = input->NextChunk();
+      if (!got_next) {
+        return kStreamEnd;
+      }
+      continue;
     }
 
     const size_t have = input->chunk_size();
-    assert(input->IsValid());
-    assert(output->size() - output->pos() > 0); // we are not trying to write into a full output
     assert(have > 0);
+    assert(output->size() - output->pos() > 0); // we are not trying to write into a full output
     const int64_t written = output->Write(input->chunk(), have);
     if (written < 0) {
       return kStreamIOError;
@@ -61,11 +61,8 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
       return kStreamOutBufFull;
     }
 
-  // TODO TODO replace with input->HasInputLeftInChunk()
-  } while (input->has_chunk_left()
-          || (input->GetIdxInsideChunk() < input->chunk_size()
-              && input->chunk_size() != 0));
-  output_full_ = false;
+  }
+  output_full_ = false; // questionable usefulness of this field
   return kStreamEnd;
 }
 
