@@ -48,7 +48,7 @@ void TaskCompress::Process(BlockItem *input_block) {
     assert(in_comp.IsValid()); // empty InputMem is also valid
     if (!in_comp.HasInputLeftInChunk()) {
       if (!in_comp.has_chunk_left()) {
-        break;
+        ; // break;
       } else {
         in_comp.NextChunk();
         assert(in_comp.IsValid()); // empty InputMem is also valid
