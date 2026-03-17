@@ -602,6 +602,13 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   zip::StreamStates res = compressor_->Compress(&in, &comp_single_block);
   ASSERT_EQ(res, zip::kStreamEnd);
   ASSERT_GT(comp_single_block.pos(), 0U);
+
+  if (alg == zip::Algorithm::kNoCompression) {
+    // size of output equals the size of the input
+    ASSERT_EQ(comp_single_block.pos(), block_raw.size());
+    // contents of the output are the same as input
+    ASSERT_EQ(0, memcmp(comp_single_block.data(), block_raw.data(), block_raw.size()));
+  }
   // safety margin because of zstd having slightly different sizes between
   // block per block compression and compression in a single chunk
   unsigned char *ptr_read_large = reinterpret_cast<unsigned char *>(
