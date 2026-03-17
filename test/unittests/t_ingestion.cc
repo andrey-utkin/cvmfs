@@ -566,9 +566,9 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
     new TaskCompress(&tube_in, &tube_group_out, &allocator_));
   task_group.Spawn();
 
-  unsigned size = 16 * 1024 * 1024;
-  unsigned block_size = 32 * 1024;
-  unsigned nblocks = size / block_size;
+  const unsigned size = 16 * 1024 * 1024;
+  const unsigned block_size = 32 * 1024;
+  const unsigned nblocks = size / block_size;
   EXPECT_EQ(0U, size % block_size);
   BlockItem block_raw(42, &allocator_);
   block_raw.MakeData(size);
@@ -650,6 +650,11 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
       zip::InputMem in_tmp(b->data(), b->size());
       cvmfs::MemSink out_tmp(0);
       res = decomp->DecompressStream(&in_tmp, &out_tmp);
+      if (alg == zip::kNoCompression) {
+        ASSERT_EQ(out_tmp.pos(), b->size());
+        ASSERT_EQ(out_tmp.pos(), in_tmp.chunk_size());
+        EXPECT_EQ(0, memcmp(out_tmp.data(), b.data(), b.size()));
+      }
       ASSERT_TRUE(res == zip::kStreamEnd || res == zip::kStreamContinue);
       memcpy(ptr_read_decomp + decomp_read_pos, out_tmp.data(), out_tmp.pos());
       decomp_read_pos += out_tmp.pos();
@@ -658,6 +663,7 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   EXPECT_EQ(BlockItem::kBlockStop, b->type());
   delete b;
   EXPECT_EQ(0U, tube_out->size());
+  ASSERT_EQ(decomp_read_pos, size());
 
   decomp->Reset();
   zip::InputMem in_tmp(ptr_read_large, read_pos);
