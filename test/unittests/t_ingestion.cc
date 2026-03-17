@@ -669,8 +669,8 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
 
 TEST_F(T_Ingestion, TaskCompress) {
   ExerciseCompressionRoundtrip(zip::Algorithm::kZlib);
-  ExerciseCompressionRoundtrip(zip::Algorithm::kZstd);
   ExerciseCompressionRoundtrip(zip::Algorithm::kNoCompression);
+  ExerciseCompressionRoundtrip(zip::Algorithm::kZstd);
 }
 
 
