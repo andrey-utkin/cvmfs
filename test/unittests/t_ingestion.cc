@@ -653,7 +653,7 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
       if (alg == zip::kNoCompression) {
         ASSERT_EQ(out_tmp.pos(), b->size());
         ASSERT_EQ(out_tmp.pos(), in_tmp.chunk_size());
-        EXPECT_EQ(0, memcmp(out_tmp.data(), b.data(), b.size()));
+        EXPECT_EQ(0, memcmp(out_tmp.data(), b->data(), b->size()));
       }
       ASSERT_TRUE(res == zip::kStreamEnd || res == zip::kStreamContinue);
       memcpy(ptr_read_decomp + decomp_read_pos, out_tmp.data(), out_tmp.pos());
@@ -663,7 +663,7 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   EXPECT_EQ(BlockItem::kBlockStop, b->type());
   delete b;
   EXPECT_EQ(0U, tube_out->size());
-  ASSERT_EQ(decomp_read_pos, size());
+  ASSERT_EQ(decomp_read_pos, size);
 
   decomp->Reset();
   zip::InputMem in_tmp(ptr_read_large, read_pos);
