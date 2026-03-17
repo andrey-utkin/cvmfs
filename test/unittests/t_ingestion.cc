@@ -633,7 +633,9 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   unsigned read_pos = 0;
   unsigned decomp_read_pos = 0;
   BlockItem *b = NULL;
+  unsigned lap_no = 0;
   do {
+    lap_no++;
     delete b;
     b = tube_out->PopFront();
 
