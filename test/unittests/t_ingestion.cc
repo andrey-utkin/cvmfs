@@ -670,6 +670,7 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   EXPECT_EQ(0U, tube_out->size());
   if (alg == zip::kNoCompression) {
     ASSERT_EQ(decomp_read_pos, read_pos);
+    ASSERT_EQ(read_pos, block_raw.size());
   }
 
   decomp->Reset();
@@ -677,6 +678,11 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   cvmfs::MemSink out_tmp(0, block_raw.size() + 100);
   res = decomp->DecompressStream(&in_tmp, &out_tmp);
   ASSERT_TRUE(res == zip::kStreamEnd);
+  if (alg == zip::kNoCompression) {
+    ASSERT_EQ(read_pos, out_tmp.size());
+    ASSERT_EQ(out_tmp.size(), block_raw.size());
+    ASSERT_EQ(block_raw.size(), out_decomp.size());
+  }
 
   EXPECT_EQ(0, memcmp(out_tmp.data(), block_raw.data(), block_raw.size()));
   EXPECT_EQ(0, memcmp(out_decomp.data(), ptr_read_decomp, block_raw.size()));
