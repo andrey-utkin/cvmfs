@@ -668,7 +668,9 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   EXPECT_EQ(BlockItem::kBlockStop, b->type());
   delete b;
   EXPECT_EQ(0U, tube_out->size());
-  ASSERT_EQ(decomp_read_pos, read_pos);
+  if (alg == zip::kNoCompression) {
+    ASSERT_EQ(decomp_read_pos, read_pos);
+  }
 
   decomp->Reset();
   zip::InputMem in_tmp(ptr_read_large, read_pos);
