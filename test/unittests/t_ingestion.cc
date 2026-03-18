@@ -574,7 +574,11 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   block_raw.MakeData(size);
 
   // File does not exist
-  FileItem file_large(new FileIngestionSource(std::string("./large")));
+  FileItem file_large(new FileIngestionSource(std::string("./large")),
+                      /*uint64_t min_chunk_size = */ 4 * 1024 * 1024,
+                      /*uint64_t avg_chunk_size = */ 8 * 1024 * 1024,
+                      /*uint64_t max_chunk_size = */ 16 * 1024 * 1024,
+                      /*zip::Algorithms compression_algorithm = */ alg);
   ChunkItem chunk_large(&file_large, 0);
   for (unsigned i = 0; i < nblocks; ++i) {
     string str_content(block_size, static_cast<char>(i));
