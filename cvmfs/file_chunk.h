@@ -49,7 +49,7 @@ typedef BigVector<FileChunk> FileChunkList;
 struct FileChunkReflist {
   FileChunkReflist()
       : list(NULL)
-      , compression_alg(zlib::kZlibDefault)
+      , compression_alg(zlib::kDefault)
       , external_data(false) { }
   FileChunkReflist(FileChunkList *l,
                    const PathString &p,

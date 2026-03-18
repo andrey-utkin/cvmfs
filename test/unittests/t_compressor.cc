@@ -48,7 +48,7 @@ class T_Compressor : public ::testing::Test {
 
 
 TEST_F(T_Compressor, Compression) {
-  compressor = zlib::Compressor::Construct(zlib::kZlibDefault);
+  compressor = zlib::Compressor::Construct(zlib::kDefault);
 
   // Compress the output
   unsigned char *input = reinterpret_cast<unsigned char *>(ptr_test_string);
@@ -73,7 +73,7 @@ TEST_F(T_Compressor, Compression) {
 
 
 TEST_F(T_Compressor, CompressionLong) {
-  compressor = zlib::Compressor::Construct(zlib::kZlibDefault);
+  compressor = zlib::Compressor::Construct(zlib::kDefault);
   unsigned char
       *compress_buf = new unsigned char[compressor->DeflateBound(long_size)];
   unsigned compress_pos = 0;

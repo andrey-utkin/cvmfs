@@ -356,7 +356,7 @@ TEST_F(T_Catalog, Chunks) {
   unsigned counter = 0;
   while (catalog->AllChunksNext(&hash, &compression_alg)) {
     ++counter;
-    EXPECT_EQ(zlib::kZlibDefault, compression_alg);
+    EXPECT_EQ(zlib::kDefault, compression_alg);
   }
   EXPECT_TRUE(catalog->AllChunksEnd());
   // Expect the number of chunks in files plus the number of hashes in

@@ -751,7 +751,7 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
   // now initialise the various bits we need
 
   upload::SpoolerDefinition spooler_definition(
-      spooler_definition_string, shash::kSha1, zlib::kZlibDefault, false, true,
+      spooler_definition_string, shash::kSha1, zlib::kDefault, false, true,
       SyncParameters::kDefaultMinFileChunkSize,
       SyncParameters::kDefaultAvgFileChunkSize,
       SyncParameters::kDefaultMaxFileChunkSize, g_session_token_file, key_file);
@@ -1434,12 +1434,12 @@ int swissknife::IngestSQL::add_files(
         dir.compression_algorithm_ = zlib::kNoCompression;
         break;
       case 2:  // Compressed with Zlib
-        dir.compression_algorithm_ = zlib::kZlibDefault;
+        dir.compression_algorithm_ = zlib::kDefault;
         break;
       // future cases: different compression schemes
       default:  // default behaviour: compressed if internal, content-addressed.
                 // Uncompressed if external
-        dir.compression_algorithm_ = file.internal ? zlib::kZlibDefault
+        dir.compression_algorithm_ = file.internal ? zlib::kDefault
                                                    : zlib::kNoCompression;
     }
 

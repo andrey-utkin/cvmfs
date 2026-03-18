@@ -336,7 +336,7 @@ TEST_F(T_Ingestion, TaskChunkDispatch) {
   delete item_stop;
 
   FileItem file_null_legacy(new FileIngestionSource(std::string("/dev/null")),
-                            1024, 2048, 4096, zlib::kZlibDefault, shash::kSha1,
+                            1024, 2048, 4096, zlib::kDefault, shash::kSha1,
                             shash::kSuffixNone, true, true);
   file_null_legacy.set_size(0);
   BlockItem *b3 = new BlockItem(3, &allocator_);
@@ -802,7 +802,7 @@ TEST_F(T_Ingestion, PipelineNull) {
 
   uploader_->ClearResults();
 
-  spooler_definition.compression_alg = zlib::kZlibDefault;
+  spooler_definition.compression_alg = zlib::kDefault;
   spooler_definition.hash_algorithm = shash::kShake128;
   UniquePtr<IngestionPipeline> pipeline_zlib(
       new IngestionPipeline(uploader_, spooler_definition));

@@ -172,7 +172,7 @@ int64_t StreamingCacheManager::Stream(const FdInfo &info,
   } else {
     url = "/data/" + info.object_id.MakePath();
   }
-  const bool is_zipped = info.label.zip_algorithm == zlib::kZlibDefault;
+  const bool is_zipped = info.label.zip_algorithm == zlib::kDefault;
 
   download::JobInfo download_job(&url, is_zipped, true /* probe_hosts */,
                                  &info.object_id, &sink);

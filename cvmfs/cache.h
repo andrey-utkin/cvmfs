@@ -96,7 +96,7 @@ class CacheManager : SingleCopy {
     Label()
         : flags(0)
         , size(kSizeUnknown)
-        , zip_algorithm(zlib::kZlibDefault)
+        , zip_algorithm(zlib::kDefault)
         , range_offset(-1) { }
 
     bool IsCatalog() const { return flags & kLabelCatalog; }

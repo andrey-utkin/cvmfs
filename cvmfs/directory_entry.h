@@ -122,7 +122,7 @@ class DirectoryEntryBase {
       , has_xattrs_(false)
       , is_external_file_(false)
       , is_direct_io_(false)
-      , compression_algorithm_(zlib::kZlibDefault) { }
+      , compression_algorithm_(zlib::kDefault) { }
 
   inline bool IsRegular() const { return S_ISREG(mode_); }
   inline bool IsLink() const { return S_ISLNK(mode_); }

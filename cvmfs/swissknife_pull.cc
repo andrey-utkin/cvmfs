@@ -61,7 +61,7 @@ class ChunkJob {
   ChunkJob()
       : suffix(shash::kSuffixNone)
       , hash_algorithm(shash::kAny)
-      , compression_alg(zlib::kZlibDefault) { }
+      , compression_alg(zlib::kDefault) { }
 
   ChunkJob(const shash::Any &hash, zlib::Algorithms compression_alg)
       : suffix(hash.suffix)
@@ -283,7 +283,7 @@ static void *MainWorker(void *data) {
       }
       fclose(fchunk);
       Store(tmp_file, chunk_hash,
-            (compression_alg == zlib::kZlibDefault) ? true : false);
+            (compression_alg == zlib::kDefault) ? true : false);
       atomic_inc64(&overall_new);
     }
     if (atomic_xadd64(&overall_chunks, 1) % 1000 == 0)

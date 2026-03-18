@@ -152,7 +152,7 @@ const unsigned kBufferSize = 32768;
  */
 Algorithms ParseCompressionAlgorithm(const std::string &algorithm_option) {
   if ((algorithm_option == "default") || (algorithm_option == "zlib"))
-    return kZlibDefault;
+    return kDefault;
   if (algorithm_option == "none")
     return kNoCompression;
   PANIC(kLogStderr, "unknown compression algorithms: %s",
@@ -162,7 +162,7 @@ Algorithms ParseCompressionAlgorithm(const std::string &algorithm_option) {
 
 std::string AlgorithmName(const zlib::Algorithms alg) {
   switch (alg) {
-    case kZlibDefault:
+    case kDefault:
       return "zlib";
       break;
     case kNoCompression:
@@ -878,7 +878,7 @@ void Compressor::RegisterPlugins() {
 
 
 bool ZlibCompressor::WillHandle(const zlib::Algorithms &alg) {
-  return alg == kZlibDefault;
+  return alg == kDefault;
 }
 
 
@@ -894,7 +894,7 @@ ZlibCompressor::ZlibCompressor(const Algorithms &alg) : Compressor(alg) {
 
 
 Compressor *ZlibCompressor::Clone() {
-  ZlibCompressor *other = new ZlibCompressor(zlib::kZlibDefault);
+  ZlibCompressor *other = new ZlibCompressor(zlib::kDefault);
   assert(stream_.avail_in == 0);
   // Delete the other stream
   int retcode = deflateEnd(&other->stream_);

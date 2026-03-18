@@ -58,7 +58,7 @@ class MockSyncMediator : public AbstractSyncMediator {
   virtual bool IsExternalData() const { return false; }
   virtual bool IsDirectIo() const { return false; }
   virtual zlib::Algorithms GetCompressionAlgorithm() const {
-    return zlib::kZlibDefault;
+    return zlib::kDefault;
   }
 
   int n_register;
