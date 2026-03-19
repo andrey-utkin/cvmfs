@@ -166,7 +166,7 @@ Algorithms ParseCompressionAlgorithm(const std::string &algorithm_option) {
 
 std::string AlgorithmName(const zlib::Algorithms alg) {
   switch (alg) {
-    case kDefault:
+    case kZlib:
       return "zlib";
       break;
     case kNoCompression:
@@ -882,7 +882,7 @@ void Compressor::RegisterPlugins() {
 
 
 bool ZlibCompressor::WillHandle(const zlib::Algorithms &alg) {
-  return alg == kDefault;
+  return alg == kZlib;
 }
 
 
