@@ -137,36 +137,38 @@ void DecompressFini(z_stream *strm);
 
 StreamStates CompressZStream2Null(const void *buf, const int64_t size,
                                   const bool eof, z_stream *strm,
-                                  shash::ContextPtr *hash_context);
+                                  shash::ContextPtr *hash_context,
+                                  zip::Algorithm alg = zip::Algorithm::kDefault);
 StreamStates DecompressZStream2File(const void *buf, const int64_t size,
-                                    z_stream *strm, FILE *f);
+                                    z_stream *strm, FILE *f, zip::Algorithm alg = zip::Algorithm::kDefault);
 StreamStates DecompressZStream2Sink(const void *buf, const int64_t size,
-                                    z_stream *strm, cvmfs::Sink *sink);
+                                    z_stream *strm, cvmfs::Sink *sink, zip::Algorithm alg = zip::Algorithm::kDefault);
 
-bool CompressPath2Path(const std::string &src, const std::string &dest);
+bool CompressPath2Path(const std::string &src, const std::string &dest, zip::Algorithm alg = zip::Algorithm::kDefault);
 bool CompressPath2Path(const std::string &src, const std::string &dest,
-                       shash::Any *compressed_hash);
-bool DecompressPath2Path(const std::string &src, const std::string &dest);
+                       shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
+bool DecompressPath2Path(const std::string &src, const std::string &dest, zip::Algorithm alg = zip::Algorithm::kDefault);
 
-bool CompressPath2Null(const std::string &src, shash::Any *compressed_hash);
-bool CompressFile2Null(FILE *fsrc, shash::Any *compressed_hash);
+bool CompressPath2Null(const std::string &src, shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
+bool CompressFile2Null(FILE *fsrc, shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
 bool CompressFd2Null(int fd_src, shash::Any *compressed_hash,
-                     uint64_t *size = NULL);
-bool CompressFile2File(FILE *fsrc, FILE *fdest);
-bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash);
+                     uint64_t *size = NULL,
+                     zip::Algorithm alg = zip::Algorithm::kDefault);
+bool CompressFile2File(FILE *fsrc, FILE *fdest, zip::Algorithm alg = zip::Algorithm::kDefault);
+bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
 bool CompressPath2File(const std::string &src, FILE *fdest,
-                       shash::Any *compressed_hash);
-bool DecompressFile2File(FILE *fsrc, FILE *fdest);
-bool DecompressPath2File(const std::string &src, FILE *fdest);
+                       shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
+bool DecompressFile2File(FILE *fsrc, FILE *fdest, zip::Algorithm alg = zip::Algorithm::kDefault);
+bool DecompressPath2File(const std::string &src, FILE *fdest, zip::Algorithm alg = zip::Algorithm::kDefault);
 
 bool CompressMem2File(const unsigned char *buf, const size_t size, FILE *fdest,
-                      shash::Any *compressed_hash);
+                      shash::Any *compressed_hash, zip::Algorithm alg = zip::Algorithm::kDefault);
 
 // User of these functions has to free out_buf, if successful
 bool CompressMem2Mem(const void *buf, const int64_t size, void **out_buf,
-                     uint64_t *out_size);
+                     uint64_t *out_size, zip::Algorithm alg = zip::Algorithm::kDefault);
 bool DecompressMem2Mem(const void *buf, const int64_t size, void **out_buf,
-                       uint64_t *out_size);
+                       uint64_t *out_size, zip::Algorithm alg = zip::Algorithm::kDefault);
 
 }  // namespace zlib
 namespace zip = zlib; /* alias */

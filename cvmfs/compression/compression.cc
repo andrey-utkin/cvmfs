@@ -212,7 +212,7 @@ StreamStates CompressZStream2Null(const void *buf,
                                   const int64_t size,
                                   const bool eof,
                                   z_stream *strm,
-                                  shash::ContextPtr *hash_context) {
+                                  shash::ContextPtr *hash_context, zip::Algorithm alg) {
   unsigned char out[kZChunk];
   int z_ret;
 
@@ -237,7 +237,7 @@ StreamStates CompressZStream2Null(const void *buf,
 StreamStates DecompressZStream2Sink(const void *buf,
                                     const int64_t size,
                                     z_stream *strm,
-                                    cvmfs::Sink *sink) {
+                                    cvmfs::Sink *sink, zip::Algorithm alg) {
   unsigned char out[kZChunk];
   int z_ret;
   int64_t pos = 0;
@@ -276,7 +276,7 @@ StreamStates DecompressZStream2Sink(const void *buf,
 StreamStates DecompressZStream2File(const void *buf,
                                     const int64_t size,
                                     z_stream *strm,
-                                    FILE *f) {
+                                    FILE *f, zip::Algorithm alg) {
   unsigned char out[kZChunk];
   int z_ret;
   int64_t pos = 0;
@@ -316,7 +316,7 @@ StreamStates DecompressZStream2File(const void *buf,
 }
 
 
-bool CompressPath2Path(const string &src, const string &dest) {
+bool CompressPath2Path(const string &src, const string &dest, zip::Algorithm alg) {
   FILE *fsrc = fopen(src.c_str(), "r");
   if (!fsrc) {
     LogCvmfs(kLogCompress, kLogDebug, "open %s as compression source failed",
@@ -336,7 +336,7 @@ bool CompressPath2Path(const string &src, const string &dest) {
 
   LogCvmfs(kLogCompress, kLogDebug, "opened %s and %s for compression",
            src.c_str(), dest.c_str());
-  const bool result = CompressFile2File(fsrc, fdest);
+  const bool result = CompressFile2File(fsrc, fdest, alg);
 
   fclose(fsrc);
   fclose(fdest);
@@ -345,7 +345,7 @@ bool CompressPath2Path(const string &src, const string &dest) {
 
 
 bool CompressPath2Path(const string &src, const string &dest,
-                       shash::Any *compressed_hash) {
+                       shash::Any *compressed_hash, zip::Algorithm alg) {
   FILE *fsrc = fopen(src.c_str(), "r");
   if (!fsrc) {
     LogCvmfs(kLogCompress, kLogDebug, "open %s as compression source failed",
@@ -366,7 +366,7 @@ bool CompressPath2Path(const string &src, const string &dest,
   LogCvmfs(kLogCompress, kLogDebug, "opened %s and %s for compression",
            src.c_str(), dest.c_str());
   bool result = false;
-  if (!CompressFile2File(fsrc, fdest, compressed_hash))
+  if (!CompressFile2File(fsrc, fdest, compressed_hash, alg))
     goto compress_path2path_final;
   platform_stat64 info;
   if (platform_fstat(fileno(fsrc), &info) != 0)
@@ -384,7 +384,7 @@ compress_path2path_final:
 }
 
 
-bool DecompressPath2Path(const string &src, const string &dest) {
+bool DecompressPath2Path(const string &src, const string &dest, zip::Algorithm alg) {
   FILE *fsrc = NULL;
   FILE *fdest = NULL;
   int result = false;
@@ -397,7 +397,7 @@ bool DecompressPath2Path(const string &src, const string &dest) {
   if (!fdest)
     goto decompress_path2path_final;
 
-  result = DecompressFile2File(fsrc, fdest);
+  result = DecompressFile2File(fsrc, fdest, alg);
 
 decompress_path2path_final:
   if (fsrc)
@@ -418,7 +418,7 @@ bool CompressFile2Null(FILE *fsrc, shash::Any *compressed_hash) {
   unsigned char out[kZChunk];
   shash::ContextPtr hash_context(compressed_hash->algorithm);
 
-  CompressInit(&strm);
+  CompressInit(&strm, alg);
   hash_context.buffer = alloca(hash_context.size);
   shash::Init(hash_context);
 
@@ -455,7 +455,7 @@ bool CompressFile2Null(FILE *fsrc, shash::Any *compressed_hash) {
 
   // Clean up and return
 compress_file2null_final:
-  CompressFini(&strm);
+  CompressFini(&strm, alg);
   LogCvmfs(kLogCompress, kLogDebug, "file compression finished with result %d",
            result);
   return result;
@@ -463,7 +463,7 @@ compress_file2null_final:
 
 
 bool CompressFd2Null(int fd_src, shash::Any *compressed_hash,
-                     uint64_t *processed_bytes) {
+                     uint64_t *processed_bytes, zip::Algorithm alg) {
   int z_ret = 0;
   int flush = 0;
   bool result = false;
@@ -474,7 +474,7 @@ bool CompressFd2Null(int fd_src, shash::Any *compressed_hash,
   off_t cksum_bytes = 0;
   shash::ContextPtr hash_context(compressed_hash->algorithm);
 
-  CompressInit(&strm);
+  CompressInit(&strm, alg);
   hash_context.buffer = alloca(hash_context.size);
   shash::Init(hash_context);
 
@@ -520,24 +520,24 @@ bool CompressFd2Null(int fd_src, shash::Any *compressed_hash,
 
   // Clean up and return
 compress_fd2null_final:
-  CompressFini(&strm);
+  CompressFini(&strm, alg);
   LogCvmfs(kLogCompress, kLogDebug, "file compression finished with result %d",
            result);
   return result;
 }
 
 
-bool CompressPath2Null(const string &src, shash::Any *compressed_hash) {
+bool CompressPath2Null(const string &src, shash::Any *compressed_hash, zip::Algorithm alg) {
   FILE *fsrc = fopen(src.c_str(), "r");
   if (fsrc == NULL)
     return false;
-  bool retval = CompressFile2Null(fsrc, compressed_hash);
+  bool retval = CompressFile2Null(fsrc, compressed_hash, alg);
   fclose(fsrc);
   return retval;
 }
 
 
-bool CompressFile2File(FILE *fsrc, FILE *fdest) {
+bool CompressFile2File(FILE *fsrc, FILE *fdest, zip::Algorithm alg) {
   int z_ret = 0;
   int flush = 0;
   bool result = false;
@@ -546,7 +546,7 @@ bool CompressFile2File(FILE *fsrc, FILE *fdest) {
   unsigned char in[kZChunk];
   unsigned char out[kZChunk];
 
-  CompressInit(&strm);
+  CompressInit(&strm, alg);
 
   // Compress until end of file
   do {
@@ -562,6 +562,7 @@ bool CompressFile2File(FILE *fsrc, FILE *fdest) {
     do {
       strm.avail_out = kZChunk;
       strm.next_out = out;
+#error "FIXME move to alg-specific fn"
       z_ret = deflate(&strm, flush);  // no bad return value
       if (z_ret == Z_STREAM_ERROR)
         goto compress_file2file_final;  // state not clobbered
@@ -581,25 +582,25 @@ bool CompressFile2File(FILE *fsrc, FILE *fdest) {
 
   // Clean up and return
 compress_file2file_final:
-  CompressFini(&strm);
+  CompressFini(&strm, alg);
   LogCvmfs(kLogCompress, kLogDebug, "file compression finished with result %d",
            result);
   return result;
 }
 
 bool CompressPath2File(const string &src, FILE *fdest,
-                       shash::Any *compressed_hash) {
+                       shash::Any *compressed_hash, zip::Algorithm alg) {
   FILE *fsrc = fopen(src.c_str(), "r");
   if (!fsrc)
     return false;
 
-  bool retval = CompressFile2File(fsrc, fdest, compressed_hash);
+  bool retval = CompressFile2File(fsrc, fdest, compressed_hash, alg);
   fclose(fsrc);
   return retval;
 }
 
 
-bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash) {
+bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash, zip::Algorithm alg) {
   int z_ret = 0;
   int flush = 0;
   bool result = false;
@@ -627,6 +628,7 @@ bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash) {
     do {
       strm.avail_out = kZChunk;
       strm.next_out = out;
+#error move to alg-specific fn
       z_ret = deflate(&strm, flush);  // no bad return value
       if (z_ret == Z_STREAM_ERROR)
         goto compress_file2file_hashed_final;  // state not clobbered
@@ -648,24 +650,24 @@ bool CompressFile2File(FILE *fsrc, FILE *fdest, shash::Any *compressed_hash) {
 
   // Clean up and return
 compress_file2file_hashed_final:
-  CompressFini(&strm);
+  CompressFini(&strm, alg);
   LogCvmfs(kLogCompress, kLogDebug, "file compression finished with result %d",
            result);
   return result;
 }
 
 
-bool DecompressFile2File(FILE *fsrc, FILE *fdest) {
+bool DecompressFile2File(FILE *fsrc, FILE *fdest, zip::Algorithm alg) {
   bool result = false;
   StreamStates stream_state = kStreamIOError;
   z_stream strm;
   size_t have;
   unsigned char buf[kBufferSize];
 
-  DecompressInit(&strm);
+  DecompressInit(&strm, alg);
 
   while ((have = fread(buf, 1, kBufferSize, fsrc)) > 0) {
-    stream_state = DecompressZStream2File(buf, have, &strm, fdest);
+    stream_state = DecompressZStream2File(buf, have, &strm, fdest, alg);
     if ((stream_state == kStreamDataError) || (stream_state == kStreamIOError))
       goto decompress_file2file_final;
   }
@@ -677,24 +679,24 @@ bool DecompressFile2File(FILE *fsrc, FILE *fdest) {
   result = true;
 
 decompress_file2file_final:
-  DecompressFini(&strm);
+  DecompressFini(&strm, alg);
   return result;
 }
 
 
-bool DecompressPath2File(const string &src, FILE *fdest) {
+bool DecompressPath2File(const string &src, FILE *fdest, zip::Algorithm alg) {
   FILE *fsrc = fopen(src.c_str(), "r");
   if (!fsrc)
     return false;
 
-  bool retval = DecompressFile2File(fsrc, fdest);
+  bool retval = DecompressFile2File(fsrc, fdest, alg);
   fclose(fsrc);
   return retval;
 }
 
 
 bool CompressMem2File(const unsigned char *buf, const size_t size, FILE *fdest,
-                      shash::Any *compressed_hash) {
+                      shash::Any *compressed_hash, zip::Algorithm alg) {
   int z_ret = 0;
   int flush = 0;
   bool result = false;
@@ -705,7 +707,7 @@ bool CompressMem2File(const unsigned char *buf, const size_t size, FILE *fdest,
   unsigned char out[kZChunk];
   shash::ContextPtr hash_context(compressed_hash->algorithm);
 
-  CompressInit(&strm);
+  CompressInit(&strm, alg);
   hash_context.buffer = alloca(hash_context.size);
   shash::Init(hash_context);
 
@@ -722,6 +724,7 @@ bool CompressMem2File(const unsigned char *buf, const size_t size, FILE *fdest,
     do {
       strm.avail_out = kZChunk;
       strm.next_out = out;
+#error
       z_ret = deflate(&strm, flush);  // no bad return value
       if (z_ret == Z_STREAM_ERROR)
         goto compress_file2file_hashed_final;  // state not clobbered
@@ -756,7 +759,7 @@ compress_file2file_hashed_final:
  * User of this function has to free out_buf.
  */
 bool CompressMem2Mem(const void *buf, const int64_t size, void **out_buf,
-                     uint64_t *out_size) {
+                     uint64_t *out_size, zip::Algorithm alg) {
   unsigned char out[kZChunk];
   int z_ret;
   int flush;
@@ -764,7 +767,7 @@ bool CompressMem2Mem(const void *buf, const int64_t size, void **out_buf,
   int64_t pos = 0;
   uint64_t alloc_size = kZChunk;
 
-  CompressInit(&strm);
+  CompressInit(&strm, alg);
   *out_buf = smalloc(alloc_size);
   *out_size = 0;
 
