@@ -169,5 +169,5 @@ bool DecompressMem2Mem(const void *buf, const int64_t size, void **out_buf,
                        uint64_t *out_size);
 
 }  // namespace zlib
-
+namespace zip = zlib; /* alias */
 #endif  // CVMFS_COMPRESSION_COMPRESSION_H_
