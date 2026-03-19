@@ -151,8 +151,12 @@ const unsigned kBufferSize = 32768;
  * Aborts if string doesn't match any of the algorithms.
  */
 Algorithms ParseCompressionAlgorithm(const std::string &algorithm_option) {
-  if ((algorithm_option == "default") || (algorithm_option == "zlib"))
+  if (algorithm_option == "default") {
     return kDefault;
+  }
+  if (algorithm_option == "zlib") {
+    return kZlib;
+  }
   if (algorithm_option == "none")
     return kNoCompression;
   PANIC(kLogStderr, "unknown compression algorithms: %s",
