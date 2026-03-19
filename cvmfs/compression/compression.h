@@ -39,6 +39,7 @@ enum StreamStates {
   kStreamContinue,
   kStreamEnd,
 };
+typedef StreamStates StreamState;
 
 // Do not change order of algorithms.  Used as flags in the catalog
 enum Algorithms {
@@ -46,6 +47,7 @@ enum Algorithms {
   kNoCompression,
   kDefault = kZlib,
 };
+typedef Algorithms Algorithm;
 
 /**
  * Abstract Compression class which is inherited by implementations of
