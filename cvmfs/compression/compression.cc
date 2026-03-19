@@ -887,6 +887,7 @@ bool ZlibCompressor::WillHandle(const zlib::Algorithms &alg) {
 
 
 ZlibCompressor::ZlibCompressor(const Algorithms &alg) : Compressor(alg) {
+  assert(alg == kZlib);
   stream_.zalloc = Z_NULL;
   stream_.zfree = Z_NULL;
   stream_.opaque = Z_NULL;
@@ -898,7 +899,7 @@ ZlibCompressor::ZlibCompressor(const Algorithms &alg) : Compressor(alg) {
 
 
 Compressor *ZlibCompressor::Clone() {
-  ZlibCompressor *other = new ZlibCompressor(zlib::kDefault);
+  ZlibCompressor *other = new ZlibCompressor(zlib::kZlib);
   assert(stream_.avail_in == 0);
   // Delete the other stream
   int retcode = deflateEnd(&other->stream_);
@@ -952,8 +953,9 @@ size_t ZlibCompressor::DeflateBound(const size_t bytes) {
 //------------------------------------------------------------------------------
 
 
-EchoCompressor::EchoCompressor(const zlib::Algorithms &alg)
-    : Compressor(alg) { }
+EchoCompressor::EchoCompressor(const zlib::Algorithms &alg) : Compressor(alg) {
+  assert(alg == kNoCompression);
+}
 
 
 bool EchoCompressor::WillHandle(const zlib::Algorithms &alg) {
