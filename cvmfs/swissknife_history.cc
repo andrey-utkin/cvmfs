@@ -172,9 +172,8 @@ CommandTag::Environment *CommandTag::InitializeEnvironment(
     const bool use_file_chunking = false;
     const bool generate_legacy_bulk_chunks = false;
     const upload::SpoolerDefinition sd(
-        spl_definition, hash_algo, zlib::kDefault,
-        generate_legacy_bulk_chunks, use_file_chunking, 0, 0, 0,
-        session_token_file);
+        spl_definition, hash_algo, zlib::kDefault, generate_legacy_bulk_chunks,
+        use_file_chunking, 0, 0, 0, session_token_file);
     env->spooler = upload::Spooler::Construct(sd);
     if (!env->spooler.IsValid()) {
       LogCvmfs(kLogCvmfs, kLogStderr, "failed to initialize upload spooler");

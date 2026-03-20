@@ -170,8 +170,7 @@ int Fetcher::Fetch(const CacheManager::LabeledObject &object,
     *(tls->download_job.GetPidPtr()) = -1;
     *(tls->download_job.GetInterruptCuePtr()) = NULL;
   }
-  tls->download_job.SetCompressed(object.label.zip_algorithm
-                                  == zlib::kDefault);
+  tls->download_job.SetCompressed(object.label.zip_algorithm == zlib::kDefault);
   tls->download_job.SetRangeOffset(object.label.range_offset);
   tls->download_job.SetRangeSize(static_cast<int64_t>(object.label.size));
   download_mgr_->Fetch(&tls->download_job);
