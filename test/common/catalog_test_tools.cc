@@ -451,7 +451,7 @@ bool CatalogTestTool::DirSpecAtRootHash(const shash::Any &root_hash,
 CatalogTestTool::~CatalogTestTool() { }
 
 upload::Spooler *CatalogTestTool::CreateSpooler(const std::string &config) {
-  upload::SpoolerDefinition definition(config, shash::kSha1, zlib::kDefault,
+  upload::SpoolerDefinition const definition(config, shash::kSha1, zlib::kDefault,
                                        false, true, 4194304, 8388608, 16777216,
                                        "dummy_token", "dummy_key");
   return upload::Spooler::Construct(definition);
