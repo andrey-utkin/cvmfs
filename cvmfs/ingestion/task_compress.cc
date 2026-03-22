@@ -33,31 +33,26 @@ void TaskCompress::Process(BlockItem *input_block) {
     output_block = new BlockItem(tag, allocator_);
     output_block->SetFileItem(input_block->file_item());
     output_block->SetChunkItem(input_block->chunk_item());
-    output_block->MakeData(kCompressedBlockSize);
+    output_block->MakeData(compressor->CompressUpperBound(input_block->size()));
     tag_map_.Insert(tag, output_block);
   }
 
   cvmfs::MemSink out_comp;
   zip::StreamStates ret_compress;
-  do {
-    assert(!output_block->IsFull());
-    out_comp.Adopt(output_block->capacity(), output_block->size(),
-                   output_block->data(), false);
 
-    ret_compress = compressor->CompressStream(&in_comp, &out_comp, flush);
-    output_block->set_size(out_comp.pos());
+  // Unclear: can the blocks possibly be "too big" for one-shot compression?
+  // The very fact of _block_ processing suggests the answer is "no".
+  out_comp.Adopt(output_block->capacity(), output_block->size(),
+                 output_block->data(), false);
 
-    if (ret_compress == zip::kStreamOutBufFull) {
-      assert(output_block->IsFull());
-      tubes_out_->Dispatch(output_block);
-      output_block = new BlockItem(tag, allocator_);
-      output_block->SetFileItem(input_block->file_item());
-      output_block->SetChunkItem(input_block->chunk_item());
-      output_block->MakeData(kCompressedBlockSize);
-      tag_map_.Insert(tag, output_block);
-    }
-  } while (ret_compress != zip::kStreamEnd
-           && ret_compress != zip::kStreamContinue);
+  ret_compress = compressor->Compress(&in_comp, &out_comp);
+  output_block->set_size(out_comp.pos());
+  tubes_out_->Dispatch(output_block);
+
+  assert(ret_compress == zip::kStreamEnd);
+  if (ret_compress != zip::kStreamEnd) {
+    return;
+  }
 
   if (flush) {
     input_block->chunk_item()->ReleaseCompressor();
