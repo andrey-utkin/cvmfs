@@ -905,7 +905,9 @@ void T_Ingestion::ExercisePipelineNull(zip::Algorithm alg) {
   cvmfs::MemSink zlib_null(0);
   const zip::StreamStates res = compressor_->Compress(&in, &zlib_null);
   ASSERT_EQ(res, zip::kStreamEnd);
-  ASSERT_GT(zlib_null.pos(), 0U);
+  if (alg != zip::Algorithm::kNoCompression) {
+    ASSERT_GT(zlib_null.pos(), 0U);
+  }
 
   shash::Any hash_compressed_null(spooler_definition.hash_algorithm);
   shash::HashMem(zlib_null.data(), zlib_null.pos(), &hash_compressed_null);
