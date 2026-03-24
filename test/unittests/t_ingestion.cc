@@ -112,6 +112,7 @@ class T_Ingestion : public ::testing::Test {
   }
   void ExerciseCompressionRoundtrip(zip::Algorithm alg);
   void ExerciseDevNullCompression(zip::Algorithm alg);
+  void ExercisePipelineNull(zip::Algorithm alg);
 
   Tube<DummyItem> tube_;
   TubeConsumerGroup<DummyItem> task_group_;
