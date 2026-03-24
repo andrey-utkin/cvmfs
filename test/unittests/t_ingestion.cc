@@ -869,7 +869,7 @@ TEST_F(T_Ingestion, TaskWriteLarge) {
 
 void T_Ingestion::ExercisePipelineNull(zip::Algorithm alg) {
   upload::SpoolerDefinition spooler_definition = MockSpoolerDefinition();
-  spooler_definition.compression_alg = zip::kNoCompression;
+  spooler_definition.compression_alg = alg;
 
   UniquePtr<IngestionPipeline> pipeline_straight(
     new IngestionPipeline(uploader_, spooler_definition));
