@@ -59,7 +59,8 @@ bool JobInfo::IsFileNotFound() {
 void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
   decompressor_alg_ = decompressor_alg;
   //decomp_ = zip::Decompressor::Construct(decompressor_alg);
-  decomp_ = new zip::GuessDecompressor(decompressor_alg);
+  UniquePtr<zip::Decompressor> guesser = new zip::GuessDecompressor(decompressor_alg);
+  decomp_ = reinterpret_cast<UniquePtr<zip::Decompressor>*>&guesser;
 }
 
 bool JobInfo::ResetDecompression() {
