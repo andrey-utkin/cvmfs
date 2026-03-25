@@ -7,7 +7,6 @@
 #include <inttypes.h>
 
 #include "util/string.h"
-#include "compression/decompressor_guess.h"
 
 namespace download {
 
@@ -58,9 +57,7 @@ bool JobInfo::IsFileNotFound() {
 
 void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
   decompressor_alg_ = decompressor_alg;
-  //decomp_ = zip::Decompressor::Construct(decompressor_alg);
-  UniquePtr<zip::Decompressor> guesser = new zip::GuessDecompressor(decompressor_alg);
-  decomp_ = reinterpret_cast<UniquePtr<zip::Decompressor>*>&guesser;
+  decomp_ = zip::Decompressor::Construct(decompressor_alg);
 }
 
 bool JobInfo::ResetDecompression() {
