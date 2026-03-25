@@ -148,7 +148,7 @@ cd /home/sftnight/cvmfs/test
 export CVMFS_TEST_PROXY=DIRECT
 # restrict to only one CPU:
 taskset --cpu-list $(( RANDOM % "$(nproc)" )) \
-./run.sh /dev/stdout -- $test || true
+./run.sh /tmp/$test.test.log -- $test || true
 EOF
   chmod a+rwx "$job_file"
   # reveal:
@@ -163,7 +163,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     podman stop --ignore "$WORKER_CONTAINER_NAME_BASE"$worker_i
   fi
 done
-tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
-grep 'Testcase failed' worker/*/tmp/*.job.log
+tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
+grep 'Testcase failed' worker/*/tmp/*.test.log
 echo 'Tests passed: '
-grep 'Test passed' worker/*/tmp/*.job.log | wc -l
+grep 'Test passed' worker/*/tmp/*.test.log | wc -l
