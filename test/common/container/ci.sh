@@ -163,7 +163,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     podman stop --ignore "$WORKER_CONTAINER_NAME_BASE"$worker_i
   fi
 done
-tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
+tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
 grep 'Testcase failed' worker/*/tmp/*.test.log
 echo 'Tests passed: '
 grep 'Test passed' worker/*/tmp/*.test.log | wc -l
