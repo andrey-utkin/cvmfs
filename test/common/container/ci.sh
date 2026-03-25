@@ -37,7 +37,7 @@ if [[ -v BUILD ]]; then
   podman start "$BUILDER_CONTAINER_NAME"
 
   time podman exec -u sftnight "$BUILDER_CONTAINER_NAME" bash -c \
-    "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON"
+    "cmake -S /home/sftnight/cvmfs -B /tmp/cvmfs-build -D EXTERNALS_PREFIX=/tmp/cvmfs-ext -D BUILD_SHRINKWRAP=ON ${CMAKE_EXTRA_OPTS:-}"
 
   time podman exec -u sftnight "$BUILDER_CONTAINER_NAME" bash -c \
     "cd /tmp/cvmfs-build && make -j$(nproc) && sudo make -j$(nproc) install"
