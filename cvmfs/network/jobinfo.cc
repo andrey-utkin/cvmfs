@@ -7,6 +7,7 @@
 #include <inttypes.h>
 
 #include "util/string.h"
+#include "compression/decompressor_guess.h"
 
 namespace download {
 
@@ -15,7 +16,7 @@ atomic_int64 JobInfo::next_uuid = 0;
 JobInfo::JobInfo(const std::string *u, const bool compressed, const bool ph,
          const shash::Any *h, cvmfs::Sink *s)
 {
-  Init(compressed ? zip::Algorithm::kDefault : zip::Algorithm::kNoCompression);
+  Init(compressed ? zip::Algorithm::kGuessDecompression : zip::Algorithm::kNoCompression);
 
   url_ = u;
   probe_hosts_ = ph;
@@ -57,7 +58,8 @@ bool JobInfo::IsFileNotFound() {
 
 void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
   decompressor_alg_ = decompressor_alg;
-  decomp_ = zip::Decompressor::Construct(decompressor_alg);
+  //decomp_ = zip::Decompressor::Construct(decompressor_alg);
+  decomp_ = new zip::GuessDecompressor(decompressor_alg);
 }
 
 bool JobInfo::ResetDecompression() {
