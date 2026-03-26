@@ -93,7 +93,7 @@ StreamStates ZlibDecompressor::DecompressStream(InputAbstract *input,
 
     } while (
         //stream_.avail_out == 0 // output buffer is full
-        inBuffer.avail_in > 0 // input buffer has something to process
+        stream_.avail_in > 0 // input buffer has something to process
         );
   } while (input->has_chunk_left());
 
