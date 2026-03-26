@@ -159,9 +159,10 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
   touch worker/$worker_i/orders/non-executable-for-quit
 done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
-  if ! [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; then
-    podman stop --ignore "$WORKER_CONTAINER_NAME_BASE"$worker_i
-  fi
+  while [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; do
+    sleep 1
+  done
+  podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i
 done
 tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
 grep 'Testcase failed' worker/*/tmp/*.test.log
