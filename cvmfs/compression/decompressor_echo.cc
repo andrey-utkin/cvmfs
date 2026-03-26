@@ -28,7 +28,7 @@ StreamStates EchoDecompressor::DecompressStream(InputAbstract *input,
   }
 
   do {
-    if (input->chunk_size() == 0) {
+    if (!input->HasInputLeftInChunk()) {
       if (!input->NextChunk()) {
         return kStreamIOError;
       }
