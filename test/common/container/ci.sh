@@ -139,7 +139,7 @@ wait_until_found_idle_worker() {
 for test in $TESTS; do
   idle_worker_orders_dir=$(wait_until_found_idle_worker)
   jobname=${test#src/}
-  job_file=$(mktemp --tmpdir="$idle_worker_orders_dir"/.wip "$jobname".XXXXXXX.job)
+  job_file="$idle_worker_orders_dir"/.wip/"$jobname".job
   cat > "$job_file" <<-EOF
 #!/bin/bash
 set -euo pipefail
