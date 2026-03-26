@@ -138,7 +138,7 @@ wait_until_found_idle_worker() {
 
 for test in $TESTS; do
   idle_worker_orders_dir=$(wait_until_found_idle_worker)
-  jobname=$(echo $test | sed s:src/::)
+  jobname=${test#src/}
   job_file=$(mktemp --tmpdir="$idle_worker_orders_dir"/.wip "$jobname".XXXXXXX.job)
   cat > "$job_file" <<-EOF
 #!/bin/bash
