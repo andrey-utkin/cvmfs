@@ -148,7 +148,7 @@ cd /home/sftnight/cvmfs/test
 export CVMFS_TEST_PROXY=DIRECT
 # restrict to only one CPU:
 taskset --cpu-list $(( RANDOM % "$(nproc)" )) \
-./run.sh /tmp/$test.test.log -- $test || true
+./run.sh /tmp/$jobname.test.log -- $test || true
 EOF
   chmod a+rwx "$job_file"
   # reveal:
