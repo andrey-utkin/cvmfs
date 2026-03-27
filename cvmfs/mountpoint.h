@@ -285,6 +285,7 @@ class FileSystem : SingleCopy, public BootFactory {
      * CVMFS_CACHE_WORKSPACE is set.
      */
     std::string workspace;
+    zip::Algorithm decomp_alg;
   };
 
   static void LogSqliteError(void *user_data __attribute__((unused)),

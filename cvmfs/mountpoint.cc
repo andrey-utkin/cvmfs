@@ -373,9 +373,19 @@ FileSystem::PosixCacheSettings FileSystem::DeterminePosixCacheSettings(
     settings.workspace = optarg;
   }
 
+  if (options_mgr_->GetValue(
+          MkCacheParm("CVMFS_DECOMPRESSION_ALGORITHM", instance), &optarg)) {
+    settings.decomp_alg = zip::ParseCompressionAlgorithm(optarg);
+  } else if (options_mgr_->GetValue(
+                 MkCacheParm("CVMFS_COMPRESSION_ALGORITHM", instance),
+                 &optarg)) {
+    settings.decomp_alg = zip::ParseCompressionAlgorithm(optarg);
+  } else {
+    settings.decomp_alg = zip::Algorithm::kDefault;
+  }
+
   return settings;
 }
-
 
 bool FileSystem::DetermineNfsMode() {
   string optarg;
@@ -702,7 +712,9 @@ CacheManager *FileSystem::SetupPosixCacheMgr(const string &instance) {
     settings.is_alien,
     settings.avoid_rename ? PosixCacheManager::kRenameLink
                           : PosixCacheManager::kRenameNormal,
-    settings.do_refcount));
+    settings.do_refcount,
+    settings.
+    zip::DecompressionAlgFromEnv()));
   if (!cache_mgr.IsValid()) {
     boot_error_ = "Failed to setup posix cache '" + instance + "' in " +
                   settings.cache_path + ": " + strerror(errno);
