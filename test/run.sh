@@ -311,7 +311,7 @@ do
       # Default 5min timeout for quick tests
       cvmfs_test_timeout=300
     else
-      cvmfs_test_timeout=0
+      cvmfs_test_timeout=600
     fi
   fi
 
