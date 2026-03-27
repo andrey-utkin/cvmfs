@@ -713,7 +713,7 @@ CacheManager *FileSystem::SetupPosixCacheMgr(const string &instance) {
     settings.avoid_rename ? PosixCacheManager::kRenameLink
                           : PosixCacheManager::kRenameNormal,
     settings.do_refcount,
-    settings.decomp_alg);
+    settings.decomp_alg));
   if (!cache_mgr.IsValid()) {
     boot_error_ = "Failed to setup posix cache '" + instance + "' in " +
                   settings.cache_path + ": " + strerror(errno);
