@@ -25,7 +25,7 @@ Algorithms ParseCompressionAlgorithm(const std::string &algorithm_option) {
     return kNoCompression;
 #ifdef CVMFS_GUESS_DECOMPRESSOR
   if (algorithm_option == "guess")
-    return zip::Algorithm::kGuessDecompressor;
+    return zip::Algorithm::kGuessDecompression;
 #endif
   PANIC(kLogStderr, "unknown compression algorithms: %s",
         algorithm_option.c_str());
@@ -44,7 +44,7 @@ std::string AlgorithmName(const zip::Algorithms alg) {
       return "zstd";
       break;
 #ifdef CVMFS_GUESS_DECOMPRESSOR
-    case zip::Algorithm::kGuessDecompressor:
+    case zip::Algorithm::kGuessDecompression:
       return "guess";
       break;
 #endif
