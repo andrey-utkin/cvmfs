@@ -311,7 +311,7 @@ do
       # Default 5min timeout for quick tests
       cvmfs_test_timeout=300
     else
-      cvmfs_test_timeout=0
+      cvmfs_test_timeout=600
     fi
   fi
 
@@ -335,7 +335,7 @@ do
 
   # run the test
   test_start=$(get_millisecond_epoch)
-  timeout -s HUP $cvmfs_test_timeout \
+  timeout -s HUP --kill-after 10 --verbose $cvmfs_test_timeout \
     bash $debug -c "PID=\$\$                                                 && \
                     trap 'echo KILLING:\$PID; pkill -P \$PID; exit 124' HUP  && \
                     . ./test_functions                                       && \
