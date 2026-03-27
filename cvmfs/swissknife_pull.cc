@@ -641,7 +641,8 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
                                *stratum0_url,
                                *temp_dir,
                                download_manager(),
-                               signature_manager());
+                               signature_manager(),
+                               zip::DecompressionAlgFromEnv());
 
   pthread_t *workers =
     reinterpret_cast<pthread_t *>(smalloc(sizeof(pthread_t) * num_parallel));

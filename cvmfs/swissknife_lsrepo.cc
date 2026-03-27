@@ -75,7 +75,7 @@ int CommandListCatalogs::Main(const ArgumentList &args) {
                                                       signature_manager());
     success = Run(manual_root_hash, &fetcher);
   } else {
-    LocalObjectFetcher<> fetcher(repo_url, tmp_dir);
+    LocalObjectFetcher<> fetcher(repo_url, tmp_dir, zip::DecompressionAlgFromEnv());
     success = Run(manual_root_hash, &fetcher);
   }
 

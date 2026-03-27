@@ -66,7 +66,7 @@ int CommandFileStats::Main(const ArgumentList &args) {
                                                       signature_manager());
     success = Run(&fetcher);
   } else {
-    LocalObjectFetcher<> fetcher(repo_url, tmp_dir);
+    LocalObjectFetcher<> fetcher(repo_url, tmp_dir, zip::DecompressionAlgFromEnv());
     success = Run(&fetcher);
   }
 
