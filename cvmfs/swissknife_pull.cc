@@ -592,8 +592,8 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
   atomic_init64(&overall_new);
   atomic_init64(&chunk_queue);
 
-  decomp = zip::Decompressor::Construct(zip::kDefault);
-  comp = zip::Compressor::Construct(zip::kDefault);
+  decomp = zip::Decompressor::Construct(zip::DecompressorAlgFromEnv());
+  comp = zip::Compressor::Construct(zip::CompressorAlgFromEnv());
   copy = zip::Compressor::Construct(zip::kNoCompression);
 
   const bool     follow_redirects = false;
