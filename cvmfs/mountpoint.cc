@@ -697,7 +697,7 @@ CacheManager *FileSystem::SetupPosixCacheMgr(const string &instance) {
   if (!CheckPosixCacheSettings(settings))
     return NULL;
 
-  zip::Algorithm decomp_arg;
+  zip::Algorithm decomp_alg;
   {
     std::string optarg;
     if (options_mgr_->GetValue("CVMFS_DECOMPRESSION_ALGORITHM", &optarg)) {
