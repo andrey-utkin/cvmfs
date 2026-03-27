@@ -168,3 +168,5 @@ tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log work
 grep 'Testcase failed' worker/*/tmp/*.test.log
 echo 'Tests passed: '
 grep 'Test passed' worker/*/tmp/*.test.log | wc -l
+# Stats of outcomes (by 3rd line from the end):
+for x in worker/*/tmp/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
