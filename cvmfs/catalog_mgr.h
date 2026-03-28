@@ -455,6 +455,7 @@ class AbstractCatalogManager : public SingleCopy {
   pthread_key_t pkey_sqlitemem_;
   OwnerMap uid_map_;
   OwnerMap gid_map_;
+  zip::Algorithm decomp_alg_;
 
   // Not needed anymore since there are the glue buffers
   // Catalog *Inode2Catalog(const inode_t inode);

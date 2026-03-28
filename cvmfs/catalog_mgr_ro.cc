@@ -32,7 +32,9 @@ SimpleCatalogManager::SimpleCatalogManager(
                      , stratum0_(stratum0)
                      , dir_temp_(dir_temp)
                      , download_manager_(download_manager)
-                     , manage_catalog_files_(manage_catalog_files) {
+                     , manage_catalog_files_(manage_catalog_files)
+                     , decomp_alg_(mountpoint->GetDecompressionAlg())
+  {
   if (!dir_cache.empty()) {
     const bool success = MakeCacheDirectories(dir_cache_, 0755);
 
