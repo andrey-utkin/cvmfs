@@ -325,6 +325,9 @@ class AbstractCatalogManager : public SingleCopy {
                                    shash::Any *hash);
 
  protected:
+  zip::Algorithm decomp_alg_;
+  inline const zip::Algorithm GetDecompressionAlg() { return decomp_alg_; }
+
   /**
    * Load the catalog and return a file name and the catalog hash.
    *
@@ -455,7 +458,6 @@ class AbstractCatalogManager : public SingleCopy {
   pthread_key_t pkey_sqlitemem_;
   OwnerMap uid_map_;
   OwnerMap gid_map_;
-  zip::Algorithm decomp_alg_;
 
   // Not needed anymore since there are the glue buffers
   // Catalog *Inode2Catalog(const inode_t inode);
