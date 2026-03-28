@@ -47,13 +47,13 @@ ClientCatalogManager::ClientCatalogManager(MountPoint *mountpoint)
   , fixed_root_catalog_()
   , fixed_alt_root_catalog_(false)
   , root_fd_(-1)
-  , decomp_alg_(mountpoint->GetDecompressionAlg())
 {
   LogCvmfs(kLogCatalog, kLogDebug, "constructing client catalog manager");
   n_certificate_hits_ = mountpoint->statistics()->Register(
     "cache.n_certificate_hits", "Number of certificate hits");
   n_certificate_misses_ = mountpoint->statistics()->Register(
     "cache.n_certificate_misses", "Number of certificate misses");
+  decomp_alg_ = mountpoint->GetDecompressionAlg();
 }
 
 
