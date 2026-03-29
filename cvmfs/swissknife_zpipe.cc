@@ -29,6 +29,14 @@
 #include "compression/input_file.h"
 #include "network/sink_file.h"
 
+#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
+#  include <fcntl.h>
+#  include <io.h>
+#  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+#else
+#  define SET_BINARY_MODE(file)
+#endif
+
 #define CHUNK 16384
 
 /* compress or decompress from stdin to stdout */
