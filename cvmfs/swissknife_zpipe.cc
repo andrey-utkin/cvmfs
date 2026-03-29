@@ -41,8 +41,6 @@
 
 /* compress or decompress from stdin to stdout */
 int swissknife::CommandZpipe::Main(const swissknife::ArgumentList &args) {
-    int ret;
-
     /* avoid end-of-line conversions */
     SET_BINARY_MODE(stdin);
     SET_BINARY_MODE(stdout);
@@ -53,7 +51,7 @@ int swissknife::CommandZpipe::Main(const swissknife::ArgumentList &args) {
     /* do compression if no arguments */
     if (args.find('d') == args.end()) {
         zip::Algorithm comp_alg = zip::CompressionAlgFromEnv();
-        auto *compressor = new zip::Compressor::Construct(comp_alg);
+        auto *compressor = zip::Compressor::Construct(comp_alg);
         const zip::StreamStates res = compressor->Compress(input, output);
         if (res == zip::kStreamEnd) {
             return 0;
@@ -64,7 +62,7 @@ int swissknife::CommandZpipe::Main(const swissknife::ArgumentList &args) {
     } else {
         /* do decompression if -d specified */
         zip::Algorithm decomp_alg = zip::DecompressionAlgFromEnv();
-        auto *decompressor = new zip::Decompressor::Construct(decomp_alg);
+        auto *decompressor = zip::Decompressor::Construct(decomp_alg);
         const zip::StreamStates res = decompressor->DecompressStream(input, output);
         if (res == zip::kStreamEnd) {
             return 0;
