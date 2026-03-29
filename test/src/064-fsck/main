@@ -11,7 +11,7 @@ cvmfs_run_test() {
   # This is checking shared cache so there's no repo or domain context.
   # But by the test design, we have cern.ch repos only, which we know use zlib right now.
   export CVMFS_COMPRESSION_ALGORITHM=zlib CVMFS_DECOMPRESSION_ALGORITHM=zlib
-  sudo cvmfs_config fsck -j8 || return 2
+  sudo -E cvmfs_config fsck -j8 || return 2
   unset CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM
 
   cvmfs_umount atlas.cern.ch,lhcb.cern.ch,cms.cern.ch || return 10
@@ -25,7 +25,7 @@ cvmfs_run_test() {
   # This is checking shared cache so there's no repo or domain context.
   # But by the test design, we have cern.ch repos only, which we know use zlib right now.
   export CVMFS_COMPRESSION_ALGORITHM=zlib CVMFS_DECOMPRESSION_ALGORITHM=zlib
-  sudo cvmfs_config fsck -j8 -p
+  sudo -E cvmfs_config fsck -j8 -p
   unset CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM
   if [ $? -ne 1 ]; then
     return 12
