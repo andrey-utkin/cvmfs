@@ -18,6 +18,9 @@ cvmfs_run_test() {
   for f in $(sudo find $cms_cachedir -mindepth 2 -type f); do
     sudo sh -c "cat /dev/null > $f"
   done
+  # This is checking shared cache so there's no repo or domain context.
+  # But by the test design, we have cern.ch repos only, which we know use zlib right now.
+  export CVMFS_DECOMPRESSION_ALGORITHM=zlib
   sudo cvmfs_config fsck -j8 -p
   if [ $? -ne 1 ]; then
     return 12
