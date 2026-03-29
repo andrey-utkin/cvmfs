@@ -5,6 +5,8 @@
 #include "decompressor_zstd.h"
 
 #include <cassert>
+#include <zstd.h>
+#include <zstd_errors.h>
 
 #include "decompressor.h"
 
