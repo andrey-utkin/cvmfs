@@ -70,8 +70,8 @@ StreamStates ZstdDecompressor::DecompressStream(InputAbstract *input,
       z_ret = ZSTD_decompressStream(stream_, &outBuffer, &inBuffer);
       if (ZSTD_isError(z_ret)) {
         LogCvmfs(kLogCompress, kLogSyslogErr | kLogStderr,
-                                          "Error during zstd decompression: %s",
-                                           ZSTD_getErrorName(z_ret));
+                                          "Error during zstd decompression: %s (ZSTD_ErrorCode %d)",
+                                           ZSTD_getErrorName(z_ret), ZSTD_getErrorCode(z_ret));
         is_healthy_ = false;
         return kStreamDataError;
       }
