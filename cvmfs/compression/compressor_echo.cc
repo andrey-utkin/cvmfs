@@ -126,7 +126,7 @@ StreamStates EchoCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
       is_healthy_ = false;
       return kStreamIOError;
     }
-    shash::Update(input->chunk(), have, hash_context);
+    shash::Update(input->chunk(), written, hash_context);
   } while (input->has_chunk_left());
 
   output->Flush();

@@ -215,7 +215,7 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
         is_healthy_ = false;
         return kStreamIOError;
       }
-      shash::Update(out, have, hash_context);
+      shash::Update(out, written, hash_context);
     } while (stream_.avail_out == 0);
   } while (flush != Z_FINISH);
 

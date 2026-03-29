@@ -215,7 +215,7 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
         is_healthy_ = false;
         return kStreamIOError;
       }
-      shash::Update(out, have, hash_context);
+      shash::Update(out, written, hash_context);
     } while (inBuffer.pos < inBuffer.size);
   } while (mode != ZSTD_e_end);
 

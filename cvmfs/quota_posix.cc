@@ -803,14 +803,17 @@ bool PosixQuotaManager::InitDatabase(const bool rebuild_database) {
     goto init_database_fail;
   }
   // TODO(reneme): make this a `QuotaDatabase : public sqlite::Database`
+  std::string default_compression_alg_str = std::to_string(zip::DecompressionAlgFromEnv());
   sql = "PRAGMA synchronous=0; PRAGMA locking_mode=EXCLUSIVE; "
     "PRAGMA auto_vacuum=1; "
     "CREATE TABLE IF NOT EXISTS cache_catalog (sha1 TEXT, size INTEGER, "
     "  acseq INTEGER, path TEXT, type INTEGER, pinned INTEGER, "
+    "  compression_alg INTEGER DEFAULT " + default_compression_alg_str + ", "
     "CONSTRAINT pk_cache_catalog PRIMARY KEY (sha1)); "
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_cache_catalog_acseq "
     "  ON cache_catalog (acseq); "
     "CREATE TEMP TABLE fscache (sha1 TEXT, size INTEGER, actime INTEGER, "
+    "  compression_alg INTEGER DEFAULT " + default_compression_alg_str + ", "
     "CONSTRAINT pk_fscache PRIMARY KEY (sha1)); "
     "CREATE INDEX idx_fscache_actime ON fscache (actime); "
     "CREATE TABLE IF NOT EXISTS properties (key TEXT, value TEXT, "
@@ -834,7 +837,8 @@ bool PosixQuotaManager::InitDatabase(const bool rebuild_database) {
   // If this an old cache catalog,
   // add and initialize new columns to cache_catalog
   sql = "ALTER TABLE cache_catalog ADD type INTEGER; "
-        "ALTER TABLE cache_catalog ADD pinned INTEGER";
+        "ALTER TABLE cache_catalog ADD pinned INTEGER; "
+        "ALTER TABLE cache_catalog ADD compression_alg INTEGER DEFAULT " + default_compression_alg_str + "; ";
   err = sqlite3_exec(database_, sql.c_str(), NULL, NULL, NULL);
   if (err == SQLITE_OK) {
     sql = "UPDATE cache_catalog SET type=" + StringifyInt(kFileRegular) + ";";
@@ -857,7 +861,7 @@ bool PosixQuotaManager::InitDatabase(const bool rebuild_database) {
 
   // Set schema version
   sql = "INSERT OR REPLACE INTO properties (key, value) "
-  "VALUES ('schema', '1.0')";
+  "VALUES ('schema', '1.1')";
   err = sqlite3_exec(database_, sql.c_str(), NULL, NULL, NULL);
   if (err != SQLITE_OK) {
     LogCvmfs(kLogQuota, kLogDebug, "could not init cache database (failed: %s)",
@@ -922,8 +926,8 @@ bool PosixQuotaManager::InitDatabase(const bool rebuild_database) {
                      "WHERE pinned=2;", -1, &stmt_unblock_, NULL);
   sqlite3_prepare_v2(database_,
                      "INSERT OR REPLACE INTO cache_catalog "
-                     "(sha1, size, acseq, path, type, pinned) "
-                     "VALUES (:sha1, :s, :seq, :p, :t, :pin);",
+                     "(sha1, size, acseq, path, type, pinned, compression_alg) "
+                     "VALUES (:sha1, :s, :seq, :p, :t, :pin, :compression_alg);",
                      -1, &stmt_new_, NULL);
   sqlite3_prepare_v2(database_,
                      "SELECT size, pinned FROM cache_catalog WHERE sha1=:sha1;",
@@ -931,7 +935,7 @@ bool PosixQuotaManager::InitDatabase(const bool rebuild_database) {
   sqlite3_prepare_v2(database_, "DELETE FROM cache_catalog WHERE sha1=:sha1;",
                      -1, &stmt_rm_, NULL);
   sqlite3_prepare_v2(database_,
-                     "SELECT sha1, size FROM cache_catalog WHERE "
+                     "SELECT sha1, size, compression_alg FROM cache_catalog WHERE "
                      "acseq=(SELECT min(acseq) "
                      "FROM cache_catalog WHERE pinned<>2);",
                      -1, &stmt_lru_, NULL);
@@ -1822,6 +1826,8 @@ bool PosixQuotaManager::RebuildDatabase() {
                           SQLITE_STATIC);
         sqlite3_bind_int64(stmt_insert, 2, info.st_size);
         sqlite3_bind_int64(stmt_insert, 3, info.st_atime);
+        // compression_alg info is not available, leaving as default.
+        // This will cause extraneous fsck error reports.
         if (sqlite3_step(stmt_insert) != SQLITE_DONE) {
           LogCvmfs(kLogQuota, kLogDebug, "could not insert into temp table");
           goto build_return;
@@ -1841,11 +1847,11 @@ bool PosixQuotaManager::RebuildDatabase() {
 
   // Transfer from temp table in cache catalog
   sqlite3_prepare_v2(database_,
-                     "SELECT sha1, size FROM fscache ORDER BY actime;",
+                     "SELECT sha1, size, compression_alg FROM fscache ORDER BY actime;",
                      -1, &stmt_select, NULL);
   sqlite3_prepare_v2(database_,
-    "INSERT INTO cache_catalog (sha1, size, acseq, path, type, pinned) "
-    "VALUES (:sha1, :s, :seq, 'unknown (automatic rebuild)', :t, 0);",
+    "INSERT INTO cache_catalog (sha1, size, acseq, path, type, pinned, compression_alg) "
+    "VALUES (:sha1, :s, :seq, 'unknown (automatic rebuild)', :t, 0, :compression_alg);",
     -1, &stmt_insert, NULL);
   while (sqlite3_step(stmt_select) == SQLITE_ROW) {
     const string hash = string(
@@ -1855,6 +1861,7 @@ bool PosixQuotaManager::RebuildDatabase() {
     sqlite3_bind_int64(stmt_insert, 3, seq++);
     // Might also be a catalog (information is lost)
     sqlite3_bind_int64(stmt_insert, 4, kFileRegular);
+    sqlite3_bind_int64(stmt_insert, 5, sqlite3_column_int64(stmt_select, 2));
 
     int retval = sqlite3_step(stmt_insert);
     if (retval != SQLITE_DONE) {

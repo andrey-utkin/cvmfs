@@ -192,6 +192,10 @@ static void *MainCheck(void *data __attribute__((unused))) {
     } else {
       if (hash != expected_hash) {
         // If the hashes don't match, try hashing the uncompressed file
+        LogCvmfs(kLogCvmfs, kLogStdout,
+                 "Warning: %s has compressed checksum %s, "
+                 "falling back to matching to the uncompressed file's hash",
+                 path.c_str(), hash.ToString().c_str());
         if (!shash::HashFile(relative_path, &hash)) {
           LogCvmfs(kLogCvmfs, kLogStdout, "Error: could not hash %s",
                    path.c_str());
