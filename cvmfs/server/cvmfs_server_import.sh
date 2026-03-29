@@ -64,6 +64,7 @@ cvmfs_server_import() {
   local unionfs=
   local recreate_whitelist=0
   local configure_apache=1
+  local compression_alg=${CVMFS_COMPRESSION_ALGORITHM-}
   local recreate_repo_key=0
   local require_masterkeycard=0
   local proxy_url
@@ -104,6 +105,9 @@ cvmfs_server_import() {
       ;;
       r)
         recreate_whitelist=1
+      ;;
+      Z)
+        compression_alg=$OPTARG
       ;;
       p)
         configure_apache=0
@@ -226,7 +230,7 @@ cvmfs_server_import() {
                                          "true"              \
                                          "false"             \
                                          "$configure_apache" \
-                                         "default"           \
+                                         "$compression_alg"  \
                                          "false"             \
                                          ""                  \
                                          ""                  \
