@@ -26,8 +26,9 @@ cvmfs_run_test() {
   # But by the test design, we have cern.ch repos only, which we know use zlib right now.
   export CVMFS_COMPRESSION_ALGORITHM=zlib CVMFS_DECOMPRESSION_ALGORITHM=zlib
   sudo -E cvmfs_config fsck -j8 -p
+  RET=$?
   unset CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM
-  if [ $? -ne 1 ]; then
+  if [ $RET -ne 1 ]; then
     return 12
   fi
 
