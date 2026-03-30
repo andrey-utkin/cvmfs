@@ -71,7 +71,7 @@ cvmfs_server_import() {
 
   # parameter handling
   OPTIND=1
-  while getopts "w:o:c:u:k:lsmgf:rptRx:" option; do
+  while getopts "w:o:c:u:k:lsmgf:rptRx:Z:" option; do
     case $option in
       w)
         stratum0=$OPTARG
