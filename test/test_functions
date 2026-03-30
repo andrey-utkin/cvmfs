@@ -1329,7 +1329,7 @@ publish_repo() {
       cvmfs_server publish -Dv "$@" $repo > /dev/tty 2>&1 || return 100
     ;;
     *)
-      cvmfs_server publish -v "$@" $repo || return 100
+      bash -x cvmfs_server publish -v "$@" $repo || return 100
     ;;
   esac
 
