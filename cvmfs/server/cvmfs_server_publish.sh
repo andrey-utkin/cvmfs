@@ -351,7 +351,7 @@ cvmfs_server_publish() {
 
     # synchronize the repository
     publish_starting $name
-    $user_shell "rr CVMFS_COMPRESSION_ALGORITHM=$CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM=$CVMFS_DECOMPRESSION_ALGORITHM $sync_command" || { publish_failed $name; die "Synchronization failed\n\nExecuted Command:\n$sync_command";   }
+    $user_shell "CVMFS_COMPRESSION_ALGORITHM=$CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM=$CVMFS_DECOMPRESSION_ALGORITHM $rr sync_command" || { publish_failed $name; die "Synchronization failed\n\nExecuted Command:\n$sync_command";   }
     cvmfs_sys_file_is_regular $manifest            || { publish_failed $name; die "Manifest creation failed\n\nExecuted Command:\n$sync_command"; }
     local branch_hash=
     local trunk_hash=$(grep "^C" $manifest | tr -d C)
