@@ -411,6 +411,8 @@ cvmfs_server_publish() {
     fi
 
     # add a tag for the new revision
+    echo DELAY
+    sleep 5
     echo "Tagging $name"
     $user_shell "CVMFS_COMPRESSION_ALGORITHM=$CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM=$CVMFS_DECOMPRESSION_ALGORITHM $tag_command" || { publish_failed $name; die "Tagging failed\n\nExecuted Command:\n$tag_command";  }
 
