@@ -160,11 +160,17 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
 done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   while [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; do
+    # common failure mode: container listed in podman ps but not running and not inspectable
+    if ! podman inspect "$WORKER_CONTAINER_NAME_BASE"$worker_i >/dev/null; then
+      break
+    fi
     sleep 1
   done
-  podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i
+  podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i || true
 done
 tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
 grep 'Testcase failed' worker/*/tmp/*.test.log
 echo 'Tests passed: '
 grep 'Test passed' worker/*/tmp/*.test.log | wc -l
+# Stats of outcomes (by 3rd line from the end):
+for x in worker/*/tmp/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
