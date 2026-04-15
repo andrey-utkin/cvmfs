@@ -190,9 +190,10 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     assert(reflog_hash.suffix == shash::kSuffixNone);
 
     std::string tmp_path;
-    const bool decompress = false;
     const bool nocache = true;
-    Failures failure = Fetch(kReflogFilename, decompress, nocache, &tmp_path);
+    Failures failure =
+        Fetch(kReflogFilename, zip::DecompressionAlg::kNoCompression, nocache,
+              &tmp_path);
     if (failure != kFailOk) {
       return failure;
     }
