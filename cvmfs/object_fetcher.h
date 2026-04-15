@@ -130,9 +130,20 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     assert(history_hash.suffix == shash::kSuffixHistory ||
            history_hash.IsNull());
 
+    // History is a SQLite database, has clear signature at the beginning and
+    // so decompression algorithm can be reliably guessed among zlib, zstd and
+    // none.
+    // But in future we may have explicit metafata for that.
+    zip::DecompressionAlg decomp_alg;
+#ifdef CVMFS_GUESS_DECOMPRESSOR
+    decomp_alg = zip::DecompressionAlg::kGuessDecompression;
+#else
+    decomp_alg = zip::DecompressionAlgFromEnv();
+#endif
+
     // download the history hash
     std::string path;
-    const Failures retval = Fetch(effective_history_hash, &path);
+    const Failures retval = Fetch(effective_history_hash, &path, decomp_alg);
     if (retval != kFailOk) {
       return retval;
     }
@@ -179,8 +190,7 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     decomp_alg = zip::DecompressionAlgFromEnv();
 #endif
 
-    const Failures retval =
-        Fetch(BuildRelativeUrl(catalog_hash), decomp_alg, false, &path);
+    const Failures retval = Fetch(catalog_hash, &path, decomp_alg);
     if (retval != kFailOk) {
       return retval;
     }
@@ -298,6 +308,11 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     return static_cast<DerivedT*>(this)->Fetch(object_hash, file_path);
   }
 #endif
+  Failures Fetch(const shash::Any& object_hash, std::string* file_path,
+                 zip::DecompressionAlg decomp_alg) {
+    return static_cast<DerivedT*>(this)->Fetch(object_hash, file_path,
+                                               decomp_alg);
+  }
 
   Failures Fetch(const std::string& relative_path,
                  zip::DecompressionAlg decomp_alg,
@@ -585,6 +600,15 @@ class HttpObjectFetcher :
     return Download(url, decomp_alg, nocache, &object_hash, object_file);
   }
 #endif
+  Failures Fetch(const shash::Any& object_hash, std::string* object_file,
+                 zip::DecompressionAlg decomp_alg) {
+    assert(object_file != NULL);
+    assert(!object_hash.IsNull());
+
+    const bool nocache = false;
+    const std::string url = BuildRelativeUrl(object_hash);
+    return Download(url, decomp_alg, nocache, &object_hash, object_file);
+  }
 
   Failures Fetch(const std::string &relative_path,
                  zip::DecompressionAlg decomp_alg,
