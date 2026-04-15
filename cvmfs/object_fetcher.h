@@ -167,7 +167,19 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     assert(catalog_hash.suffix == shash::kSuffixCatalog);
 
     std::string path;
-    const Failures retval = Fetch(catalog_hash, &path);
+
+    // Catalog is a SQLite database, has clear signature at the beginning and
+    // so decompression algorithm can be reliably guessed among zlib, zstd and
+    // none.
+    zip::DecompressionAlg decomp_alg;
+#ifdef CVMFS_GUESS_DECOMPRESSOR
+    decomp_alg = zip::DecompressionAlg::kGuessDecompression;
+#else
+    decomp_alg = zip::DecompressionAlgFromEnv();
+#endif
+
+    const Failures retval =
+        Fetch(BuildRelativeUrl(catalog_hash), decomp_alg, false, &path);
     if (retval != kFailOk) {
       return retval;
     }
