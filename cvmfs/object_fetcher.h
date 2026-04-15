@@ -477,7 +477,7 @@ class LocalObjectFetcher :
 
  private:
   const std::string base_path_;
-  zip::DecompressorAlg decomp_alg_;
+  zip::DecompressionAlg decomp_alg_;
 };
 
 template <class CatalogT, class HistoryT, class ReflogT>
