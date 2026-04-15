@@ -171,6 +171,7 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     // Catalog is a SQLite database, has clear signature at the beginning and
     // so decompression algorithm can be reliably guessed among zlib, zstd and
     // none.
+    // But in future we may have explicit metafata for that.
     zip::DecompressionAlg decomp_alg;
 #ifdef CVMFS_GUESS_DECOMPRESSOR
     decomp_alg = zip::DecompressionAlg::kGuessDecompression;
