@@ -558,22 +558,24 @@ class HttpObjectFetcher :
     return BuildUrl(BuildRelativeUrl(hash));
   }
 
+#if 0
   Failures Fetch(const shash::Any &object_hash, std::string *object_file) {
     assert(object_file != NULL);
     assert(!object_hash.IsNull());
 
-    const bool decompress = true;
+    zip::DecompressionAlg decomp_alg = FIXME;
     const bool nocache = false;
     const std::string url = BuildRelativeUrl(object_hash);
-    return Download(url, decompress, nocache, &object_hash, object_file);
+    return Download(url, decomp_alg, nocache, &object_hash, object_file);
   }
+#endif
 
   Failures Fetch(const std::string &relative_path,
-                 const bool         decompress,
+                 zip::DecompressionAlg decomp_alg,
                  const bool         nocache,
                        std::string *file_path) {
     const shash::Any *expected_hash = NULL;
-    return Download(relative_path, decompress, nocache, expected_hash,
+    return Download(relative_path, decomp_alg, nocache, expected_hash,
                     file_path);
   }
 
@@ -587,7 +589,7 @@ class HttpObjectFetcher :
   }
 
   Failures Download(const std::string &relative_path,
-                    const bool         decompress,
+                    zip::DecompressionAlg decomp_alg,
                     const bool         nocache,
                     const shash::Any  *expected_hash,
                           std::string *file_path) {
@@ -608,7 +610,7 @@ class HttpObjectFetcher :
     const std::string url = BuildUrl(relative_path);
     const bool probe_hosts = false;
     cvmfs::FileSink filesink(f);
-    download::JobInfo download_job(&url, decompress, probe_hosts, expected_hash,
+    download::JobInfo download_job(&url, decomp_alg, probe_hosts, expected_hash,
                                    &filesink);
     download_job.SetForceNocache(nocache);
     download::Failures retval = download_manager_->Fetch(&download_job);
