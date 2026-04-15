@@ -447,7 +447,8 @@ class LocalObjectFetcher :
     // decompress or copy the requested object file
     zip::InputPath in_path(source);
     cvmfs::FileSink out_file(f, true);
-    UniquePtr<Decompressor> decomp = zip::Decompressor::Construct(decomp_alg);
+    UniquePtr<Decompressor> decomp;
+    decomp = zip::Decompressor::Construct(decomp_alg);
 
     const bool success = (decomp->DecompressStream(&in_path, &out_file)
                                                             == zip::kStreamEnd);
