@@ -279,16 +279,18 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
    * @param file_path    temporary file path to store the download result
    * @return             failure code (if not kFailOk, file_path is invalid)
    */
+#if 0
   Failures Fetch(const shash::Any &object_hash, std::string *file_path) {
     return static_cast<DerivedT*>(this)->Fetch(object_hash, file_path);
   }
+#endif
 
-  Failures Fetch(const std::string &relative_path,
-                 const bool         decompress,
-                 const bool         nocache,
-                       std::string *file_path) {
+  Failures Fetch(const std::string& relative_path,
+                 zip::DecompressionAlg decomp_alg,
+                 const bool nocache,
+                 std::string* file_path) {
     return static_cast<DerivedT*>(this)->Fetch(relative_path,
-                                               decompress,
+                                               decomp_alg,
                                                nocache,
                                                file_path);
   }
