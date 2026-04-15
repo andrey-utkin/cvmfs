@@ -385,9 +385,7 @@ class LocalObjectFetcher :
                      zip::Algorithm decomp_alg)
     : BaseTN(temp_dir)
     , base_path_(base_path) {
-    copy_ = zip::Decompressor::Construct(zip::kNoCompression);
-
-    decomp_ = zip::Decompressor::Construct(decomp_alg);
+    decomp_alg_ = decomp_alg;
   }
 
   using BaseTN::FetchManifest;  // un-hiding convenience overload
@@ -406,19 +404,22 @@ class LocalObjectFetcher :
     return "file://" + BuildPath(BuildRelativePath(hash));
   }
 
-  Failures Fetch(const shash::Any &object_hash, std::string *file_path) {
+  Failures Fetch(const shash::Any& object_hash, std::string* file_path) {
+    return Fetch(object_hash, file_path, decomp_alg_);
+  }
+
+  Failures Fetch(const shash::Any& object_hash, std::string* file_path,
+                 zip::DecompressionAlg decomp_alg) {
     assert(file_path != NULL);
     file_path->clear();
 
     const std::string relative_path = BuildRelativePath(object_hash);
-    const bool        decompress    = true;
     const bool        nocache       = false;
-    return Fetch(relative_path, decompress, nocache, file_path);
+    return Fetch(relative_path, decomp_alg, nocache, file_path);
   }
 
-
   Failures Fetch(const std::string &relative_path,
-                 const bool         decompress,
+                 zip::DecompressionAlg decomp_alg,
                  const bool         /* nocache */,
                        std::string *file_path) {
     assert(file_path != NULL);
@@ -446,13 +447,7 @@ class LocalObjectFetcher :
     // decompress or copy the requested object file
     zip::InputPath in_path(source);
     cvmfs::FileSink out_file(f, true);
-    zip::Decompressor *decomp;
-
-    if (decompress) {
-      decomp = decomp_.weak_ref();
-    } else {
-      decomp = copy_.weak_ref();
-    }
+    UniquePtr<Decompressor> zip::Decompressor::Construct(decomp_alg);
 
     const bool success = (decomp->DecompressStream(&in_path, &out_file)
                                                             == zip::kStreamEnd);
@@ -482,8 +477,7 @@ class LocalObjectFetcher :
 
  private:
   const std::string base_path_;
-  UniquePtr<zip::Decompressor> copy_;
-  UniquePtr<zip::Decompressor> decomp_;
+  zip::DecompressorAlg decomp_alg_;
 };
 
 template <class CatalogT, class HistoryT, class ReflogT>
