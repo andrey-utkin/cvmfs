@@ -55,7 +55,7 @@ CommandCheck::CommandCheck()
                             , is_remote_(false) {
   const shash::Any hash_null;
   duplicates_map_.Init(16, hash_null, hasher_any);
-  decomp_ = zip::Decompressor::Construct(zip::DecompressionAlgFromEnv());
+  //decomp_ = zip::Decompressor::Construct(zip::DecompressionAlgFromEnv());
   copy_ = zip::Compressor::Construct(zip::kNoCompression);
 }
 
@@ -700,8 +700,14 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
   const string dest = temp_directory_ + "/" + catalog_hash.ToString();
   zip::InputPath in_path(source);
   cvmfs::PathSink out_path(dest);
-  if (decomp_->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
-    assert(decomp_->Reset());
+
+  // TEMPORARY test of constructing GuessDecompressor without plugins stuff.
+  // ONLY since this code is used only for catalogs and history.
+  //zip::GuessDecompressor decomp(zip::DecompressionAlg::kGuessDecompressor);
+  zip::GuessDecompressor decomp;
+
+  if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
+    assert(decomp.Reset());
     return "";
   }
   return dest;

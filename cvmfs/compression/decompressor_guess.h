@@ -18,6 +18,8 @@ namespace zip {
 class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
+  explicit GuessDecompressor();
+  // TODO ctor param: expected uncompressed format - PEM, SQLite, JSON - to map to first character
 
     /**
    * Compression function.

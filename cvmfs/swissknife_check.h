@@ -104,7 +104,6 @@ class CommandCheck : public Command {
   bool        no_duplicates_map_;
   bool        is_remote_;
   SmallHashDynamic<shash::Any, char> duplicates_map_;
-  UniquePtr<zip::Decompressor> decomp_;
   UniquePtr<zip::Compressor> copy_;
 };
 

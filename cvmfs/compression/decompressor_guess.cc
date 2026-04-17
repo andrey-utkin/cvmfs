@@ -14,6 +14,12 @@ GuessDecompressor::GuessDecompressor(const zip::Algorithms& alg)
 {
 }
 
+GuessDecompressor::GuessDecompressor()
+    : Decompressor(zip::Algorithm::kGuessDecompressor),
+    backend_(NULL)
+{
+}
+
 bool GuessDecompressor::WillHandle(const zip::Algorithms &alg) {
   return alg == zip::Algorithm::kGuessDecompression;
 }
