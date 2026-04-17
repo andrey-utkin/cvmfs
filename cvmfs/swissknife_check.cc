@@ -737,8 +737,7 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
   // UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
 
   //UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor(zip::DecompressionAlg::kGuessDecompression);
-  UniquePtr<zip::GuessDecompressor> decomp;
-  decomp = new zip::GuessDecompressor();
+  UniquePtr<zip::GuessDecompressor> decomp(new zip::GuessDecompressor());
 
   if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp->Reset());
