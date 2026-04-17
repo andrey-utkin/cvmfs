@@ -28,6 +28,7 @@ class GuessDecompressor: public Decompressor {
   explicit GuessDecompressor(const Algorithms &alg);
   explicit GuessDecompressor(enum ExpectedContentFormat fmt);
   void SetExpectedFormat(enum ExpectedContentFormat fmt);
+  static char ExpectedFirstByte(enum ExpectedContentFormat fmt);
 
     /**
    * Compression function.

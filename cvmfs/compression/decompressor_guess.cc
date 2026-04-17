@@ -27,7 +27,7 @@ void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
   expected_fmt_ = fmt;
 }
 
-static char GuessDecompressor::ExpectedFirstByte(enum ExpectedFirstByte fmt)
+char GuessDecompressor::ExpectedFirstByte(enum ExpectedContentFormat fmt)
 {
   assert(fmt != kInvalid);
 #pragma GCC diagnostic push
