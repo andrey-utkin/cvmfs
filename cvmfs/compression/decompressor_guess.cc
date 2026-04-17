@@ -51,7 +51,7 @@ Decompressor* GuessDecompressor::Clone() {
   return new GuessDecompressor(zip::Algorithm::kGuessDecompression);
 }
 
-void GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
+bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
 {
   assert(!backend_);
   assert(expected_fmt_ != ExpectedContentFormat::kInvalid);
@@ -92,22 +92,28 @@ void GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
         alg_ = zip::Algorithm::kNoCompression;
         break;
       } else {
-        assert(false); // TODO return runtime failure
-        alg_ = zip::Algorithm::kDefault;
+        LogCvmfs(kLogCvmfs, kLogStderr, "Decompression autoconfiguration failed: expected format %d with first byte 0x%hhx, got 0x%hhx", expected_fmt_, expected_first_byte, first_byte);
+        assert(false);
+        return false;
       }
     }
     default: {
-      assert(false); // TODO return runtime failure
-      alg_ = zip::Algorithm::kDefault;
+      LogCvmfs(kLogCvmfs, kLogStderr, "Decompression autoconfiguration failed: expected format %d with first byte 0x%hhx, got 0x%hhx (doesn't match any expected compression or content format)", expected_fmt_, expected_first_byte, first_byte);
+      assert(false);
+      return false;
     }
   }
   backend_ = zip::Decompressor::Construct(alg_);
+  return true;
 }
 
 StreamStates GuessDecompressor::DecompressStream(InputAbstract* input,
                                                  cvmfs::Sink* output) {
   if (!backend_) {
-    Guess(input, output);
+    bool ok = Guess(input, output);
+    if (!ok) {
+      return kStreamDataError;
+    }
   }
 
   const zip::StreamStates ret = backend_->DecompressStream(input, output);

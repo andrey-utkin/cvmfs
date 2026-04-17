@@ -61,7 +61,8 @@ class GuessDecompressor: public Decompressor {
   zip::Algorithm alg_;
   ExpectedContentFormat expected_fmt_;
 
-  void Guess(InputAbstract* input, cvmfs::Sink* output);
+  // returns true on success, false otherwise
+  bool Guess(InputAbstract* input, cvmfs::Sink* output);
 };
 
 }  // namespace zip
