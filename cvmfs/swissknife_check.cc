@@ -706,12 +706,21 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
   // TEMPORARY test of constructing GuessDecompressor without plugins stuff.
   // ONLY since this code is used only for catalogs and history.
   //zip::GuessDecompressor decomp(zip::DecompressionAlg::kGuessDecompressor);
+#if 0
   zip::GuessDecompressor decomp;
 
   if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp.Reset());
     return "";
   }
+#else
+  zip::GuessDecompressor *decomp = new zip::GuessDecompressor();
+
+  if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
+    assert(decomp->Reset());
+    return "";
+  }
+#endif
   return dest;
 }
 
