@@ -27,7 +27,7 @@ class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
   explicit GuessDecompressor(enum ExpectedContentFormat fmt);
-  void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt);
+  void SetExpectedFormat(enum ExpectedContentFormat fmt);
 
     /**
    * Compression function.
