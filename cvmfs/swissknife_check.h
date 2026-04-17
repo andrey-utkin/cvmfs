@@ -78,7 +78,8 @@ class CommandCheck : public Command {
                               shash::Any* root_hash, uint64_t* root_size,
                               zip::DecompressionAlg decomp_alg);
 
-  std::string DecompressPiece(const shash::Any catalog_hash);
+  std::string DecompressPiece(const shash::Any catalog_hash,
+                              zip::ExpectedContentFormat expected_fmt);
   std::string DownloadPiece(const shash::Any catalog_hash,
                             zip::DecompressionAlg decomp_alg);
   std::string FetchPath(const std::string &path);

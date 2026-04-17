@@ -697,7 +697,7 @@ string CommandCheck::DownloadPiece(const shash::Any catalog_hash,
   return dest;
 }
 
-string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
+string CommandCheck::DecompressPiece(const shash::Any catalog_hash, zip::ExpectedContentFormat expected_fmt) {
   string source = "data/" + catalog_hash.MakePath();
   const string dest = temp_directory_ + "/" + catalog_hash.ToString();
   zip::InputPath in_path(source);
@@ -737,7 +737,7 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
   // UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
 
   //UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor(zip::DecompressionAlg::kGuessDecompression);
-  UniquePtr<zip::GuessDecompressor> decomp(new zip::GuessDecompressor());
+  UniquePtr<zip::GuessDecompressor> decomp(new zip::GuessDecompressor(expected_fmt));
 
   if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp->Reset());
@@ -753,7 +753,7 @@ catalog::Catalog* CommandCheck::FetchCatalog(const string& path,
                                              zip::DecompressionAlg decomp_alg) {
   string tmp_file;
   if (!is_remote_)
-    tmp_file = DecompressPiece(catalog_hash);
+    tmp_file = DecompressPiece(catalog_hash, zip::ExpectedContentFormat::kSQLite3);
   else
     tmp_file = DownloadPiece(catalog_hash, decomp_alg);
 
@@ -1084,7 +1084,7 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
   if (!manifest->meta_info().IsNull()) {
     string tmp_file;
     if (!is_remote_)
-      tmp_file = DecompressPiece(manifest->meta_info());
+      tmp_file = DecompressPiece(manifest->meta_info(), zip::ExpectedContentFormat::kJSON);
     else
       tmp_file = DownloadPiece(manifest->meta_info(), decomp_alg);
     if (tmp_file == "") {
@@ -1135,7 +1135,7 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
   if (!manifest->history().IsNull()) {
     string tmp_file;
     if (!is_remote_)
-      tmp_file = DecompressPiece(manifest->history());
+      tmp_file = DecompressPiece(manifest->history(), zip::ExpectedContentFormat::kSQLite3);
     else
       tmp_file = DownloadPiece(manifest->history(), decomp_alg);
     if (tmp_file == "") {
