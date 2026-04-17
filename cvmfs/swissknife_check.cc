@@ -705,7 +705,7 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
 
   // TEMPORARY test of constructing GuessDecompressor without plugins stuff.
   // ONLY since this code is used only for catalogs and history.
-  //zip::GuessDecompressor decomp(zip::DecompressionAlg::kGuessDecompressor);
+  //zip::GuessDecompressor decomp(zip::DecompressionAlg::kGuessDecompression);
 #if 0
   zip::GuessDecompressor decomp;
 
@@ -736,7 +736,7 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
   //         |                   ^
   // UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
 
-  UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor(zip::DecompressionAlg::kGuessDecompressor);
+  UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor(zip::DecompressionAlg::kGuessDecompression);
 
   if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp->Reset());
