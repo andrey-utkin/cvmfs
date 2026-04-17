@@ -11,6 +11,7 @@
 #include "catalog.h"
 #include "compression/compressor.h"
 #include "compression/decompressor.h"
+#include "compression/decompressor_guess.h"
 #include "crypto/hash.h"
 #include "smallhash.h"
 #include "swissknife.h"
