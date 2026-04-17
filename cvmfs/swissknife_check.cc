@@ -22,6 +22,7 @@
 #include "catalog_sql.h"
 #include "compression/input_file.h"
 #include "compression/input_path.h"
+#include "compression/util.h"
 #include "compression/decompressor_guess.h"
 #include "file_chunk.h"
 #include "history_sqlite.h"
