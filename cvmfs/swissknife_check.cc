@@ -724,23 +724,20 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash, zip::Expecte
   }
 #endif
 
-#if 1
-  //   /usr/local/src/cvmfs/cvmfs/swissknife_check.cc:728:37: error: no viable conversion from 'zip::GuessDecompressor *' to 'UniquePtr<zip::GuessDecompressor>'
-  //     728 |   UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
-  //         |                                     ^        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //   /usr/local/src/cvmfs/cvmfs/util/pointer.h:56:7: note: candidate constructor (the implicit copy constructor) not viable: no known conversion from 'zip::GuessDecompressor *' to 'const UniquePtr<zip::GuessDecompressor> &' for 1st argument
-  //      56 | class UniquePtr : public UniquePtrBase<T, UniquePtr<T> > {
-  //         |       ^~~~~~~~~
-  //   /usr/local/src/cvmfs/cvmfs/util/pointer.h:64:19: note: explicit constructor is not a candidate
-  //      64 |   inline explicit UniquePtr(T *ref) : BaseT(ref) { }
-  //         |                   ^
-  // UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
-
-  //UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor(zip::DecompressionAlg::kGuessDecompression);
+#if 0
   UniquePtr<zip::GuessDecompressor> decomp(new zip::GuessDecompressor(expected_fmt));
 
   if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp->Reset());
+    return "";
+  }
+#endif
+
+#if 1
+  zip::GuessDecompressor decomp(expected_fmt);
+
+  if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
+    assert(decomp.Reset());
     return "";
   }
 #endif
