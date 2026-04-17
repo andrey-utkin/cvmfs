@@ -80,10 +80,10 @@ void GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
 #endif
   const char clear = ExpectedFirstByte(expected_fmt_);
   switch (data[0]) {
-    case 0x78: alg = zip::Algorithm::kZlib; break;
-    case 0x28: alg = zip::Algorithm::kZstd; break;
-    case clear: alg = zip::Algorithm::kNoCompression; break;
-    default: assert(false); alg = zip::Algorithm::kNoCompression;
+    case 0x78: alg_ = zip::Algorithm::kZlib; break;
+    case 0x28: alg_ = zip::Algorithm::kZstd; break;
+    case clear: alg_ = zip::Algorithm::kNoCompression; break;
+    default: assert(false); alg_ = zip::Algorithm::kDefault;
   }
   backend_ = zip::Decompressor::Construct(alg_);
 }
