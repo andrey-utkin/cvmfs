@@ -713,8 +713,19 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash) {
     assert(decomp.Reset());
     return "";
   }
-#else
+#endif
+
+#if 0
   zip::GuessDecompressor *decomp = new zip::GuessDecompressor();
+
+  if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
+    assert(decomp->Reset());
+    return "";
+  }
+#endif
+
+#if 1
+  UniquePtr<zip::GuessDecompressor> decomp = new zip::GuessDecompressor();
 
   if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp->Reset());
