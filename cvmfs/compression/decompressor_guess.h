@@ -11,6 +11,14 @@
 
 namespace zip {
 
+enum ExpectedContentFormat {
+  kInvalid = 0,
+  kManifest,
+  kPEM,
+  kJSON,
+  kSQLite3,
+};
+
 /**
  * GuessDecompressor is a decompressor that tries to guess and use the right actual decompressor,
  * by analysing the first bytes and/or by trying to decompress successfully.
@@ -18,8 +26,8 @@ namespace zip {
 class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
-  explicit GuessDecompressor();
-  // TODO ctor param: expected uncompressed format - PEM, SQLite, JSON - to map to first character
+  explicit GuessDecompressor(enum ExpectedContentFormat fmt);
+  void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
 
     /**
    * Compression function.
@@ -50,6 +58,7 @@ class GuessDecompressor: public Decompressor {
  private:
   Decompressor *backend_;
   zip::Algorithm alg_;
+  ExpectedContentFormat expected_fmt_;
 
   void Guess(InputAbstract* input, cvmfs::Sink* output);
 };
