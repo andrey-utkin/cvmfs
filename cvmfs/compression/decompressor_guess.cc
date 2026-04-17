@@ -30,17 +30,16 @@ void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
 static char GuessDecompressor::ExpectedFirstByte(enum ExpectedFirstByte fmt)
 {
   assert(fmt != kInvalid);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wswitch"
   switch (fmt) {
     case kManifest: return 'C';
     case kPEM:      return '-';
     case kJSON:     return '{';
     case kSQLite3:  return 'S';
-    case kInvalid:
-    default: {
-      assert(false);
-      return '\0';
-    }
+    case kInvalid:  return '\0';
   }
+#pragma GCC diagnostic pop
 }
 
 bool GuessDecompressor::WillHandle(const zip::Algorithms &alg) {
