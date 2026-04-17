@@ -15,7 +15,7 @@ GuessDecompressor::GuessDecompressor(const zip::Algorithms& alg)
 }
 
 GuessDecompressor::GuessDecompressor()
-    : Decompressor(zip::Algorithm::kGuessDecompressor),
+    : Decompressor(zip::Algorithm::kGuessDecompression),
     backend_(NULL)
 {
 }
