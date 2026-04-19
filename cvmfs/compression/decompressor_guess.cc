@@ -5,6 +5,9 @@
 #include <cstring>
 
 #include "decompressor_guess.h"
+#include "decompressor_zlib.h"
+#include "decompressor_zstd.h"
+#include "decompressor_echo.h"
 
 namespace zip {
 
