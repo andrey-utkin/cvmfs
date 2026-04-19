@@ -27,6 +27,7 @@ class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
   explicit GuessDecompressor(enum ExpectedContentFormat fmt);
+  ~GuessDecompressor();
   void SetExpectedFormat(enum ExpectedContentFormat fmt);
   static char ExpectedFirstByte(enum ExpectedContentFormat fmt);
 
