@@ -22,6 +22,11 @@ GuessDecompressor::GuessDecompressor(enum ExpectedContentFormat fmt)
 {
 }
 
+GuessDecompressor::~GuessDecompressor()
+{
+  delete backend_;
+}
+
 void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
 {
   expected_fmt_ = fmt;
@@ -61,28 +66,25 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
   const unsigned char * const data = input->chunk();
   const size_t data_len = input->chunk_size();
 
-  // What CVMFS tends to create. See with:
-  // for x in /srv/cvmfs/*/data/*/*; do file $x; xxd $x | head -n1; done
+  /* These are some reliable longer signatures of compression methods
+   * implemented in CVMFS, for potential future use:
   const unsigned char zlib_sig[2] = {0x78, 0x9c};
   const unsigned char zstd_sig[4] = {0x28, 0xb5, 0x2f, 0xfd};
+  */
 
-  // TODO test that decompression is successful.
-  // What if it's just such a file, in a repo having compression disabled?
-  // But that's not the default configuration so less important.
-#if 0
-  if (data_len >= sizeof(zlib_sig) && !memcmp(data, zlib_sig, sizeof(zlib_sig))) {
-    alg_ = zip::Algorithm::kZlib;
-  } else if (data_len >= sizeof(zstd_sig) && !memcmp(data, zstd_sig, sizeof(zstd_sig))) {
-    alg_ = zip::Algorithm::kZstd;
-  } else {
-    alg_ = zip::Algorithm::kNoCompression;
-  }
-#endif
   const char expected_first_byte = ExpectedFirstByte(expected_fmt_);
   const char first_byte = data[0];
   switch (first_byte) {
-    case 0x78: alg_ = zip::Algorithm::kZlib; break;
-    case 0x28: alg_ = zip::Algorithm::kZstd; break;
+    case 0x78: {
+      alg_ = zip::Algorithm::kZlib;
+      backend_ = new zip::ZlibDecompressor(alg_);
+      break;
+    }
+    case 0x28: {
+      alg_ = zip::Algorithm::kZstd;
+      backend_ = new zip::ZstdDecompressor(alg_);
+      break;
+    }
     case 'C':
     case '-':
     case '{':
@@ -90,6 +92,7 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
     {
       if (first_byte == expected_first_byte) {
         alg_ = zip::Algorithm::kNoCompression;
+        backend_ = new zip::EchoDecompressor(alg_);
         break;
       } else {
         LogCvmfs(kLogCvmfs, kLogStderr, "Decompression autoconfiguration failed: expected format %d with first byte 0x%hhx, got 0x%hhx", expected_fmt_, expected_first_byte, first_byte);
@@ -103,7 +106,6 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
       return false;
     }
   }
-  backend_ = zip::Decompressor::Construct(alg_);
   return true;
 }
 
