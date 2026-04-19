@@ -69,20 +69,16 @@ class CommandCheck : public Command {
                    const uint64_t                   catalog_size,
                    const bool                       is_nested_catalog,
                    const catalog::DirectoryEntry  *transition_point,
-                   catalog::DeltaCounters         *computed_counters,
-                   zip::DecompressionAlg decomp_alg);
+                   catalog::DeltaCounters         *computed_counters);
   catalog::Catalog* FetchCatalog(const std::string& path,
                                  const shash::Any& catalog_hash,
-                                 const uint64_t catalog_size,
-                                 zip::DecompressionAlg decomp_alg);
+                                 const uint64_t catalog_size);
   bool FindSubtreeRootCatalog(const std::string& subtree_path,
-                              shash::Any* root_hash, uint64_t* root_size,
-                              zip::DecompressionAlg decomp_alg);
+                              shash::Any* root_hash, uint64_t* root_size);
 
   std::string DecompressPiece(const shash::Any catalog_hash,
                               zip::ExpectedContentFormat expected_fmt);
-  std::string DownloadPiece(const shash::Any catalog_hash,
-                            zip::DecompressionAlg decomp_alg);
+
   std::string FetchPath(const std::string &path);
   bool InspectReflog(const shash::Any &reflog_hash,
                      manifest::Manifest *manifest);
