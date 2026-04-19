@@ -703,44 +703,12 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash, zip::Expecte
   zip::InputPath in_path(source);
   cvmfs::PathSink out_path(dest);
 
-  // TEMPORARY test of constructing GuessDecompressor without plugins stuff.
-  // ONLY since this code is used only for catalogs and history.
-  //zip::GuessDecompressor decomp(zip::DecompressionAlg::kGuessDecompression);
-#if 0
-  zip::GuessDecompressor decomp;
-
-  if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
-    assert(decomp.Reset());
-    return "";
-  }
-#endif
-
-#if 0
-  zip::GuessDecompressor *decomp = new zip::GuessDecompressor();
-
-  if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
-    assert(decomp->Reset());
-    return "";
-  }
-#endif
-
-#if 0
-  UniquePtr<zip::GuessDecompressor> decomp(new zip::GuessDecompressor(expected_fmt));
-
-  if (decomp->DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
-    assert(decomp->Reset());
-    return "";
-  }
-#endif
-
-#if 1
   zip::GuessDecompressor decomp(expected_fmt);
 
   if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
     assert(decomp.Reset());
     return "";
   }
-#endif
   return dest;
 }
 
