@@ -373,7 +373,7 @@ history::History *CommandTag::GetHistory(const manifest::Manifest *manifest,
   } else {
     // History is SQLite database so compression format is reliably guessable.
     // In future, we might have explicit metadata for decomp_alg
-    UniquePtr <zip::Decompression> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
+    UniquePtr<zip::Decompressor> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
 
     if (!FetchObject(repository_url, history_hash, history_path, decomp)) {
       return NULL;
@@ -402,7 +402,7 @@ catalog::Catalog *CommandTag::GetCatalog(const std::string &repository_url,
 
   // Catalogs are SQLite databases so compression format is reliably guessable.
   // In future, we might have explicit metadata for decomp_alg
-  UniquePtr <zip::Decompression> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
+  UniquePtr<zip::Decompressor> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
 
   if (!FetchObject(repository_url, catalog_hash, catalog_path, decomp)) {
     return NULL;
