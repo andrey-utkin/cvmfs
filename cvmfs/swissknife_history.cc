@@ -335,7 +335,7 @@ bool CommandTag::UpdateUndoTags(
 bool CommandTag::FetchObject(const std::string& repository_url,
                              const shash::Any& object_hash,
                              const std::string& destination_path,
-                             zip::Decompressor decomp) const {
+                             zip::Decompressor* decomp) const {
   assert(!object_hash.IsNull());
 
   download::Failures dl_retval;
@@ -402,7 +402,7 @@ catalog::Catalog *CommandTag::GetCatalog(const std::string &repository_url,
 
   // Catalogs are SQLite databases so compression format is reliably guessable.
   // In future, we might have explicit metadata for decomp_alg
-  zip::Decompressor decomp = new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3);
+  zip::Decompressor *decomp = new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3);
 
   if (!FetchObject(repository_url, catalog_hash, catalog_path, decomp)) {
     return NULL;
