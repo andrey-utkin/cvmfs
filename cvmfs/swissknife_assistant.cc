@@ -103,7 +103,7 @@ history::History *Assistant::GetHistory(OpenMode open_mode) {
 }
 
 bool Assistant::FetchObject(const shash::Any& id, const string& local_path,
-                            zip::Decompressor decomp) {
+                            zip::Decompressor* decomp) {
   assert(!id.IsNull());
 
   download::Failures dl_retval;
