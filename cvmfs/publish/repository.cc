@@ -11,6 +11,7 @@
 
 #include "catalog_mgr_ro.h"
 #include "catalog_mgr_rw.h"
+#include "compression/decompressor_guess.h"
 #include "crypto/hash.h"
 #include "crypto/signature.h"
 #include "gateway_util.h"
