@@ -12,10 +12,17 @@ namespace download {
 
 atomic_int64 JobInfo::next_uuid = 0;
 
+JobInfo::JobInfo()
+{
+  Init();
+  SetDecompressor(zip::Algorithm::kNoCompression);
+}
+
 JobInfo::JobInfo(const std::string *u, zip::DecompressionAlg decompressor_alg, const bool ph,
          const shash::Any *h, cvmfs::Sink *s)
 {
-  Init(decompressor_alg);
+  Init();
+  SetDecompressor(decompressor_alg);
 
   url_ = u;
   probe_hosts_ = ph;
@@ -24,9 +31,15 @@ JobInfo::JobInfo(const std::string *u, zip::DecompressionAlg decompressor_alg, c
   sink_ = s;
 }
 
+JobInfo(const std::string* u, UniquePtr<zip::Decompressor> decomp,
+        const bool ph, const shash::Any* h, cvmfs::Sink* s)
+{
+}
+
 JobInfo::JobInfo(const std::string *u, const bool ph)
 {
-  Init(zip::kNoCompression);
+  Init();
+  SetDecompressor(zip::kNoCompression);
 
   url_ = u;
   probe_hosts_ = ph;
@@ -44,8 +57,19 @@ bool JobInfo::IsFileNotFound() {
 }
 
 void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
-  decompressor_alg_ = decompressor_alg;
   decomp_ = zip::Decompressor::Construct(decompressor_alg);
+}
+
+void JobInfo::SetDecompressor(UniquePtr<zip::Decompressor> decomp) {
+  decomp_ = decomp;
+}
+
+void JobInfo::SetDecompressor(const Label &label) {
+  if (label.zip_algorithm == zip::Algorithm::kGuessDecompression) {
+    decomp_ = new GuessDecompressor(label);
+  } else {
+    SetDecompressor(label.zip_algorithm(label.zip_algorithm);
+  }
 }
 
 bool JobInfo::ResetDecompression() {
@@ -88,7 +112,7 @@ bool JobInfo::DecompressToSink(zip::InputAbstract *in) {
   return false;
 }
 
-void JobInfo::Init(zip::Algorithm decompressor_alg) {
+void JobInfo::Init() {
   id_ = atomic_xadd64(&next_uuid, 1);
   pipe_job_results = NULL;
   url_ = NULL;
@@ -124,8 +148,6 @@ void JobInfo::Init(zip::Algorithm decompressor_alg) {
   current_host_chain_index_ = 0;
 
   allow_failure_ = false;
-
-  SetDecompressor(decompressor_alg);
 }
 
 }  // namespace download

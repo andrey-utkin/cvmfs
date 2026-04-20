@@ -8,11 +8,13 @@
 #include <string>
 
 #include "decompressor.h"
+#include "cache.h"
 
 namespace zip {
 
 enum ExpectedContentFormat {
   kInvalid = 0,
+  kArbitrary,
   kManifest,
   kPEM,
   kJSON,
@@ -27,6 +29,7 @@ class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
   explicit GuessDecompressor(enum ExpectedContentFormat fmt);
+  explicit GuessDecompressor(const Label &label);
   ~GuessDecompressor();
   void SetExpectedFormat(enum ExpectedContentFormat fmt);
   static char ExpectedFirstByte(enum ExpectedContentFormat fmt);

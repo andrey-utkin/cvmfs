@@ -84,7 +84,6 @@ class JobInfo {
   const std::string *extra_info_;
 
   // decompression
-  zip::Algorithm decompressor_alg_;  // ONLY change using SetDecompressor()
   cvmfs::Sink *sink_;
   UniquePtr<zip::Decompressor> decomp_;
 
@@ -115,7 +114,7 @@ class JobInfo {
 
   // TODO(heretherebedragons) c++11 allows to delegate constructors (N1986)
   // Replace Init() with JobInfo() that is called by the other constructors
-  void Init(zip::Algorithm decompressor_alg);
+  void Init();
 
  public:
   /**
@@ -126,7 +125,9 @@ class JobInfo {
           const shash::Any *h, cvmfs::Sink *s);
 #endif
 
-  JobInfo(const std::string *u, zip::Algorithm compression, const bool ph,
+  JobInfo(const std::string *u, zip::DecompressionAlg decompressor_alg, const bool ph,
+          const shash::Any *h, cvmfs::Sink *s);
+  JobInfo(const std::string *u, UniquePtr<zip::Decompressor> decomp, const bool ph,
           const shash::Any *h, cvmfs::Sink *s);
 
   /**
@@ -230,6 +231,8 @@ class JobInfo {
 
   void SetUrl(const std::string *url) { url_ = url; }
   void SetDecompressor(zip::Algorithm decompressor_alg);
+  void SetDecompressor(UniquePtr<zip::Decompressor> decomp);
+  void SetDecompressor(const Label &label);
   void SetProbeHosts(bool probe_hosts) { probe_hosts_ = probe_hosts; }
   void SetHeadRequest(bool head_request) { head_request_ = head_request; }
   void SetFollowRedirects(bool follow_redirects)
@@ -278,7 +281,7 @@ class JobInfo {
   void SetAllowFailure(bool allow_failure) { allow_failure_ = allow_failure; }
 
   // needed for fetch.h ThreadLocalStorage
-  JobInfo() { Init(zip::Algorithm::kNoCompression); }
+  JobInfo();
 };  // JobInfo
 
 }  // namespace download

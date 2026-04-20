@@ -272,8 +272,9 @@ int swissknife::CommandInfo::Main(const swissknife::ArgumentList &args) {
     }
     const string url = repository + "/data/" + meta_info.MakePath();
     cvmfs::MemSink metainfo_memsink;
-    download::JobInfo download_metainfo(&url, decomp_alg, false, &meta_info,
-                                        &metainfo_memsink);
+    download::JobInfo download_metainfo(
+        &url, new zip::GuessDecompressor(zip::ExpectedContentFormat::kJSON),
+        false, &meta_info, &metainfo_memsink);
     download::Failures retval = download_manager()->Fetch(&download_metainfo);
     if (retval != download::kFailOk) {
       if (human_readable)

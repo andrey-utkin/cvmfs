@@ -30,6 +30,25 @@ GuessDecompressor::~GuessDecompressor()
   delete backend_;
 }
 
+GuessDecompressor::GuessDecompressor(const Label &label)
+    : Decompressor(zip::Algorithm::kGuessDecompression)
+    , backend_(NULL)
+{
+  if (label.flags & (CacheManager::kLabelCatalog | CacheManager::kLabelHistory)) {
+    SetExpectedFormat(kSQLite3);
+    return;
+  }
+  if (label.flags & CacheManager::kLabelCertificate) {
+    SetExpectedFormat(kPEM);
+    return;
+  }
+  if (label.flags & CacheManager::kLabelMetainfo) {
+    SetExpectedFormat(kJSON);
+    return;
+  }
+  AssertOrLog(false, kLogCvmfs, kLogSyslogWarn | kLogDebug, "No object label flags indicating specific content format to enable decompressor autoconfiguration.");
+}
+
 void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
 {
   expected_fmt_ = fmt;
@@ -56,7 +75,9 @@ bool GuessDecompressor::WillHandle(const zip::Algorithms &alg) {
 
 
 Decompressor* GuessDecompressor::Clone() {
-  return new GuessDecompressor(zip::Algorithm::kGuessDecompression);
+  Decompressor *n = new GuessDecompressor(zip::Algorithm::kGuessDecompression);
+  n->SetExpectedFormat(expected_fmt_);
+  return n;
 }
 
 bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)

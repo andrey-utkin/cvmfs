@@ -11,6 +11,7 @@
 
 #include "catalog.h"
 #include "compression/decompressor.h"
+#include "compression/decompressor_guess.h"
 #include "compression/input_file.h"
 #include "compression/input_path.h"
 #include "crypto/signature.h"
@@ -130,20 +131,11 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     assert(history_hash.suffix == shash::kSuffixHistory ||
            history_hash.IsNull());
 
-    // History is a SQLite database, has clear signature at the beginning and
-    // so decompression algorithm can be reliably guessed among zlib, zstd and
-    // none.
-    // But in future we may have explicit metafata for that.
-    zip::DecompressionAlg decomp_alg;
-#ifdef CVMFS_GUESS_DECOMPRESSOR
-    decomp_alg = zip::DecompressionAlg::kGuessDecompression;
-#else
-    decomp_alg = zip::DecompressionAlgFromEnv();
-#endif
-
     // download the history hash
     std::string path;
-    const Failures retval = Fetch(effective_history_hash, &path, decomp_alg);
+    const Failures retval =
+        Fetch(effective_history_hash, &path,
+              new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
     if (retval != kFailOk) {
       return retval;
     }
@@ -179,18 +171,9 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
 
     std::string path;
 
-    // Catalog is a SQLite database, has clear signature at the beginning and
-    // so decompression algorithm can be reliably guessed among zlib, zstd and
-    // none.
-    // But in future we may have explicit metafata for that.
-    zip::DecompressionAlg decomp_alg;
-#ifdef CVMFS_GUESS_DECOMPRESSOR
-    decomp_alg = zip::DecompressionAlg::kGuessDecompression;
-#else
-    decomp_alg = zip::DecompressionAlgFromEnv();
-#endif
-
-    const Failures retval = Fetch(catalog_hash, &path, decomp_alg);
+    const Failures retval =
+        Fetch(catalog_hash, &path,
+              new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
     if (retval != kFailOk) {
       return retval;
     }
@@ -324,6 +307,20 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
                                                file_path);
   }
 
+  Failures Fetch(const shash::Any& object_hash, std::string* file_path,
+                 UniquePtr<zip::Decompressor> decomp) {
+    return static_cast<DerivedT*>(this)->Fetch(object_hash, file_path, decomp);
+  }
+
+  Failures Fetch(const std::string& relative_path,
+                 UniquePtr<zip::Decompressor> decomp, const bool nocache,
+                 std::string* file_path) {
+    return static_cast<DerivedT*>(this)->Fetch(relative_path,
+                                               decomp,
+                                               nocache,
+                                               file_path);
+  }
+
   /**
    * Retrieves the history content hash of the HEAD history database from the
    * repository's manifest
@@ -380,13 +377,22 @@ class LocalObjectFetcher :
    * @param base_path  the path to the repository's backend storage
    * @param temp_dir   location to store decompressed tmp data
    */
+  [[deprecated("Pass zip::Decompressor object instead")]]
   LocalObjectFetcher(const std::string &base_path,
                      const std::string &temp_dir,
                      zip::Algorithm decomp_alg)
     : BaseTN(temp_dir)
     , base_path_(base_path) {
-    decomp_alg_ = decomp_alg;
+    decomp_ = zip::Decompressor::Construct(decomp_alg);
   }
+
+  LocalObjectFetcher(const std::string &base_path,
+                     const std::string &temp_dir,
+                     UniquePtr<zip::Decompressor> decomp)
+    : BaseTN(temp_dir)
+    , base_path_(base_path)
+    , decomp_(decomp)
+  { }
 
   using BaseTN::FetchManifest;  // un-hiding convenience overload
   Failures FetchManifest(manifest::Manifest** manifest) {
@@ -405,7 +411,7 @@ class LocalObjectFetcher :
   }
 
   Failures Fetch(const shash::Any& object_hash, std::string* file_path) {
-    return Fetch(object_hash, file_path, decomp_alg_);
+    return Fetch(object_hash, file_path, decomp_);
   }
 
   Failures Fetch(const shash::Any& object_hash, std::string* file_path,
@@ -478,7 +484,7 @@ class LocalObjectFetcher :
 
  private:
   const std::string base_path_;
-  zip::DecompressionAlg decomp_alg_;
+  UniquePtr <zip::Decompressor> decomp_;
 };
 
 template <class CatalogT, class HistoryT, class ReflogT>
@@ -524,14 +530,12 @@ class HttpObjectFetcher :
                     const std::string           &repo_url,
                     const std::string           &temp_dir,
                     download::DownloadManager   *download_mgr,
-                    signature::SignatureManager *signature_mgr,
-                    zip::Algorithm              decomp_alg)
+                    signature::SignatureManager *signature_mgr)
     : BaseTN(temp_dir)
     , repo_url_(repo_url)
     , repo_name_(repo_name)
     , download_manager_(download_mgr)
     , signature_manager_(signature_mgr)
-    , decomp_alg_(decomp_alg)
   {}
 
  public:
@@ -709,7 +713,6 @@ class HttpObjectFetcher :
   const std::string            repo_name_;
   download::DownloadManager   *download_manager_;
   signature::SignatureManager *signature_manager_;
-  zip::Algorithm              decomp_alg_;
 };
 
 template <class CatalogT, class HistoryT, class ReflogT>
