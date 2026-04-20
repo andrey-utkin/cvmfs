@@ -423,10 +423,16 @@ class LocalObjectFetcher :
     return Fetch(relative_path, decomp_alg, nocache, file_path);
   }
 
-  Failures Fetch(const std::string &relative_path,
-                 zip::DecompressionAlg decomp_alg,
-                 const bool         /* nocache */,
-                       std::string *file_path) {
+  Failures Fetch(const std::string& relative_path,
+                 zip::DecompressionAlg decomp_alg, const bool nocache,
+                 std::string* file_path) {
+    UniquePtr<zip::Decompressor> decomp(
+        zip::Decompressor::Construct(decomp_alg));
+    return Fetch(relative_path, decomp, nocache, file_path);
+  }
+
+  Failures Fetch(const std::string& relative_path, zip::Decompressor* decomp,
+                 const bool /* nocache */, std::string* file_path) {
     assert(file_path != NULL);
     file_path->clear();
 
@@ -452,8 +458,6 @@ class LocalObjectFetcher :
     // decompress or copy the requested object file
     zip::InputPath in_path(source);
     cvmfs::FileSink out_file(f, true);
-    UniquePtr<zip::Decompressor> decomp;
-    decomp = zip::Decompressor::Construct(decomp_alg);
 
     const bool success = (decomp->DecompressStream(&in_path, &out_file)
                                                             == zip::kStreamEnd);
