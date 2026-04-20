@@ -855,6 +855,12 @@ class MockObjectFetcher : public AbstractObjectFetcher<MockObjectFetcher> {
                  const bool         nocache,
                        std::string *file_path,
                        zip::DecompressionAlg decomp_alg = zip::DecompressionAlg::kDefault);
+  Failures Fetch(const shash::Any &object_hash, std::string *file_path, zip::Decompressor* decomp);
+  Failures Fetch(const std::string &relative_path,
+                 const bool         decompress,
+                 const bool         nocache,
+                       std::string *file_path,
+                       zip::Decompressor* decomp);
 
  private:
   bool ObjectExists(const shash::Any &object_hash) const;
