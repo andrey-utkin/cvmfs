@@ -308,13 +308,12 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
   }
 
   Failures Fetch(const shash::Any& object_hash, std::string* file_path,
-                 UniquePtr<zip::Decompressor> decomp) {
+                 zip::Decompressor* decomp) {
     return static_cast<DerivedT*>(this)->Fetch(object_hash, file_path, decomp);
   }
 
-  Failures Fetch(const std::string& relative_path,
-                 UniquePtr<zip::Decompressor> decomp, const bool nocache,
-                 std::string* file_path) {
+  Failures Fetch(const std::string& relative_path, zip::Decompressor* decomp,
+                 const bool nocache, std::string* file_path) {
     return static_cast<DerivedT*>(this)->Fetch(relative_path,
                                                decomp,
                                                nocache,
@@ -388,7 +387,7 @@ class LocalObjectFetcher :
 
   LocalObjectFetcher(const std::string &base_path,
                      const std::string &temp_dir,
-                     UniquePtr<zip::Decompressor> decomp)
+                     zip::Decompressor* decomp)
     : BaseTN(temp_dir)
     , base_path_(base_path)
     , decomp_(decomp)
