@@ -161,8 +161,7 @@ void Repository::DownloadRootObjects(
   cvmfs::FileSink filesink(reflog_fd);
   download::JobInfo download_reflog(
       &reflog_url,
-      UniquePtr<zip::Decompressor>(
-          new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3)),
+      new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3),
       false /* probe hosts */, NULL, &filesink);
   download::Failures rv_dl = download_mgr_->Fetch(&download_reflog);
   fclose(reflog_fd);
@@ -188,8 +187,7 @@ void Repository::DownloadRootObjects(
     cvmfs::FileSink filesink(tags_fd);
     download::JobInfo download_tags(
         &tags_url,
-        UniquePtr<zip::Decompressor>(
-            new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3)),
+        new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3),
         true /* probe hosts */, &tags_hash, &filesink);
     rv_dl = download_mgr_->Fetch(&download_tags);
     fclose(tags_fd);
@@ -211,8 +209,7 @@ void Repository::DownloadRootObjects(
     cvmfs::MemSink metainfo_memsink;
     download::JobInfo download_info(
         &info_url,
-        UniquePtr<zip::Decompressor>(
-            new zip::GuessDecompressor(zip::ExpectedContentFormat::kJSON)),
+        new zip::GuessDecompressor(zip::ExpectedContentFormat::kJSON),
         true /* probe_hosts */, &info_hash, &metainfo_memsink);
     download::Failures rv_info = download_mgr_->Fetch(&download_info);
     if (rv_info != download::kFailOk) {

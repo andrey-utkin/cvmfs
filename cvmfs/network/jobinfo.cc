@@ -32,9 +32,17 @@ JobInfo::JobInfo(const std::string *u, zip::DecompressionAlg decompressor_alg, c
   sink_ = s;
 }
 
-JobInfo(const std::string* u, UniquePtr<zip::Decompressor> decomp,
-        const bool ph, const shash::Any* h, cvmfs::Sink* s)
+JobInfo::JobInfo(const std::string* u, zip::Decompressor* decomp, const bool ph,
+                 const shash::Any* h, cvmfs::Sink* s)
 {
+  Init();
+  SetDecompressor(decomp);
+
+  url_ = u;
+  probe_hosts_ = ph;
+  head_request_ = false;
+  expected_hash_ = h;
+  sink_ = s;
 }
 
 JobInfo::JobInfo(const std::string *u, const bool ph)
@@ -61,7 +69,7 @@ void JobInfo::SetDecompressor(zip::Algorithm decompressor_alg) {
   decomp_ = zip::Decompressor::Construct(decompressor_alg);
 }
 
-void JobInfo::SetDecompressor(UniquePtr<zip::Decompressor> decomp) {
+void JobInfo::SetDecompressor(zip::Decompressor* decomp) {
   decomp_ = decomp;
 }
 
@@ -69,7 +77,7 @@ void JobInfo::SetDecompressor(const CacheManager::Label &label) {
   if (label.zip_algorithm == zip::Algorithm::kGuessDecompression) {
     decomp_ = new GuessDecompressor(label);
   } else {
-    SetDecompressor(label.zip_algorithm(label.zip_algorithm);
+    SetDecompressor(label.zip_algorithm);
   }
 }
 

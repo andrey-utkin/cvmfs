@@ -332,10 +332,10 @@ bool CommandTag::UpdateUndoTags(
   return true;
 }
 
-bool CommandTag::FetchObject(const std::string &repository_url,
-                             const shash::Any &object_hash,
-                             const std::string &destination_path,
-                             UniquePtr<zip::Decompressor> decomp) const {
+bool CommandTag::FetchObject(const std::string& repository_url,
+                             const shash::Any& object_hash,
+                             const std::string& destination_path,
+                             zip::Decompressor decomp) const {
   assert(!object_hash.IsNull());
 
   download::Failures dl_retval;
@@ -373,7 +373,7 @@ history::History *CommandTag::GetHistory(const manifest::Manifest *manifest,
   } else {
     // History is SQLite database so compression format is reliably guessable.
     // In future, we might have explicit metadata for decomp_alg
-    UniquePtr<zip::Decompressor> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
+    zip::Decompressor *decomp = new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3);
 
     if (!FetchObject(repository_url, history_hash, history_path, decomp)) {
       return NULL;
@@ -402,7 +402,7 @@ catalog::Catalog *CommandTag::GetCatalog(const std::string &repository_url,
 
   // Catalogs are SQLite databases so compression format is reliably guessable.
   // In future, we might have explicit metadata for decomp_alg
-  UniquePtr<zip::Decompressor> decomp(new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
+  zip::Decompressor decomp = new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3);
 
   if (!FetchObject(repository_url, catalog_hash, catalog_path, decomp)) {
     return NULL;
