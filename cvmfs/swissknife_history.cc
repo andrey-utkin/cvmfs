@@ -10,6 +10,7 @@
 #include <ctime>
 
 #include "catalog_rw.h"
+#include "compression/decompressor_guess.h"
 #include "crypto/hash.h"
 #include "crypto/signature.h"
 #include "manifest_fetch.h"
