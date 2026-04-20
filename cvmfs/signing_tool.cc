@@ -59,10 +59,9 @@ SigningTool::Result SigningTool::Run(
   }
 
   // init the download helper for reflog
-  ObjectFetcher object_fetcher(
-      repo_name, repo_url, temp_dir, server_tool_->download_manager(),
-      server_tool_->signature_manager(),
-      new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3));
+  ObjectFetcher object_fetcher(repo_name, repo_url, temp_dir,
+                               server_tool_->download_manager(),
+                               server_tool_->signature_manager());
 
   // Load Manifest
   manifest = manifest::Manifest::LoadFile(manifest_path);
