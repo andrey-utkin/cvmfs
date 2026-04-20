@@ -6,6 +6,7 @@
 
 #include <inttypes.h>
 
+#include "cache.h"
 #include "util/string.h"
 
 namespace download {
@@ -64,7 +65,7 @@ void JobInfo::SetDecompressor(UniquePtr<zip::Decompressor> decomp) {
   decomp_ = decomp;
 }
 
-void JobInfo::SetDecompressor(const Label &label) {
+void JobInfo::SetDecompressor(const CacheManager::Label &label) {
   if (label.zip_algorithm == zip::Algorithm::kGuessDecompression) {
     decomp_ = new GuessDecompressor(label);
   } else {

@@ -232,7 +232,7 @@ class JobInfo {
   void SetUrl(const std::string *url) { url_ = url; }
   void SetDecompressor(zip::Algorithm decompressor_alg);
   void SetDecompressor(UniquePtr<zip::Decompressor> decomp);
-  void SetDecompressor(const Label &label);
+  void SetDecompressor(const CacheManager::Label &label);
   void SetProbeHosts(bool probe_hosts) { probe_hosts_ = probe_hosts; }
   void SetHeadRequest(bool head_request) { head_request_ = head_request; }
   void SetFollowRedirects(bool follow_redirects)
