@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "cache.h"
 #include "compression/decompressor.h"
 #include "crypto/hash.h"
 #include "duplex_curl.h"
@@ -28,9 +29,6 @@
 #include "util/tube.h"
 
 class InterruptCue;
-namespace CacheManager {
-  struct Label;
-}
 
 namespace download {
 
