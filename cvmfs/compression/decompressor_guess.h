@@ -21,6 +21,8 @@ enum ExpectedContentFormat {
   kSQLite3,
 };
 
+struct CacheManager::Label;
+
 /**
  * GuessDecompressor is a decompressor that tries to guess and use the right actual decompressor,
  * by analysing the first bytes and/or by trying to decompress successfully.
@@ -29,7 +31,7 @@ class GuessDecompressor: public Decompressor {
  public:
   explicit GuessDecompressor(const Algorithms &alg);
   explicit GuessDecompressor(enum ExpectedContentFormat fmt);
-  explicit GuessDecompressor(const Label &label);
+  explicit GuessDecompressor(const CacheManager::Label &label);
   ~GuessDecompressor();
   void SetExpectedFormat(enum ExpectedContentFormat fmt);
   static char ExpectedFirstByte(enum ExpectedContentFormat fmt);

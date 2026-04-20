@@ -8,6 +8,7 @@
 #include "decompressor_zlib.h"
 #include "decompressor_zstd.h"
 #include "decompressor_echo.h"
+#include "cache.h"
 
 namespace zip {
 
@@ -30,7 +31,7 @@ GuessDecompressor::~GuessDecompressor()
   delete backend_;
 }
 
-GuessDecompressor::GuessDecompressor(const Label &label)
+GuessDecompressor::GuessDecompressor(const CacheManager::Label &label)
     : Decompressor(zip::Algorithm::kGuessDecompression)
     , backend_(NULL)
 {
