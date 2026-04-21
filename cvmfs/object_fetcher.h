@@ -423,6 +423,16 @@ class LocalObjectFetcher :
     return Fetch(relative_path, decomp_alg, nocache, file_path);
   }
 
+  Failures Fetch(const shash::Any& object_hash, std::string* file_path,
+                 zip::Decompressor* decomp) {
+    assert(file_path != NULL);
+    file_path->clear();
+
+    const std::string relative_path = BuildRelativePath(object_hash);
+    const bool        nocache       = false;
+    return Fetch(relative_path, decomp, nocache, file_path);
+  }
+
   Failures Fetch(const std::string& relative_path,
                  zip::DecompressionAlg decomp_alg, const bool nocache,
                  std::string* file_path) {
