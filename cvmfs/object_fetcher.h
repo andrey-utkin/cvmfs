@@ -617,7 +617,7 @@ class HttpObjectFetcher :
                        std::string *file_path) {
     const shash::Any *expected_hash = NULL;
     UniquePtr<zip::Decompressor> decomp(zip::Decompressor::Construct(decomp_alg));
-    return Download(relative_path, decomp_alg, nocache, expected_hash,
+    return Download(relative_path, decomp, nocache, expected_hash,
                     file_path);
   }
 
