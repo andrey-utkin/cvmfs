@@ -650,7 +650,7 @@ class HttpObjectFetcher :
   }
 
   Failures Download(const std::string &relative_path,
-                    zip::Decompression* decomp,
+                    zip::Decompressor* decomp,
                     const bool         nocache,
                     const shash::Any  *expected_hash,
                           std::string *file_path) {
