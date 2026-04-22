@@ -644,8 +644,7 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
                                *stratum0_url,
                                *temp_dir,
                                download_manager(),
-                               signature_manager(),
-                               zip::DecompressionAlgFromEnv());
+                               signature_manager());
 
   pthread_t *workers =
     reinterpret_cast<pthread_t *>(smalloc(sizeof(pthread_t) * num_parallel));
@@ -721,8 +720,7 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
                                             *stratum1_url,
                                             *temp_dir,
                                             download_manager(),
-                                            signature_manager(),
-                                            zip::DecompressionAlgFromEnv());
+                                            signature_manager());
 
       if (!reflog_hash.IsNull()) {
         reflog =

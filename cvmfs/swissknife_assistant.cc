@@ -11,6 +11,7 @@
 
 #include "catalog.h"
 #include "catalog_rw.h"
+#include "compression/decompressor_guess.h"
 #include "history.h"
 #include "history_sqlite.h"
 #include "manifest.h"

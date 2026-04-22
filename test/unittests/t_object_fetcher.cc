@@ -432,14 +432,12 @@ class T_ObjectFetcher : public ::testing::Test {
   template <typename T> struct type {};
 
   ObjectFetcherT* GetObjectFetcher(
-      const type<LocalObjectFetcher<> > type_spec,
-      zip::Algorithm decomp_alg = zip::Algorithm::kDefault) {
+      const type<LocalObjectFetcher<> > type_spec) {
     return new LocalObjectFetcher<>(backend_storage, temp_directory, decomp_alg);
   }
 
   ObjectFetcherT* GetObjectFetcher(
-      const type<HttpObjectFetcher<> > type_spec,
-      zip::Algorithm decomp_alg = zip::Algorithm::kDefault) {
+      const type<HttpObjectFetcher<> > type_spec) {
     return new HttpObjectFetcher<>(fqrn,
                                    "file://" + backend_storage,
                                    temp_directory,

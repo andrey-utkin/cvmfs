@@ -9,6 +9,7 @@
 
 #include "crypto/hash.h"
 #include "compression/util.h"
+#include "compression/decompressor.h"
 
 namespace catalog {
 class Catalog;
