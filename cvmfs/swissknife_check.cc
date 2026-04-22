@@ -689,7 +689,7 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash,
     const string url = repo_base_path_ + "/" + source;
     // JobInfo takes over decomp
     download::JobInfo download_catalog(&url, decomp, false, &catalog_hash,
-        &pathsink);
+        &out_path);
     download::Failures retval = download_manager()->Fetch(&download_catalog);
     if (retval != download::kFailOk) {
       LogCvmfs(kLogCvmfs, kLogStderr, "failed to download object %s (%d)",
