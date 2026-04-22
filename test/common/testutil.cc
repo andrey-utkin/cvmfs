@@ -587,6 +587,31 @@ MockObjectFetcher::Fetch(const std::string &relative_path,
   return MockObjectFetcher::kFailOk;
 }
 
+MockObjectFetcher::Failures
+MockObjectFetcher::Fetch(const shash::Any   &object_hash,
+                               std::string  *file_path,
+                               zip::Decompression* decomp) {
+  assert(file_path != NULL);
+  *file_path = object_hash.ToString();
+  if (!ObjectExists(object_hash)) {
+    return MockObjectFetcher::kFailNotFound;
+  }
+  return MockObjectFetcher::kFailOk;
+}
+
+MockObjectFetcher::Failures
+MockObjectFetcher::Fetch(const std::string &relative_path,
+                         const bool         decompress,
+                         const bool         nocache,
+                         std::string *file_path,
+                         zip::Decompression* decomp) {
+  *file_path = relative_path;
+  if (!PathExists(relative_path)) {
+    return MockObjectFetcher::kFailNotFound;
+  }
+  return MockObjectFetcher::kFailOk;
+}
+
 bool MockObjectFetcher::ObjectExists(const shash::Any &object_hash) const {
   return MockCatalog::Exists(object_hash) ||
          MockHistory::Exists(object_hash);
