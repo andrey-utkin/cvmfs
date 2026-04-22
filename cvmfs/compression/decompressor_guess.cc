@@ -88,8 +88,18 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
 {
   assert(!backend_);
   assert(expected_fmt_ != ExpectedContentFormat::kInvalid);
-  if (input->chunk_size() == 0 && input->has_chunk_left()) {
-    input->NextChunk();
+  assert(expected_fmt_ != ExpectedContentFormat::kArbitrary);
+  if (input->chunk_size() == 0) {
+    bool ok = input->NextChunk();
+    if (!ok) {
+      return false;
+    }
+  }
+  if (input->chunk_size() == 0 && !input->has_chunk_left()) {
+    // empty input. Just set backend to something and say it's OK
+    alg_ = zip::Algorithm::kNoCompression;
+    backend_ = new zip::EchoDecompressor(alg_);
+    return true;
   }
   const unsigned char * const data = input->chunk();
   const size_t data_len = input->chunk_size();
@@ -101,6 +111,7 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
   */
 
   const char expected_first_byte = ExpectedFirstByte(expected_fmt_);
+  assert(data_len != 0);
   const char first_byte = data[0];
   switch (first_byte) {
     case 0x78: {
