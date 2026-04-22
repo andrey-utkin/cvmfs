@@ -433,7 +433,7 @@ class T_ObjectFetcher : public ::testing::Test {
 
   ObjectFetcherT* GetObjectFetcher(
       const type<LocalObjectFetcher<> > type_spec) {
-    return new LocalObjectFetcher<>(backend_storage, temp_directory, decomp_alg);
+    return new LocalObjectFetcher<>(backend_storage, temp_directory);
   }
 
   ObjectFetcherT* GetObjectFetcher(
@@ -442,8 +442,7 @@ class T_ObjectFetcher : public ::testing::Test {
                                    "file://" + backend_storage,
                                    temp_directory,
                                    &download_manager_,
-                                   &signature_manager_,
-                                   decomp_alg);
+                                   &signature_manager_);
   }
 
   ObjectFetcherT* GetObjectFetcher(const type<MockObjectFetcher> type_spec) {

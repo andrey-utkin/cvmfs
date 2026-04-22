@@ -376,7 +376,7 @@ class LocalObjectFetcher :
    * @param base_path  the path to the repository's backend storage
    * @param temp_dir   location to store decompressed tmp data
    */
-  [[deprecated("Pass zip::Decompressor object instead")]]
+  [[deprecated("Pass zip::Decompressor object to Fetch() instead")]]
   LocalObjectFetcher(const std::string &base_path,
                      const std::string &temp_dir,
                      zip::Algorithm decomp_alg)
@@ -385,12 +385,20 @@ class LocalObjectFetcher :
     decomp_ = zip::Decompressor::Construct(decomp_alg);
   }
 
+  [[deprecated("Pass zip::Decompressor object to Fetch() instead")]]
   LocalObjectFetcher(const std::string &base_path,
                      const std::string &temp_dir,
                      zip::Decompressor* decomp)
     : BaseTN(temp_dir)
     , base_path_(base_path)
     , decomp_(decomp)
+  { }
+
+  LocalObjectFetcher(const std::string &base_path,
+                     const std::string &temp_dir)
+    : BaseTN(temp_dir)
+    , base_path_(base_path)
+    , decomp_(NULL)
   { }
 
   using BaseTN::FetchManifest;  // un-hiding convenience overload

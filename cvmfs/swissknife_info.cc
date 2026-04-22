@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "compression/decompressor_guess.h"
 #include "crypto/hash.h"
 #include "manifest.h"
 #include "network/download.h"
