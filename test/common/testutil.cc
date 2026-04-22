@@ -564,8 +564,8 @@ MockObjectFetcher::FetchManifest(manifest::Manifest** manifest) {
 
 MockObjectFetcher::Failures
 MockObjectFetcher::Fetch(const shash::Any   &object_hash,
-                               zip::DecompressionAlg decomp_alg,
-                               std::string  *file_path) {
+                               std::string  *file_path,
+                               zip::DecompressionAlg decomp_alg) {
   assert(file_path != NULL);
   *file_path = object_hash.ToString();
   if (!ObjectExists(object_hash)) {
@@ -588,8 +588,8 @@ MockObjectFetcher::Fetch(const std::string &relative_path,
 
 MockObjectFetcher::Failures
 MockObjectFetcher::Fetch(const shash::Any   &object_hash,
-                               zip::Decompressor* decomp,
-                               std::string  *file_path) {
+                               std::string  *file_path,
+                               zip::Decompressor* decomp) {
   assert(file_path != NULL);
   *file_path = object_hash.ToString();
   if (!ObjectExists(object_hash)) {
