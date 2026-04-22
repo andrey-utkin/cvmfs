@@ -197,9 +197,9 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
 
     std::string tmp_path;
     const bool nocache = true;
-    Failures failure =
-        Fetch(kReflogFilename, zip::DecompressionAlg::kNoCompression, nocache,
-              &tmp_path);
+    auto decomp = zip::Decompressor::Construct(zip::DecompressionAlg::kNoCompression);
+    Failures failure = Fetch(kReflogFilename, decomp, nocache, &tmp_path);
+    delete decomp;
     if (failure != kFailOk) {
       return failure;
     }
