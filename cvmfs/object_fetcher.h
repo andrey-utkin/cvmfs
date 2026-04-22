@@ -198,8 +198,8 @@ class AbstractObjectFetcher : public ObjectFetcherFailures {
     std::string tmp_path;
     const bool nocache = true;
     auto decomp = zip::Decompressor::Construct(zip::DecompressionAlg::kNoCompression);
+    // decomp freeing responsibility is transferred to Fetch()
     Failures failure = Fetch(kReflogFilename, decomp, nocache, &tmp_path);
-    delete decomp;
     if (failure != kFailOk) {
       return failure;
     }
@@ -445,8 +445,8 @@ class LocalObjectFetcher :
                  zip::DecompressionAlg decomp_alg, const bool nocache,
                  std::string* file_path) {
     zip::Decompressor* decomp = zip::Decompressor::Construct(decomp_alg);
+    // decomp freeing responsibility is transferred to Fetch()
     auto ret = Fetch(relative_path, decomp, nocache, file_path);
-    delete decomp;
     return ret;
   }
 
@@ -626,9 +626,9 @@ class HttpObjectFetcher :
                        std::string *file_path) {
     const shash::Any *expected_hash = NULL;
     zip::Decompressor* decomp = zip::Decompressor::Construct(decomp_alg);
+    // decomp freeing responsibility is transferred to Fetch()
     auto ret =
         Download(relative_path, decomp, nocache, expected_hash, file_path);
-    delete decomp;
     return ret;
   }
 
