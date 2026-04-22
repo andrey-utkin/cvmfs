@@ -4,11 +4,12 @@
 
 #include <cstring>
 
+#include "cache.h"
 #include "decompressor_guess.h"
 #include "decompressor_zlib.h"
 #include "decompressor_zstd.h"
 #include "decompressor_echo.h"
-#include "cache.h"
+#include "util/exception.h"
 
 namespace zip {
 
