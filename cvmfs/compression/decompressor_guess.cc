@@ -151,6 +151,11 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
 StreamStates GuessDecompressor::DecompressStream(InputAbstract* input,
                                                  cvmfs::Sink* output) {
   if (!backend_) {
+    // Can't read if it's not valid.
+    // For example, InputPath on a file which doesn't exist.
+    if (!input->IsValid()) {
+      return kStreamIOError;
+    }
     bool ok = Guess(input, output);
     if (!ok) {
       return kStreamDataError;
