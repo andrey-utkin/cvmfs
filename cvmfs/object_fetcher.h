@@ -436,9 +436,10 @@ class LocalObjectFetcher :
   Failures Fetch(const std::string& relative_path,
                  zip::DecompressionAlg decomp_alg, const bool nocache,
                  std::string* file_path) {
-    UniquePtr<zip::Decompressor> decomp(
-        zip::Decompressor::Construct(decomp_alg));
-    return Fetch(relative_path, decomp, nocache, file_path);
+    zip::Decompressor* decomp = zip::Decompressor::Construct(decomp_alg);
+    auto ret = Fetch(relative_path, decomp, nocache, file_path);
+    delete decomp;
+    return ret;
   }
 
   Failures Fetch(const std::string& relative_path, zip::Decompressor* decomp,
@@ -616,9 +617,11 @@ class HttpObjectFetcher :
                  const bool         nocache,
                        std::string *file_path) {
     const shash::Any *expected_hash = NULL;
-    UniquePtr<zip::Decompressor> decomp(zip::Decompressor::Construct(decomp_alg));
-    return Download(relative_path, decomp, nocache, expected_hash,
-                    file_path);
+    zip::Decompressor* decomp = zip::Decompressor::Construct(decomp_alg);
+    auto ret =
+        Download(relative_path, decomp, nocache, expected_hash, file_path);
+    delete decomp;
+    return ret;
   }
 
   Failures Fetch(const shash::Any& object_hash, std::string* object_file,
