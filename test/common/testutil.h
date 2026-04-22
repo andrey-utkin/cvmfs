@@ -850,15 +850,15 @@ class MockObjectFetcher : public AbstractObjectFetcher<MockObjectFetcher> {
   using BaseTN::FetchManifest;  // un-hiding convenience overload
   Failures FetchManifest(manifest::Manifest** manifest);
   Failures Fetch(const shash::Any& object_hash,
-                 zip::DecompressionAlg decomp_alg,
-                 std::string* file_path);
+                 std::string* file_path,
+                 zip::DecompressionAlg decomp_alg);
   Failures Fetch(const std::string &relative_path,
                  zip::DecompressionAlg decomp_alg,
                  const bool         nocache,
                  std::string *file_path);
   Failures Fetch(const shash::Any &object_hash,
-                 zip::Decompressor* decomp,
-                 std::string *file_path);
+                 std::string *file_path,
+                 zip::Decompressor* decomp);
   Failures Fetch(const std::string &relative_path,
                  zip::Decompressor* decomp,
                  const bool         nocache,
