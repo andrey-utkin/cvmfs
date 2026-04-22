@@ -684,12 +684,26 @@ string CommandCheck::DecompressPiece(const shash::Any catalog_hash,
   zip::InputPath in_path(source);
   cvmfs::PathSink out_path(dest);
 
-  zip::GuessDecompressor decomp(expected_fmt);
-
-  if (decomp.DecompressStream(&in_path, &out_path) != zip::kStreamEnd) {
-    assert(decomp.Reset());
-    return "";
+  auto decomp = new zip::GuessDecompressor(expected_fmt);
+  if (is_remote_) {
+    const string url = repo_base_path_ + "/" + source;
+    // JobInfo takes over decomp
+    download::JobInfo download_catalog(&url, decomp, false, &catalog_hash,
+        &pathsink);
+    download::Failures retval = download_manager()->Fetch(&download_catalog);
+    if (retval != download::kFailOk) {
+      LogCvmfs(kLogCvmfs, kLogStderr, "failed to download object %s (%d)",
+          catalog_hash.ToString().c_str(), retval);
+      return "";
+    }
+  } else {
+    auto ret = decomp->DecompressStream(&in_path, &out_path);
+    delete decomp;
+    if (ret != zip::kStreamEnd) {
+      return "";
+    }
   }
+
   return dest;
 }
 
