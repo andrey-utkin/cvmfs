@@ -90,26 +90,6 @@ int swissknife::CommandInfo::Main(const swissknife::ArgumentList &args) {
       (args.find('u') != args.end()) ? *args.find('u')->second : "";
   const string repository = MakeCanonicalPath(*args.find('r')->second);
 
-  // For manifest fields, we can make reasonable assumptions about content
-  // structure, and thus about reliability of autodetecting the decompression
-  // algorithm.
-  //
-  // We know the certificate is PEM-formatted, always starting with
-  // -----BEGIN CERTIFICATE-----. Definitely not an arbitrary binary, so
-  // kGuessCompression is completely reliable in this case.
-  //
-  // Metadata is JSON, also unambiguous for plain vs zlib vs zstd.
-  //
-  // "SQLite format 3" is literally the beginning of files which are.
-  // This applies to history (H) and catalog (C).
-  zip::DecompressionAlg decomp_alg;
-#ifdef CVMFS_GUESS_DECOMPRESSOR
-  decomp_alg = zip::DecompressionAlg::kGuessDecompression;
-#else
-  // In future, we might have a manifest field for decomp_alg
-  decomp_alg = zip::DecompressionAlgFromEnv();
-#endif
-
   // sanity check
   if (args.count('C') > 0 && mount_point.empty()) {
     LogCvmfs(kLogCvmfs, kLogStderr, "need a CernVM-FS mountpoint (-u) for -C");
