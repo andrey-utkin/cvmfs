@@ -58,14 +58,16 @@ void GuessDecompressor::SetExpectedFormat(enum ExpectedContentFormat fmt)
 char GuessDecompressor::ExpectedFirstByte(enum ExpectedContentFormat fmt)
 {
   assert(fmt != kInvalid);
+  assert(fmt != kArbitrary);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wswitch"
   switch (fmt) {
-    case kManifest: return 'C';
-    case kPEM:      return '-';
-    case kJSON:     return '{';
-    case kSQLite3:  return 'S';
-    case kInvalid:  return '\0';
+    case kManifest:  return 'C';
+    case kPEM:       return '-';
+    case kJSON:      return '{';
+    case kSQLite3:   return 'S';
+    case kInvalid:   return '\0';
+    case kArbitrary: return '\0';
   }
 #pragma GCC diagnostic pop
 }
@@ -76,7 +78,7 @@ bool GuessDecompressor::WillHandle(const zip::Algorithms &alg) {
 
 
 Decompressor* GuessDecompressor::Clone() {
-  Decompressor *n = new GuessDecompressor(zip::Algorithm::kGuessDecompression);
+  GuessDecompressor *n = new GuessDecompressor(zip::Algorithm::kGuessDecompression);
   n->SetExpectedFormat(expected_fmt_);
   return n;
 }
