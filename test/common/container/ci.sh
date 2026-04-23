@@ -161,7 +161,7 @@ done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   while [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; do
     # common failure mode: container listed in podman ps but not running and not inspectable
-    if ! podman inspect "$WORKER_CONTAINER_NAME_BASE"$worker_i >/dev/null; then
+    if [[ "$(podman inspect "$WORKER_CONTAINER_NAME_BASE"$worker_i | jq --raw-output .[0].State.Running)" != true ]]; then
       break
     fi
     sleep 1
