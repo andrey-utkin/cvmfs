@@ -135,13 +135,11 @@ bool GuessDecompressor::Guess(InputAbstract* input, cvmfs::Sink* output)
         break;
       } else {
         LogCvmfs(kLogCvmfs, kLogStderr, "Decompression autoconfiguration failed: expected format %d with first byte 0x%hhx, got 0x%hhx", expected_fmt_, expected_first_byte, first_byte);
-        assert(false);
         return false;
       }
     }
     default: {
       LogCvmfs(kLogCvmfs, kLogStderr, "Decompression autoconfiguration failed: expected format %d with first byte 0x%hhx, got 0x%hhx (doesn't match any expected compression or content format)", expected_fmt_, expected_first_byte, first_byte);
-      assert(false);
       return false;
     }
   }
