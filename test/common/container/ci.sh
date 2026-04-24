@@ -61,6 +61,7 @@ PRIORITIZE=(nice -n19  ionice -c3)
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   mkdir -p worker/$worker_i/orders
   mkdir -p worker/$worker_i/orders/.wip
+  mkdir -p worker/$worker_i/log
   mkdir -p worker/$worker_i/tmp
   chmod -R 777 worker/$worker_i
 done
@@ -81,13 +82,14 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     --security-opt seccomp=unconfined \
     -v /sys/fs/cgroup:/sys/fs/cgroup \
     -v ../../../:/home/sftnight/cvmfs \
+    -v ./worker/$worker_i/log:/var/log/ci \
     -v ./worker/$worker_i/tmp:/tmp \
     -v ./worker/$worker_i/orders:/orders \
     --tmpfs /var/spool/cvmfs \
     "$CONTAINER_IMAGE_NAME":chksetup \
     && "${PRIORITIZE[@]}" podman start "$WORKER_CONTAINER_NAME_BASE"$worker_i \
     && "${PRIORITIZE[@]}" podman exec -u sftnight "$WORKER_CONTAINER_NAME_BASE"$worker_i bash -c \
-    "while ! systemctl status &>/dev/null; do sleep 1; done; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /tmp/work.log &" \
+    "while ! (systemctl status && systemctl is-active multi-user.target)&>/dev/null; do sleep 1; done; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /var/log/ci/work.log &" \
     &
 
 #  # examples:
@@ -148,7 +150,7 @@ cd /home/sftnight/cvmfs/test
 export CVMFS_TEST_PROXY=DIRECT
 # restrict to only one CPU:
 taskset --cpu-list $(( RANDOM % "$(nproc)" )) \
-./run.sh /tmp/$jobname.test.log -- $test || true
+./run.sh /var/log/ci/$jobname.test.log -- $test || true
 EOF
   chmod a+rwx "$job_file"
   # reveal:
@@ -168,9 +170,9 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
   done
   podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i || true
 done
-tar -cf - worker/*/tmp/work.log worker/*/tmp/*.job* worker/*/tmp/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
-grep 'Testcase failed' worker/*/tmp/*.test.log
+tar -cf - worker/*/log/work.log worker/*/log/*.job* worker/*/log/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
+grep 'Testcase failed' worker/*/log/*.test.log
 echo 'Tests passed: '
-grep 'Test passed' worker/*/tmp/*.test.log | wc -l
+grep 'Test passed' worker/*/log/*.test.log | wc -l
 # Stats of outcomes (by 3rd line from the end):
-for x in worker/*/tmp/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
+for x in worker/*/log/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
