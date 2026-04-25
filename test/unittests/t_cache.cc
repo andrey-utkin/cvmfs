@@ -296,23 +296,24 @@ class TestCacheManager : public CacheManager {
 
 
 TEST_F(T_CacheManager, ChecksumFd) {
+  zip::ZlibCompressor comp;
   shash::Any hash(shash::kSha1);
-  EXPECT_EQ(-EBADF, cache_mgr_->ChecksumFd(1000000, &hash));
+  EXPECT_EQ(-EBADF, cache_mgr_->ChecksumFd(1000000, &hash, &comp));
   int fd = cache_mgr_->Open(CacheManager::LabeledObject(hash_null_));
   EXPECT_GE(fd, 0);
-  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash));
+  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash, &comp));
   EXPECT_EQ("e8ec3d88b62ebf526e4e5a4ff6162a3aa48a6b78", hash.ToString());
   cache_mgr_->Close(fd);
 
   fd = cache_mgr_->Open(CacheManager::LabeledObject(hash_one_));
   EXPECT_GE(fd, 0);
-  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash));
+  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash, &comp));
   EXPECT_EQ("0bbd725a1003cd41b89b209f70e514f12f2a1062", hash.ToString());
   cache_mgr_->Close(fd);
 
   fd = cache_mgr_->Open(CacheManager::LabeledObject(hash_page_));
   EXPECT_GE(fd, 0);
-  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash));
+  EXPECT_EQ(0, cache_mgr_->ChecksumFd(fd, &hash, &comp));
   EXPECT_EQ("54b34b84872a06a373967f68726e29353d3fe7b2", hash.ToString());
   cache_mgr_->Close(fd);
 }

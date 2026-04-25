@@ -10,6 +10,13 @@ RUN pip3 install flask
 RUN dnf install -y ccache
 RUN echo children_max=1 >> /etc/udev/udev.conf
 
+# We don't need container fetching package repo updates mid-job
+RUN systemctl disable dnf-makecache.timer
+
+# We definitely don't need /tmp wiping mid-job
+# Mask because "disable" fails.
+RUN systemctl mask systemd-tmpfiles-clean.timer
+
 RUN echo '%sftnight ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 ENV USER sftnight

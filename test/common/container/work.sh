@@ -9,6 +9,6 @@ while true; do
   if [[ "$oldest_job" == '' ]]; then sleep 1; continue; fi
   if ! [[ -x "$oldest_job" ]]; then echo "Quitting"; rm -f "$oldest_job"; exit 0; fi
   # execute the file
-  time "$PWD"/"$oldest_job" |& tee /tmp/"$oldest_job".log
-  mv "$oldest_job" /tmp
+  time "$PWD"/"$oldest_job" |& tee /var/log/ci/"$oldest_job".log
+  mv "$oldest_job" /var/log/ci/
 done
