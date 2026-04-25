@@ -391,6 +391,7 @@ TEST_F(T_Fetcher, FetchTransactionFailures) {
   {
   // StartTxn fails
   RemoveTree(tmp_path_ + "/txn");
+  CacheManager::Label lbl;
   lbl.path = "reg";
   lbl.size = CacheManager::kSizeUnknown;
   lbl.flags = 0;
