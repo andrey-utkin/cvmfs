@@ -240,12 +240,20 @@ static void Store(
 static void Store(
   const string &local_path,
   const shash::Any &remote_hash,
+  zip::Decompressor* decomp
+  )
+{
+  Store(local_path, MakePath(remote_hash), decomp);
+}
+
+static void Store(
+  const string &local_path,
+  const shash::Any &remote_hash,
   zip::DecompressionAlg decomp_alg
   )
 {
   Store(local_path, MakePath(remote_hash), decomp_alg);
 }
-
 
 static void StoreBuffer(const unsigned char *buffer, const unsigned size,
                         const std::string &dest_path,
