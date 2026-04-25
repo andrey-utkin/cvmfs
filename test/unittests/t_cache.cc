@@ -36,12 +36,12 @@ class T_CacheManager : public ::testing::Test {
     cache_mgr_ = PosixCacheManager::Create(
         tmp_path_, /*alien_cache=*/false,
         /*rename_workaround=*/PosixCacheManager::kRenameNormal,
-        /*do_refcount=*/false, /*compression_alg=*/zip::Algorithm::kZlib);
+        /*do_refcount=*/false);
 
     ASSERT_TRUE(cache_mgr_ != NULL);
     alien_cache_mgr_ = PosixCacheManager::Create(
         tmp_path_, /*alien_cache=*/true, /*rename_workaround=*/PosixCacheManager::kRenameNormal,
-        /*do_refcount=*/false, /*compression_alg=*/zip::Algorithm::kZlib);
+        /*do_refcount=*/false);
     ASSERT_TRUE(alien_cache_mgr_ != NULL);
 
     ASSERT_TRUE(cache_mgr_->CommitFromMem(
