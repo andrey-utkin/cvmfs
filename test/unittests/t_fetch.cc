@@ -361,7 +361,7 @@ TEST_F(T_Fetcher, FetchTransactionFailures) {
   CacheManager::Label lbl;
   lbl.path = "cat";
   lbl.flags = CacheManager::kLabelCatalog;
-  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
+  lbl.zip_algorithm = zip::Algorithm::kNoCompression;
   EXPECT_EQ(-EBADF, f.Fetch(CacheManager::LabeledObject(hash_catalog_, lbl)));
 
   // Wrong size (commit fails)
