@@ -232,7 +232,7 @@ static void Store(
   zip::DecompressionAlg decomp_alg
   )
 {
-  zip::Decompressor* decomp = new zip::Decompressor::Construct(decomp_alg);
+  zip::Decompressor* decomp = zip::Decompressor::Construct(decomp_alg);
   Store(local_path, remote_path, decomp);
   delete decomp;
 }
@@ -520,9 +520,8 @@ bool CommandPull::Pull(const shash::Any   &catalog_hash,
   WaitForStorage();
   if (!retval)
     return false;
-  zip::Decompressor* decomp = new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3);
-  Store(file_catalog_vanilla, catalog_hash, decomp);
-  delete decomp;
+  zip::GuessDecompressor decomp(zip::ExpectedContentFormat::kSQLite3);
+  Store(file_catalog_vanilla, catalog_hash, &decomp);
   return true;
 
  pull_cleanup:
