@@ -414,7 +414,7 @@ void *TestFetchCollapse(void *data) {
   CacheManager::Label lbl;
   lbl.path = "cat";
   lbl.flags = CacheManager::kLabelCatalog;
-  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
+  lbl.zip_algorithm = zip::Algorithm::kDefault;
   int fd = f->Fetch(CacheManager::LabeledObject(info->hash, lbl));
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, bcm->Close(fd));
