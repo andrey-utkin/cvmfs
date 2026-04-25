@@ -874,8 +874,6 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
   {
     LogCvmfs(kLogCvmfs, kLogStdout, "Uploading manifest ensemble");
     WaitForStorage();
-    decomp = ...;
-    decomp_copy = ...;
 
     if (!Peek(ensemble.manifest->certificate())) {
       StoreBuffer(ensemble.cert_buf,
