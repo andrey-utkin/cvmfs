@@ -945,12 +945,13 @@ int swissknife::CommandPull::Main(const swissknife::ArgumentList &args) {
       // sync
       if (ensemble.whitelist_pkcs7_buf) {
         StoreBuffer(ensemble.whitelist_pkcs7_buf, ensemble.whitelist_pkcs7_size,
-                    ".cvmfswhitelist.pkcs7", copy.weak_ref(), decomp_copy);
+                    ".cvmfswhitelist.pkcs7", copy.weak_ref(),
+                    decomp_copy.weak_ref());
       }
       StoreBuffer(ensemble.whitelist_buf, ensemble.whitelist_size,
-                  ".cvmfswhitelist", copy.weak_ref(), decomp_copy);
+                  ".cvmfswhitelist", copy.weak_ref(), decomp_copy.weak_ref());
       StoreBuffer(ensemble.raw_manifest_buf, ensemble.raw_manifest_size,
-                  ".cvmfspublished", copy.weak_ref(), decomp_copy);
+                  ".cvmfspublished", copy.weak_ref(), decomp_copy.weak_ref());
     }
     LogCvmfs(kLogCvmfs, kLogStdout, "Serving revision %" PRIu64,
              ensemble.manifest->revision());
