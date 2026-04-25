@@ -25,9 +25,8 @@ using namespace std;  // NOLINT
 
 const uint64_t CacheManager::kSizeUnknown = uint64_t(-1);
 
-CacheManager::CacheManager(zip::Algorithm compression_alg)
+CacheManager::CacheManager()
     : quota_mgr_(new NoopQuotaManager()) {
-  compress_ = zip::Compressor::Construct(compression_alg);
 }
 
 CacheManager::~CacheManager() {
