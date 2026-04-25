@@ -16,6 +16,7 @@
 
 #include "cache_posix.h"
 #include "compression/compressor.h"
+#include "compression/compressor_zlib.h"
 #include "crypto/hash.h"
 #include "quota.h"
 #include "testutil.h"
