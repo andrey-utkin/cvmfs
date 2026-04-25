@@ -232,7 +232,7 @@ static void Store(
   zip::DecompressionAlg decomp_alg
   )
 {
-  zip::Decompressor decomp = zip::Decompressor::Construct(decomp_alg);
+  zip::Decompressor* decomp = new zip::Decompressor::Construct(decomp_alg);
   Store(local_path, remote_path, decomp);
   delete decomp;
 }
