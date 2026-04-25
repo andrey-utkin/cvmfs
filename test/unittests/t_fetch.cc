@@ -341,10 +341,12 @@ TEST_F(T_Fetcher, FetchUncompressed) {
 TEST_F(T_Fetcher, FetchAltPath) {
   unlink((src_path_ + "/" + hash_regular_.MakePath()).c_str());
   int fd;
-  fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_regular_));
+  CacheManager::Label lbl;
+  lbl.zip_algorithm = zip::Algorithm::kDefault;
+  fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_regular_, lbl));
   EXPECT_LT(fd, 0);
 
-  fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_regular_), "altpath");
+  fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_regular_, lbl), "altpath");
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, cache_mgr_->Close(fd));
 }
@@ -367,8 +369,9 @@ TEST_F(T_Fetcher, FetchTransactionFailures) {
   EXPECT_EQ(-EIO,
     fetcher_->Fetch(CacheManager::LabeledObject(hash_cert_, lbl)));
   EXPECT_TRUE(FileExists(tmp_path_ + "/quarantaine/" + hash_cert_.ToString()));
-  lbl.flags = 0;
+  lbl.flags = CacheManager::kLabelCertificate;
   lbl.size = 1;
+  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
   int fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_cert_, lbl));
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, cache_mgr_->Close(fd));
