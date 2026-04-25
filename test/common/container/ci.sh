@@ -89,7 +89,7 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
     "$CONTAINER_IMAGE_NAME":chksetup \
     && "${PRIORITIZE[@]}" podman start "$WORKER_CONTAINER_NAME_BASE"$worker_i \
     && "${PRIORITIZE[@]}" podman exec -u sftnight "$WORKER_CONTAINER_NAME_BASE"$worker_i bash -c \
-    "while ! (systemctl status && systemctl is-active multi-user.target)&>/dev/null; do sleep 1; done; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /var/log/ci/work.log &" \
+    "touch /var/log/ci/00-started; while ! (systemctl status && systemctl is-active multi-user.target)&>/dev/null; do sleep 1; done; touch /var/log/ci/work.log; touch /var/log/ci/01-booted; nohup /home/sftnight/cvmfs/test/common/container/work.sh &> /var/log/ci/work.log &" \
     &
 
 #  # examples:
@@ -128,12 +128,33 @@ comm -23 \
 wait_until_found_idle_worker() {
   while true; do
     for worker_i in $(seq 1 "$NB_WORKERS"); do
+      if ! [[ -f worker/$worker_i/log/01-booted ]]; then
+        continue
+      else
+        touch worker/$worker_i/seen-booted
+        if ! [[ -f worker/$worker_i/log/work.log ]]; then
+          touch worker/$worker_i/faulty
+          podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i
+        fi
+      fi
+      if [[ -f worker/$worker_i/faulty ]]; then
+        continue
+      fi
       orders_dir=worker/$worker_i/orders
       if [[ "$(ls "$orders_dir")" == "" ]]; then
         echo "$orders_dir"
         return
       fi
     done
+    sleep 0.5
+  done
+}
+
+wait_workers_drained() {
+  while true; do
+    if [[ "$(find worker/*/orders -type f)" == '' ]]; then
+      break
+    fi
     sleep 0.5
   done
 }
@@ -157,13 +178,29 @@ EOF
   mv "$job_file" $idle_worker_orders_dir/
 done
 
+wait_workers_drained
+touch worker/all-tests.done
+grep 'Testcase failed' worker/*/log/*.test.log
+echo 'Tests passed: '
+grep 'Test passed' worker/*/log/*.test.log | wc -l
+# Stats of outcomes (by 3rd line from the end):
+for x in worker/*/log/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
+
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   touch worker/$worker_i/orders/non-executable-for-quit
 done
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   while [[ -f worker/$worker_i/orders/non-executable-for-quit ]]; do
+    if [[ -f worker/$worker_i/faulty ]]; then
+      continue
+    fi
     # common failure mode: container listed in podman ps but not running and not inspectable
     if [[ "$(podman inspect "$WORKER_CONTAINER_NAME_BASE"$worker_i | jq --raw-output .[0].State.Running)" != true ]]; then
+      break
+    fi
+    # common failure mode: container listed in podman is running, but no worker process and our log and tmp dir contents are gone, including work.log
+    if ! [[ -f worker/$worker_i/log/work.log ]]; then
+      echo "worker $worker_i work.log disappeared, aborting it"
       break
     fi
     sleep 1
@@ -171,8 +208,3 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
   podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i || true
 done
 tar -cf - worker/*/log/work.log worker/*/log/*.job* worker/*/log/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
-grep 'Testcase failed' worker/*/log/*.test.log
-echo 'Tests passed: '
-grep 'Test passed' worker/*/log/*.test.log | wc -l
-# Stats of outcomes (by 3rd line from the end):
-for x in worker/*/log/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
