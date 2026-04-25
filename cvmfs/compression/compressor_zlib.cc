@@ -26,7 +26,7 @@ ZlibCompressor::ZlibCompressor(const Algorithms& alg) : Compressor(alg) {
   Init();
 }
 
-ZlibCompressor::ZlibCompressor(const Algorithms& alg)
+ZlibCompressor::ZlibCompressor()
     : Compressor(zip::Algorithm::kZlib) {
   Init();
 }
