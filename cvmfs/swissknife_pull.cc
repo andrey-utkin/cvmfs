@@ -376,6 +376,7 @@ bool CommandPull::Pull(const shash::Any   &catalog_hash,
   int retval;
   download::Failures dl_retval;
   assert(shash::kSuffixCatalog == catalog_hash.suffix);
+  zip::GuessDecompressor decomp_catalog(zip::ExpectedContentFormat::kSQLite3);
 
   // Check if the catalog already exists
   if (Peek(catalog_hash)) {
@@ -520,8 +521,7 @@ bool CommandPull::Pull(const shash::Any   &catalog_hash,
   WaitForStorage();
   if (!retval)
     return false;
-  zip::GuessDecompressor decomp(zip::ExpectedContentFormat::kSQLite3);
-  Store(file_catalog_vanilla, catalog_hash, &decomp);
+  Store(file_catalog_vanilla, catalog_hash, &decomp_catalog);
   return true;
 
  pull_cleanup:
