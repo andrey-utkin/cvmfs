@@ -41,7 +41,6 @@ class ZstdCompressor : public Compressor {
 
  private:
   ZSTD_CCtx *stream_;
-  bool is_healthy_;  // ZStream is healthy
   bool compress_stream_outbuf_full_;
 };
 

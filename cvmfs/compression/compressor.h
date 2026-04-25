@@ -99,6 +99,7 @@ class Compressor: public PolymorphicConstruction<Compressor, Algorithms> {
 
  protected:
   const size_t kZChunk_;
+  bool is_healthy_;
 };
 
 }  // namespace zlib

@@ -140,7 +140,7 @@ StreamStates ZstdCompressor::CompressStreamHard(InputAbstract *input,
               && input->chunk_size() != 0));
   return kStreamEnd;
 }
-#if 0
+#endif
 
 
 ZstdCompressor::~ZstdCompressor() {

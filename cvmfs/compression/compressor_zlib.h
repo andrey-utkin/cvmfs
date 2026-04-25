@@ -40,7 +40,6 @@ class ZlibCompressor : public Compressor {
 
  private:
   z_stream stream_;
-  bool is_healthy_;  // ZStream is healthy
 };
 
 }  // namespace zlib

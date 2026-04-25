@@ -37,7 +37,6 @@ class EchoCompressor: public Compressor {
   static bool WillHandle(const zip::Algorithms &alg);
 
  private:
-  bool is_healthy_;
   bool output_full_;
 };
 
