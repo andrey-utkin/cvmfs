@@ -243,6 +243,7 @@ TEST_F(T_Fetcher, ExternalFetch) {
 
   // Download fails
   lbl.path = "/reg-fail";
+  lbl.zip_algorithm = zip::Algorithm::kDefault;
 
   EXPECT_EQ(-EIO,
     external_fetcher_->Fetch(CacheManager::LabeledObject(hash_regular_, lbl)));
@@ -273,6 +274,7 @@ TEST_F(T_Fetcher, Fetch) {
                                         &x, 1));
   CacheManager::Label lbl;
   lbl.size = 1;
+  lbl.zip_algorithm = zip::Algorithm::kDefault;
   int fd = fetcher_->Fetch(CacheManager::LabeledObject(hash_avail, lbl));
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, cache_mgr_->Close(fd));
@@ -319,6 +321,7 @@ TEST_F(T_Fetcher, FetchUncompressed) {
   CacheManager::Label lbl;
   lbl.size = 1;
   lbl.path = "x";
+  lbl.zip_algorithm = zip::Algorithm::kDefault;
   int fd =
     fetcher_->Fetch(CacheManager::LabeledObject(hash_uncompressed_, lbl));
   if (zip::Algorithm::kDefault != zip::Algorithm::kNoCompression) {
@@ -356,6 +359,7 @@ TEST_F(T_Fetcher, FetchTransactionFailures) {
   CacheManager::Label lbl;
   lbl.path = "cat";
   lbl.flags = CacheManager::kLabelCatalog;
+  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
   EXPECT_EQ(-EBADF, f.Fetch(CacheManager::LabeledObject(hash_catalog_, lbl)));
 
   // Wrong size (commit fails)
@@ -391,6 +395,7 @@ void *TestFetchCollapse(void *data) {
   CacheManager::Label lbl;
   lbl.path = "cat";
   lbl.flags = CacheManager::kLabelCatalog;
+  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
   int fd = f->Fetch(CacheManager::LabeledObject(info->hash, lbl));
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, bcm->Close(fd));
@@ -427,6 +432,7 @@ TEST_F(T_Fetcher, FetchCollapse) {
   CacheManager::Label lbl;
   lbl.path = "cat";
   lbl.flags = CacheManager::kLabelCatalog;
+  lbl.zip_algorithm = zip::Algorithm::kGuessDecompression;
   int fd = f.Fetch(CacheManager::LabeledObject(hash_catalog_, lbl));
   EXPECT_GE(fd, 0);
   EXPECT_EQ(0, bcm.Close(fd));
