@@ -39,4 +39,32 @@ void Compressor::RegisterPlugins() {
   RegisterPlugin<EchoCompressor>();
 }
 
+StreamStates Compressor::CompressStream(InputAbstract* input,
+                                        cvmfs::MemSink* output,
+                                        const bool flush) {
+  if (!is_healthy_) {
+    return kStreamError;
+  }
+
+  do {
+    if (input->GetIdxInsideChunk() < input->chunk_size()
+        && input->chunk_size() != 0) {
+      // still stuff to process in the current chunk
+    } else if (!input->NextChunk() && output->size() < output->pos()) {
+      return kStreamIOError;
+    }
+    StreamStates step_ret = StreamingStep(input, output, flush);
+    if (step_ret != kStreamContinue) {
+      return step_ret;
+    }
+
+    if (output->size() == output->pos()) {
+      return kStreamOutBufFull;
+    }
+  } while (input->has_chunk_left()
+          || (input->GetIdxInsideChunk() < input->chunk_size()
+              && input->chunk_size() != 0));
+  return kStreamEnd;
+}
+
 }  // namespace zlib

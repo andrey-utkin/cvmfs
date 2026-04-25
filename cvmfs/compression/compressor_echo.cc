@@ -33,7 +33,19 @@ Compressor* EchoCompressor::Clone() {
   return new EchoCompressor(zip::kNoCompression);
 }
 
-StreamStates EchoCompressor::CompressStream(InputAbstract *input,
+StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
+                                           cvmfs::MemSink* output,
+                                           const bool flush) {
+  const size_t have = input->chunk_size();
+  const int64_t written = output->Write(input->chunk(), have);
+  if (written > 0) {
+    input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
+  }
+  return kStreamContinue;
+}
+
+#if 0
+StreamStates EchoCompressor::CompressStreamHard(InputAbstract *input,
                                 cvmfs::MemSink *output, const bool /*flush*/) {
   if (!is_healthy_) {
     return kStreamError;
@@ -65,6 +77,7 @@ StreamStates EchoCompressor::CompressStream(InputAbstract *input,
   output_full_ = false;
   return kStreamEnd;
 }
+#endif
 
 // bool EchoCompressor::CompressStream(
 //   const bool /*flush*/,

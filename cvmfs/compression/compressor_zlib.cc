@@ -55,7 +55,31 @@ Compressor* ZlibCompressor::Clone() {
   return other;
 }
 
-StreamStates ZlibCompressor::CompressStream(InputAbstract *input,
+StreamStates ZlibCompressor::StreamingStep(InputAbstract* input,
+                                           cvmfs::MemSink* output,
+                                           const bool flush) {
+  int flush_int;
+  if (!input->has_chunk_left() && flush) {
+    flush_int = Z_FINISH;
+  } else {
+    flush_int = Z_NO_FLUSH;
+  }
+  const size_t avail_in = input->chunk_size() - input->GetIdxInsideChunk();
+  stream_.avail_in = avail_in;
+  stream_.next_in = input->chunk() + input->GetIdxInsideChunk();
+  const size_t avail_out = output->size() - output->pos();
+  stream_.avail_out = avail_out;
+  stream_.next_out = output->data() + output->pos();
+  int z_ret = deflate(&stream_, flush_int);
+  assert(z_ret == Z_OK || z_ret == Z_STREAM_END);
+  assert(output->SetPos(output->pos() + avail_out - stream_.avail_out));
+  const size_t processed_in = avail_in - stream_.avail_in;
+  input->SetIdxInsideChunk(input->GetIdxInsideChunk() + processed_in);
+  return kStreamContinue;
+}
+
+#if 0
+StreamStates ZlibCompressor::CompressStreamHard(InputAbstract *input,
                                      cvmfs::MemSink *output, const bool flush) {
   if (!is_healthy_) {
     return kStreamError;
@@ -65,7 +89,6 @@ StreamStates ZlibCompressor::CompressStream(InputAbstract *input,
   int z_ret;
 
   do {
-    // TODO TODO replace with input->HasInputLeftInChunk()
     if (input->GetIdxInsideChunk() < input->chunk_size()
         && input->chunk_size() != 0) {
       // still stuff to process in the current chunk
@@ -97,7 +120,6 @@ StreamStates ZlibCompressor::CompressStream(InputAbstract *input,
     if (stream_.avail_out == 0) {
       return kStreamOutBufFull;
     }
-  // TODO TODO replace with input->HasInputLeftInChunk()
   } while (input->has_chunk_left()
           || (input->GetIdxInsideChunk() < input->chunk_size()
               && input->chunk_size() != 0));
@@ -109,6 +131,7 @@ StreamStates ZlibCompressor::CompressStream(InputAbstract *input,
 
   return kStreamContinue;
 }
+#endif
 
 
 ZlibCompressor::~ZlibCompressor() {
