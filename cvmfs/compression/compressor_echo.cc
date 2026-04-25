@@ -36,7 +36,7 @@ Compressor* EchoCompressor::Clone() {
 StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
                                            cvmfs::MemSink* output,
                                            const bool flush) {
-  const size_t have = input->chunk_size();
+  const size_t have = input->chunk_size() - input->GetIdxInsideChunk();
   const int64_t written = output->Write(input->chunk(), have);
   if (written > 0) {
     input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
