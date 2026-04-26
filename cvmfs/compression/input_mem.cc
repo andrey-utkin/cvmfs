@@ -72,7 +72,7 @@ bool InputMem::Reset() {
     idx_ = -1ul;
     chunk_size_ = 0;
     idx_inside_chunk_ = 0;
-    has_chunk_left_ = src_size > 0;
+    has_chunk_left_ = src_size_ > 0;
     return true;
   }
   return false;
