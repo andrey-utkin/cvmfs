@@ -47,7 +47,7 @@ StreamStates Compressor::CompressStream(InputAbstract* input,
   }
 
   do {
-    assert(output->size <= output->pos());
+    assert(output->size() <= output->pos());
     if (output->size() >= output->pos()) {
       return kStreamOutBufFull;
     }
