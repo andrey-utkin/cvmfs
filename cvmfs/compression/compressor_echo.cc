@@ -39,7 +39,10 @@ StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
   const size_t have = input->chunk_size() - input->GetIdxInsideChunk();
   const size_t can_write = output->size() - output->pos();
   const size_t gonna_write = std::min(have, can_write);
-  assert(gonna_write != 0);
+  if (gonna_write == 0) {
+    assert(flush);
+    return kStreamEnd;
+  }
   const int64_t written = output->Write(input->chunk(), gonna_write);
   if (written < 0) {
     return kStreamIOError;
