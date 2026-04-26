@@ -55,10 +55,7 @@ StreamStates Compressor::CompressStream(InputAbstract* input,
     if (output->pos() == output->size()) {
       return kStreamOutBufFull;
     }
-    if (input->GetIdxInsideChunk() == input->chunk_size()) {
-      if (!input->has_chunk_left()) {
-        return kStreamEnd;
-      }
+    if (input->GetIdxInsideChunk() == input->chunk_size() && input->has_chunk_left()) {
       bool ok = input->NextChunk();
       if (!ok) {
         return kStreamIOError;

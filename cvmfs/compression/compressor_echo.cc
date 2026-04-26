@@ -45,7 +45,11 @@ StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
     return kStreamIOError;
   }
   input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
-  return kStreamContinue;
+  if (written == have) {
+    return kStreamEnd;
+  } else {
+    return kStreamContinue;
+  }
 }
 
 #if 0
