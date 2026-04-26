@@ -183,6 +183,7 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input,
         is_healthy_ = false;
         return kStreamDataError;
       }
+      input->SetIdxInsideChunk(stream_.next_in - input->chunk());
       const size_t have = kZChunk_ - stream_.avail_out;
       const int64_t written = output->Write(out, have);
 
@@ -243,6 +244,7 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
         is_healthy_ = false;
         return kStreamDataError;
       }
+      input->SetIdxInsideChunk(stream_.next_in - input->chunk());
       const size_t have = kZChunk_ - stream_.avail_out;
       const int64_t written = output->Write(out, have);
 
