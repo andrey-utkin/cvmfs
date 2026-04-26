@@ -76,7 +76,7 @@ StreamStates ZlibCompressor::StreamingStep(InputAbstract* input,
   const size_t processed_in = avail_in - stream_.avail_in;
   input->SetIdxInsideChunk(input->GetIdxInsideChunk() + processed_in);
 
-  if (!input->has_chunk_left() && flush && z_ret == Z_STREAM_END) {
+  if (!HasInputLeftInChunk() && !input->has_chunk_left() && flush && z_ret == Z_STREAM_END) {
     return kStreamEnd;
   }
   return kStreamContinue;
