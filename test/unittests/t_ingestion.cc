@@ -693,6 +693,8 @@ void T_Ingestion::ExerciseCompressionRoundtrip(zip::Algorithm alg) {
   res = decomp->DecompressStream(&in_tmp, &out_tmp);
   ASSERT_TRUE(res == zip::kStreamEnd);
   if (alg == zip::kNoCompression) {
+    ASSERT_EQ(read_pos, block_raw.pos());
+    EXPECT_EQ(0, memcmp(ptr_read_large, block_raw.data(), block_raw.size()));
     ASSERT_EQ(read_pos, out_tmp.pos());
     ASSERT_EQ(out_tmp.pos(), block_raw.size());
     ASSERT_EQ(block_raw.size(), out_decomp.pos());
