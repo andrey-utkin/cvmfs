@@ -180,7 +180,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input,
 
       z_ret = deflate(&stream_, flush);
       if (z_ret == Z_STREAM_ERROR) {
-        deflateEnd(&stream_);
         is_healthy_ = false;
         return kStreamDataError;
       }
@@ -188,7 +187,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input,
       const int64_t written = output->Write(out, have);
 
       if (written != static_cast<int64_t>(have)) {
-        deflateEnd(&stream_);
         is_healthy_ = false;
         return kStreamIOError;
       }
@@ -199,7 +197,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input,
 
   if (z_ret != Z_STREAM_END) {
     // here in original code "output" was reset and deleted
-    deflateEnd(&stream_);
     is_healthy_ = false;
     return kStreamDataError;
   } else {
@@ -243,7 +240,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
 
       z_ret = deflate(&stream_, flush);
       if (z_ret == Z_STREAM_ERROR) {
-        deflateEnd(&stream_);
         is_healthy_ = false;
         return kStreamDataError;
       }
@@ -251,7 +247,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
       const int64_t written = output->Write(out, have);
 
       if (written != static_cast<int64_t>(have)) {
-        deflateEnd(&stream_);
         is_healthy_ = false;
         return kStreamIOError;
       }
@@ -263,7 +258,6 @@ StreamStates ZlibCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
 
   if (z_ret != Z_STREAM_END) {
     // here in original code "output" was reset and deleted
-    deflateEnd(&stream_);
     is_healthy_ = false;
     return kStreamDataError;
   } else {

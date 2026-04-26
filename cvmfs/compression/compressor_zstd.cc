@@ -83,7 +83,6 @@ StreamStates ZstdCompressor::StreamingStep(InputAbstract* input,
   ZSTD_outBuffer outBuffer = {output->data(), output->size(), output->pos()};
   size_t remaining = ZSTD_compressStream2(stream_, &outBuffer, &inBuffer, mode);
   if (ZSTD_isError(remaining)) {
-    ZSTD_freeCCtx(stream_);
     is_healthy_ = false;
     return kStreamDataError;
   }
@@ -147,7 +146,8 @@ StreamStates ZstdCompressor::CompressStreamHard(InputAbstract *input,
 
 
 ZstdCompressor::~ZstdCompressor() {
-  assert(ZSTD_freeCCtx(stream_) == 0);
+  auto ret = ZSTD_freeCCtx(stream_);
+  assert(ret == 0);
 }
 
 
@@ -189,7 +189,6 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input,
 
       remaining = ZSTD_compressStream2(stream_, &outBuffer, &inBuffer, mode);
       if (ZSTD_isError(remaining)) {
-        ZSTD_freeCCtx(stream_);
         is_healthy_ = false;
         return kStreamDataError;
       }
@@ -197,7 +196,6 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input,
       const int64_t written = output->Write(out, have);
 
       if (written != static_cast<int64_t>(have)) {
-        ZSTD_freeCCtx(stream_);
         is_healthy_ = false;
         return kStreamIOError;
       }
@@ -243,7 +241,6 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
 
       remaining = ZSTD_compressStream2(stream_, &outBuffer, &inBuffer, mode);
       if (ZSTD_isError(remaining)) {
-        ZSTD_freeCCtx(stream_);
         is_healthy_ = false;
         return kStreamDataError;
       }
@@ -251,7 +248,6 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
       const int64_t written = output->Write(out, have);
 
       if (written != static_cast<int64_t>(have)) {
-        ZSTD_freeCCtx(stream_);
         is_healthy_ = false;
         return kStreamIOError;
       }
