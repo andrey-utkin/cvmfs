@@ -171,7 +171,7 @@ cd /home/sftnight/cvmfs/test
 export CVMFS_TEST_PROXY=DIRECT
 # restrict to only one CPU:
 taskset --cpu-list $(( RANDOM % "$(nproc)" )) \
-./run.sh /var/log/ci/$jobname.test.log -- $test || true
+./run.sh /var/log/ci/$jobname.test.log -- $test
 EOF
   chmod a+rwx "$job_file"
   # reveal:
@@ -185,6 +185,9 @@ echo 'Tests passed: '
 grep 'Test passed' worker/*/log/*.test.log | wc -l
 # Stats of outcomes (by 3rd line from the end):
 for x in worker/*/log/*.test.log; do tail -n3 $x | head -n1; done | sort | uniq -c
+# Stats of outcomes by run.sh exit code:
+echo PASSED "$(find worker/*/log/pass -type f | wc -l)"
+echo FAILED "$(find worker/*/log/fail -type f | wc -l)"
 
 for worker_i in $(seq 1 "$NB_WORKERS"); do
   touch worker/$worker_i/orders/non-executable-for-quit
@@ -207,4 +210,4 @@ for worker_i in $(seq 1 "$NB_WORKERS"); do
   done
   podman stop --ignore --time 0 "$WORKER_CONTAINER_NAME_BASE"$worker_i || true
 done
-tar -cf - worker/*/log/work.log worker/*/log/*.job* worker/*/log/*.test.log worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
+tar -cf - worker/*/log/ worker/*/tmp/cvmfs-test/ | zstd -T0 --ultra -20 > worker.$(date +%F_%T).tar.zst
