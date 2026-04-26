@@ -37,10 +37,14 @@ StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
                                            cvmfs::MemSink* output,
                                            const bool flush) {
   const size_t have = input->chunk_size() - input->GetIdxInsideChunk();
-  const int64_t written = output->Write(input->chunk(), have);
-  if (written > 0) {
-    input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
+  const size_t can_write = output->size() - output->pos();
+  const size_t gonna_write = std::min(have, can_write);
+  assert(gonna_write != 0);
+  const int64_t written = output->Write(input->chunk(), gonna_write);
+  if (written < 0) {
+    return kStreamIOError;
   }
+  input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
   return kStreamContinue;
 }
 
