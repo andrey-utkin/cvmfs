@@ -49,7 +49,7 @@ StreamStates EchoCompressor::StreamingStep(InputAbstract* input,
   }
   input->SetIdxInsideChunk(input->GetIdxInsideChunk() + written);
   output->SetPos(output->pos() + written);
-  if (!HasInputLeftInChunk() && !input->has_chunk_left() && flush) {
+  if (!input->HasInputLeftInChunk() && !input->has_chunk_left() && flush) {
     return kStreamEnd;
   } else {
     return kStreamContinue;

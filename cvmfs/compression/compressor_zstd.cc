@@ -88,7 +88,7 @@ StreamStates ZstdCompressor::StreamingStep(InputAbstract* input,
   }
   assert(output->SetPos(outBuffer.pos));
   input->SetIdxInsideChunk(inBuffer.pos);
-  if (!HasInputLeftInChunk() && !input->has_chunk_left() && flush && remaining == 0) {
+  if (!input->HasInputLeftInChunk() && !input->has_chunk_left() && flush && remaining == 0) {
     return kStreamEnd;
   }
   return kStreamContinue;
