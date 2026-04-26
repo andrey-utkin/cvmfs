@@ -58,7 +58,6 @@ class T_Compressor : public FileSandbox {
   char *test_string, *ptr_test_string;
   std::string str_test_string;
   UniquePtr<Compressor> compressor;
-  UniquePtr<ZlibCompressor> zlib_compressor;  // to use CompressStream()
   UniquePtr<Decompressor> decompressor;
   unsigned char *buf;
   size_t buf_size;
@@ -623,8 +622,8 @@ TEST_F(T_Compressor, EchoDecompressionSinkPath2PathLarge) {
 }
 
 TEST_F(T_Compressor, ZstdCompressionNewBigEnough) {
-  zlib_compressor = static_cast<
-        zip::ZlibCompressor*>(zip::Compressor::Construct(zip::kZstd));
+  UniquePtr<zip::Compressor> compressor;
+  compressor = zip::Compressor::Construct(zip::kZstd);
 
   // Compress the output
   unsigned char *input = reinterpret_cast<unsigned char *>(ptr_test_string);
@@ -633,7 +632,7 @@ TEST_F(T_Compressor, ZstdCompressionNewBigEnough) {
   out_mem.Adopt(buf_size, 0, buf, false);
 
   const zip::StreamStates ret =
-                       zlib_compressor->CompressStream(&in_mem, &out_mem, true);
+      compressor->CompressStream(&in_mem, &out_mem, true);
 
   ASSERT_EQ(ret, zip::kStreamEnd);
   ASSERT_GT(out_mem.pos(), 0U);
@@ -649,8 +648,7 @@ TEST_F(T_Compressor, ZstdCompressionNewBigEnough) {
 }
 
 TEST_F(T_Compressor, CompressionNewBigEnough) {
-  zlib_compressor = static_cast<
-        zip::ZlibCompressor*>(zip::Compressor::Construct(zip::kZlib));
+  compressor = zip::Compressor::Construct(zip::kZlib);
 
   // Compress the output
   unsigned char *input = reinterpret_cast<unsigned char *>(ptr_test_string);
@@ -659,7 +657,7 @@ TEST_F(T_Compressor, CompressionNewBigEnough) {
   out_mem.Adopt(buf_size, 0, buf, false);
 
   const zip::StreamStates ret =
-                       zlib_compressor->CompressStream(&in_mem, &out_mem, true);
+      compressor->CompressStream(&in_mem, &out_mem, true);
 
   ASSERT_EQ(ret, zip::kStreamEnd);
   ASSERT_GT(out_mem.pos(), 0U);
