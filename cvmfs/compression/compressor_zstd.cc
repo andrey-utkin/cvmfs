@@ -170,8 +170,11 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input,
   ZSTD_EndDirective mode = ZSTD_e_continue;
 
   do {
-    if (!input->NextChunk()) {
-      return kStreamIOError;
+    if (input->GetIdxInsideChunk() == input->chunk_size() && input->has_chunk_left()) {
+      bool ok = input->NextChunk();
+      if (!ok) {
+        return kStreamIOError;
+      }
     }
 
     if (!input->has_chunk_left()) {
@@ -221,8 +224,11 @@ StreamStates ZstdCompressor::Compress(InputAbstract *input, cvmfs::Sink *output,
   shash::Init(hash_context);
 
   do {
-    if (!input->NextChunk()) {
-      return kStreamIOError;
+    if (input->GetIdxInsideChunk() == input->chunk_size() && input->has_chunk_left()) {
+      bool ok = input->NextChunk();
+      if (!ok) {
+        return kStreamIOError;
+      }
     }
 
     if (!input->has_chunk_left()) {
