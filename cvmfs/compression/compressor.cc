@@ -47,8 +47,12 @@ StreamStates Compressor::CompressStream(InputAbstract* input,
   }
 
   do {
-    assert(output->size() <= output->pos());
-    if (output->size() >= output->pos()) {
+    assert(output->pos() <= output->size());
+    if (!(output->pos() <= output->size())) {
+      return kStreamError;
+    }
+
+    if (output->pos() == output->size()) {
       return kStreamOutBufFull;
     }
     if (input->GetIdxInsideChunk() == input->chunk_size()) {
@@ -67,5 +71,4 @@ StreamStates Compressor::CompressStream(InputAbstract* input,
 
   } while (true);
 }
-
 }  // namespace zlib
