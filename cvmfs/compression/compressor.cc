@@ -47,24 +47,25 @@ StreamStates Compressor::CompressStream(InputAbstract* input,
   }
 
   do {
-    if (input->GetIdxInsideChunk() < input->chunk_size()
-        && input->chunk_size() != 0) {
-      // still stuff to process in the current chunk
-    } else if (!input->NextChunk() && output->size() < output->pos()) {
-      return kStreamIOError;
+    assert(output->size <= output->pos());
+    if (output->size() >= output->pos()) {
+      return kStreamOutBufFull;
+    }
+    if (input->GetIdxInsideChunk() == input->chunk_size()) {
+      if (!input->has_chunk_left()) {
+        return kStreamEnd;
+      }
+      bool ok = input->NextChunk();
+      if (!ok) {
+        return kStreamIOError;
+      }
     }
     StreamStates step_ret = StreamingStep(input, output, flush);
     if (step_ret != kStreamContinue) {
       return step_ret;
     }
 
-    if (output->size() == output->pos()) {
-      return kStreamOutBufFull;
-    }
-  } while (input->has_chunk_left()
-          || (input->GetIdxInsideChunk() < input->chunk_size()
-              && input->chunk_size() != 0));
-  return kStreamEnd;
+  } while (true);
 }
 
 }  // namespace zlib
