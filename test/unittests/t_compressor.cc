@@ -136,6 +136,8 @@ TEST_F(T_Compressor, CompressionSinkMem2Mem) {
 }
 
 TEST_F(T_Compressor, ZstdCompressionAndSplitDecompressionSinkMem2MemLarge) {
+  UniquePtr<Compressor> compressor;
+  UniquePtr<Decompressor> decompressor;
   compressor = zip::Compressor::Construct(zip::kZstd);
   decompressor = zip::Decompressor::Construct(zip::kZstd);
 
@@ -482,6 +484,7 @@ TEST_F(T_Compressor, CompressionSinkPathNull2Mem) {
 }
 
 TEST_F(T_Compressor, EchoCompressionSinkMem2MemLarge) {
+  UniquePtr<Compressor> compressor;
   compressor = zip::Compressor::Construct(zip::kNoCompression);
 
   // Compress the output
@@ -591,6 +594,8 @@ TEST_F(T_Compressor, EchoCompressionSinkPath2PathLarge) {
 
 // Also tests Input_File and SinkFile because *Path uses it under the hood
 TEST_F(T_Compressor, EchoDecompressionSinkPath2PathLarge) {
+  UniquePtr<Compressor> compressor;
+  UniquePtr<Decompressor> decompressor;
   decompressor = zip::Decompressor::Construct(zip::kNoCompression);
   const size_t in_size = 16384 * 3ul;  // larger than decomp buffer size (32 KB)
   const size_t chunk_size = 8000;
