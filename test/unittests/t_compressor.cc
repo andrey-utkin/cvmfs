@@ -646,6 +646,7 @@ TEST_F(T_Compressor, EchoDecompressionSinkPath2PathLarge) {
 
 TEST_F(T_Compressor, ZstdCompressionNewBigEnough) {
   UniquePtr<zip::Compressor> compressor;
+  UniquePtr<zip::Decompressor> decompressor;
   compressor = zip::Compressor::Construct(zip::kZstd);
 
   // Compress the output
