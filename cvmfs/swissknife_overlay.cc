@@ -982,7 +982,9 @@ catalog::Catalog *CommandOverlay::LoadCatalogForPath(
     catalog_path = temp_dir + "/" + root_hash.ToString();
 
     cvmfs::PathSink pathsink(catalog_path);
-    download::JobInfo download_job(&url, true, false, &root_hash, &pathsink);
+    download::JobInfo download_job(
+        &url, new zip::GuessDecompressor(zip::ExpectedContentFormat::kSQLite3),
+        false, &root_hash, &pathsink);
     const download::Failures retval = download_manager()->Fetch(&download_job);
     if (retval != download::kFailOk) {
       LogCvmfs(kLogCvmfs, kLogStderr, "Failed to download catalog %s (%d)",
@@ -1121,7 +1123,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
   }
   zlib::Algorithms compression_alg = zlib::kZlibDefault;
   if (args.find('Z') != args.end()) {
-    compression_alg = zlib::ParseCompressionAlgorithm(
+    compression_alg = zip::ParseCompressionAlgorithm(
         *args.find('Z')->second);
   }
 
