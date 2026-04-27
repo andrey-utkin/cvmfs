@@ -10,6 +10,7 @@
 #include "decompressor_zstd.h"
 #include "decompressor_echo.h"
 #include "util/exception.h"
+#include "logging.h"
 
 namespace zip {
 
