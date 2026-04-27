@@ -26,6 +26,7 @@
 #include "catalog_rw.h"
 #include "catalog_sql.h"
 #include "compression/compression.h"
+#include "compression/util.h"
 #include "crypto/hash.h"
 #include "directory_entry.h"
 #include "ingestion/ingestion_source.h"
@@ -1151,8 +1152,8 @@ int CommandOverlay::Main(const ArgumentList &args) {
       0, 0, 0 /* chunk sizes: unused */,
       "" /* session_token_file */, "" /* key_file */);
 
-  const upload::SpoolerDefinition spooler_definition_catalogs(
-      spooler_definition.Dup2DefaultCompression());
+  const upload::SpoolerDefinition spooler_definition_catalogs(spooler_definition);
+  spooler_definition_catalogs.compression_alg = zip::CompressionAlgFromEnv();
 
   const UniquePtr<upload::Spooler> spooler_files(
       upload::Spooler::Construct(spooler_definition, &publish_statistics));
