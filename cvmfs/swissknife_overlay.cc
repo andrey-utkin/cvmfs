@@ -26,6 +26,8 @@
 #include "catalog_rw.h"
 #include "catalog_sql.h"
 #include "compression/compression.h"
+#include "compression/compressor.h"
+#include "compression/compressor_guess.h"
 #include "compression/util.h"
 #include "crypto/hash.h"
 #include "directory_entry.h"
