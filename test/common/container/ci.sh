@@ -17,7 +17,9 @@ WORKER_CONTAINER_NAME_BASE=cvmfs-ci-worker__"$FLAVOUR"-
 cd test/common/container
 
 if [[ -v BUILD ]]; then
-  podman build -f Dockerfile-dev . --tag "$CONTAINER_IMAGE_NAME":clean-slate
+  cd ../../..
+  podman build -f test/common/container/Dockerfile-dev . --tag "$CONTAINER_IMAGE_NAME":clean-slate
+  cd test/common/container
   mkdir -p     ../../../../ccache
   chmod -R 777 ../../../../ccache
   mkdir -p     ./build-and-client-tests.tmp
