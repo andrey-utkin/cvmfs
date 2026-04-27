@@ -763,8 +763,8 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
         *args.find('q')->second);
   }
 
-  upload::SpoolerDefinition const spooler_definition_catalogs(
-      spooler_definition.Dup2DefaultCompression());
+  upload::SpoolerDefinition spooler_definition_catalogs(spooler_definition);
+  spooler_definition_catalogs.compression_alg = zip::CompressionAlgFromEnv();
 
   UniquePtr<upload::Spooler> const spooler_catalogs(
       upload::Spooler::Construct(spooler_definition_catalogs, nullptr));
