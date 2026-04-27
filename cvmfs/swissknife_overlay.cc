@@ -1123,7 +1123,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
       return 1;
     }
   }
-  zlib::Algorithms compression_alg = zlib::kZlibDefault;
+  zip::Algorithms compression_alg = zip::kDefault;
   if (args.find('Z') != args.end()) {
     compression_alg = zip::ParseCompressionAlgorithm(
         *args.find('Z')->second);
