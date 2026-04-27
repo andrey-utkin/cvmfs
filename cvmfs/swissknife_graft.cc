@@ -312,7 +312,7 @@ int swissknife::CommandGraft::Publish(const std::string &input_file,
   }
   const size_t nbytes = graft_contents.size();
   const char *buf = graft_contents.c_str();
-  bool retval = SafeWrite(fd, buf, nbytes);
+  retval = SafeWrite(fd, buf, nbytes);
   if (!retval) {
     perror("Failed writing to graft file");
     close(fd);
