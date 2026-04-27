@@ -20,6 +20,7 @@
 #include "acl.h"
 #include "catalog_downloader.h"
 #include "catalog_mgr_rw.h"
+#include "compression/compression.h"
 #include "curl/curl.h"
 #include "gateway_util.h"
 #include "shortstring.h"
