@@ -1436,12 +1436,12 @@ int swissknife::IngestSQL::add_files(
         dir.compression_algorithm_ = zip::kNoCompression;
         break;
       case 2:  // Compressed with Zlib
-        dir.compression_algorithm_ = zip::kZlibDefault;
+        dir.compression_algorithm_ = zip::kZlib;
         break;
       // future cases: different compression schemes
       default:  // default behaviour: compressed if internal, content-addressed.
                 // Uncompressed if external
-        dir.compression_algorithm_ = file.internal ? zip::kZlibDefault
+        dir.compression_algorithm_ = file.internal ? zip::kZlib
                                                    : zip::kNoCompression;
     }
 
