@@ -19,6 +19,8 @@ namespace CVMFS_NAMESPACE_GUARD {
 #endif
 
 unsigned int GetNumberOfCpuCores() {
+  return 1;
+#if 0
   const int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
 
   if (numCPU <= 0) {
@@ -31,6 +33,7 @@ unsigned int GetNumberOfCpuCores() {
   }
 
   return static_cast<unsigned int>(numCPU);
+#endif
 }
 
 Signal::Signal() : fired_(false) {

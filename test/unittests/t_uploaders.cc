@@ -27,7 +27,7 @@
 /**
  * Port of S3 mockup server
  */
-#define CVMFS_S3_TEST_MOCKUP_SERVER_PORT 8082
+#define CVMFS_S3_TEST_MOCKUP_SERVER_PORT 8085
 
 namespace upload {
 

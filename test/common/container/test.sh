@@ -10,6 +10,7 @@ cd $HERE/../..
 CLIENT_TEST_LOGFILE=/tmp/cvmfs-client-test.log
 SERVER_TEST_LOGFILE=/tmp/cvmfs-server-test.log
 
+if [[ "$TEST_CLIENT" == 1 ]]; then
 echo "running CernVM-FS client test cases..."
 ./run.sh $CLIENT_TEST_LOGFILE -s "quick"                                      \
                               -x src/104-concurrent_mounts                    \
@@ -19,8 +20,11 @@ echo "running CernVM-FS client test cases..."
                                  src/0*                                       \
                                  src/1*                                       \
                               || exit 1
+fi
 
-
+if [[ "$TEST_SERVER" != 1 ]]; then
+   exit 0
+fi
 echo "running CernVM-FS server test cases..."
 CVMFS_TEST_UNIONFS=overlayfs                                                  \
 ./run.sh $SERVER_TEST_LOGFILE -s "quick"                                      \
