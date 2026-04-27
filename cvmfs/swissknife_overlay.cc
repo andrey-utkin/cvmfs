@@ -1152,7 +1152,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
       0, 0, 0 /* chunk sizes: unused */,
       "" /* session_token_file */, "" /* key_file */);
 
-  const upload::SpoolerDefinition spooler_definition_catalogs(spooler_definition);
+  upload::SpoolerDefinition spooler_definition_catalogs(spooler_definition);
   spooler_definition_catalogs.compression_alg = zip::CompressionAlgFromEnv();
 
   const UniquePtr<upload::Spooler> spooler_files(
