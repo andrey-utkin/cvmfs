@@ -21,6 +21,7 @@
 #include "catalog_downloader.h"
 #include "catalog_mgr_rw.h"
 #include "compression/compression.h"
+#include "compression/compression.h"
 #include "curl/curl.h"
 #include "gateway_util.h"
 #include "shortstring.h"
@@ -752,7 +753,7 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
   // now initialise the various bits we need
 
   upload::SpoolerDefinition spooler_definition(
-      spooler_definition_string, shash::kSha1, zlib::kZlibDefault, false, true,
+      spooler_definition_string, shash::kSha1, zip::CompressionAlgFromEnv(), false, true,
       SyncParameters::kDefaultMinFileChunkSize,
       SyncParameters::kDefaultAvgFileChunkSize,
       SyncParameters::kDefaultMaxFileChunkSize, g_session_token_file, key_file);
