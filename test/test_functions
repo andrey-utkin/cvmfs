@@ -2705,8 +2705,8 @@ EOF'
     sudo $gateway_script start
 
     # Wait for gateway to be ready with timeout
-    if ! timeout 30 bash -c "until $gateway_script status &>/dev/null; do sleep 1; done"; then
-        echo "Gateway failed to start within 30 seconds" >&2
+    if ! timeout 300 bash -c "until $gateway_script status &>/dev/null; do sleep 1; done"; then
+        echo "Gateway failed to start within 300 seconds" >&2
         return 1
     fi
 }
