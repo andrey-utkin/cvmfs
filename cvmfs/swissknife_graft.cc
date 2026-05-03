@@ -29,7 +29,10 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
   }
   *file_size = 0;
   shash::Any chunk_hash(hash_alg_);
-  zip::InputFd input(fd);
+  zip::InputFd input(
+      fd,
+      /*max_chunk_size=*/(chunk_size_ > 0 ? chunk_size_ : zip::kZChunk),
+      /*is_owner=*/false);
 
   bool do_chunk = chunk_size_ > 0;
   // no chunked files
