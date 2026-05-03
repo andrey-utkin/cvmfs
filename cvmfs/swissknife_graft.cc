@@ -14,6 +14,7 @@
 
 #include "compression/compressor.h"
 #include "compression/input_fd.h"
+#include "compression/util.h"
 #include "crypto/hash.h"
 #include "network/sink_null.h"
 #include "util/fs_traversal.h"
