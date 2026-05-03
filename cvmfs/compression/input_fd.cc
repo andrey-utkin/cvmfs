@@ -2,6 +2,9 @@
  * This file is part of the CernVM File System.
  */
 
+#include <unistd.h>
+#include <errno.h>
+
 #include "input_fd.h"
 #include "util/smalloc.h"
 
@@ -10,7 +13,7 @@ namespace zip {
 InputFd::InputFd(const int fd, const size_t max_chunk_size,
                      const bool is_owner) :
                                   InputAbstract(is_owner, max_chunk_size, NULL),
-                                  src_(fd) {
+                                  src_(fd), is_valid_(true) {
   if (InputFd::IsValid()) {
     chunk_ = static_cast<unsigned char*>(smalloc(max_chunk_size_));
     has_chunk_left_ = true;
@@ -24,8 +27,8 @@ InputFd::~InputFd() {
     if (is_owner_) {
       close(src_);
     }
+    is_valid_ = false;
   }
-  src_ = -1;
 }
 
 
@@ -56,7 +59,7 @@ bool InputFd::NextChunk() {
 }
 
 bool InputFd::IsValid() {
-  return src_ != -1;
+  return is_valid_;
 }
 
 bool InputFd::Reset() {
