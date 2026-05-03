@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "compression/compressor.h"
-#include "compression/input_path.h"
+#include "compression/input_fd.h"
 #include "crypto/hash.h"
 #include "network/sink_null.h"
 #include "util/fs_traversal.h"
@@ -30,19 +30,13 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
   *file_size = 0;
   shash::Any chunk_hash(hash_alg_);
   zip::InputFd input(fd);
-  if (!input.IsValid()) {
-    LogCvmfs(kLogCvmfs, kLogStderr, "Failure when opening file %s: %s",
-              input_file.c_str(), strerror(errno));
-    return false;
-  }
 
   bool do_chunk = chunk_size_ > 0;
   // no chunked files
   if (!do_chunk) {
     cvmfs::NullSink out_null;
 
-    zip::StreamStates ret = compressor->Compress(&input, &out_null,
-                                                                     file_hash);
+    zip::StreamStates ret = compressor->Compress(&input, &out_null, file_hash);
     if (ret != zip::kStreamEnd) {
       return false;
     }
