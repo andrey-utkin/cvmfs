@@ -42,7 +42,7 @@ class InputFd : public InputAbstract {
 
  private:
   const int src_;
-  const bool is_valid_;
+  bool is_valid_;
 };
 
 }  // namespace zip
