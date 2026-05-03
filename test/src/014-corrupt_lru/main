@@ -34,6 +34,7 @@ cvmfs_run_test() {
 
   echo "unmount ${repo}"
   cvmfs_umount ${repo} || 10
+  wait_for_umount
   echo "destroy cache database"
   sudo sh -c "echo bla > ${cache_dir}/cachedb" || return 11
 

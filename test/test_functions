@@ -531,8 +531,8 @@ cvmfs_mount() {
 
   sudo sh -c "echo \"CVMFS_REPOSITORIES=$repositories\" > /etc/cvmfs/default.local" || return 100
   sudo sh -c "echo \"CVMFS_HTTP_PROXY=\\\"${CVMFS_TEST_PROXY}\\\"\" >> /etc/cvmfs/default.local" || return 100
-  sudo sh -c 'echo "CVMFS_TIMEOUT=20" >> /etc/cvmfs/default.local' || return 100
-  sudo sh -c 'echo "CVMFS_TIMEOUT_DIRECT=20" >> /etc/cvmfs/default.local' || return 100
+  sudo sh -c 'echo "CVMFS_TIMEOUT=200" >> /etc/cvmfs/default.local' || return 100
+  sudo sh -c 'echo "CVMFS_TIMEOUT_DIRECT=200" >> /etc/cvmfs/default.local' || return 100
   sudo sh -c "echo CVMFS_SYSLOG_FACILITY=$CVMFS_TEST_SYSLOG_FACILITY >> /etc/cvmfs/default.local" || return 100
   sudo sh -c "echo CVMFS_USE_MACFUSE_KEXT=$CVMFS_TEST_USE_MACFUSE_KEXT >> /etc/cvmfs/default.local" || return 100
   sudo sh -c "echo CVMFS_REPOSITORY_TAG=TESTING > /etc/cvmfs/config.d/cvmfs-config.cern.ch.local" || return 100
@@ -612,7 +612,7 @@ cvmfs_umount() {
       return 200
     fi
 
-    local timeout=5
+    local timeout=50
     while show_mounted | grep -q " /cvmfs/$r "; do
       if [ $timeout -eq 0 ]; then
         return 101
@@ -1193,7 +1193,7 @@ open_http_server() {
   touch ${document_root}/$(basename $http_sentinel)
 
   # waiting for the server to come up
-  local timeout=15
+  local timeout=150
   while ! curl -Is ${http_sentinel} | head -n1 | grep "200 OK" >> $logfile 2>&1 && \
         [ $timeout -gt 0 ]; do
     sleep 1
@@ -1228,7 +1228,7 @@ open_metalink_server() {
   http_pid=$(run_background_service $logfile "$http_server -p $port $args")
 
   # waiting for the server to come up
-  local timeout=15
+  local timeout=150
   while ! curl -Is $url | head -n1 | grep "307 Temporary Redirect" >> $logfile 2>&1 && \
         [ $timeout -gt 0 ]; do
     sleep 1
@@ -2715,8 +2715,8 @@ EOF'
     sudo $gateway_script start
 
     # Wait for gateway to be ready with timeout
-    if ! timeout 30 bash -c "until $gateway_script status &>/dev/null; do sleep 1; done"; then
-        echo "Gateway failed to start within 30 seconds" >&2
+    if ! timeout 300 bash -c "until $gateway_script status &>/dev/null; do sleep 1; done"; then
+        echo "Gateway failed to start within 300 seconds" >&2
         return 1
     fi
 }

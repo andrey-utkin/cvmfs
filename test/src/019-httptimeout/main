@@ -63,9 +63,9 @@ cvmfs_run_test() {
   sudo rm -f /etc/cvmfs/domain.d/cern.ch.local || retval=6
 
   # Three extra seconds for measurement uncertainties.
-  local expected_delay=$((2000*3000 + 3000))
+  local expected_delay=60000
   if [ $milliseconds -gt $expected_delay ]; then
-    echo "mounting took too long with $milliseconds seconds (expected $expected_delay)"
+    echo "mounting took too long with $milliseconds milliseconds (expected $expected_delay)"
     CVMFS_TIME_WARNING_FLAG=1
   fi
 
