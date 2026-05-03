@@ -1458,12 +1458,20 @@ cvmfs_probe() {
         cvmfs_readconfig $fqrn || die "Failed to read CernVM-FS configuration"
         echo -n "Probing $CVMFS_MOUNT_DIR/$fqrn... "
         ls "$CVMFS_MOUNT_DIR/$fqrn" > /dev/null 2>&1  # workaround for FC28+
-        if [ "$sys_arch" = "Darwin" ] && ! is_macfuse_enabled; then
-          df -P "$CVMFS_MOUNT_DIR/$fqrn" 2>&1 | grep -q "$fqrn"
-        else 
-          df -P "$CVMFS_MOUNT_DIR/$fqrn" 2>&1 | grep -q ^cvmfs2
-        fi
-        if [ $? -ne 0 ]; then
+        for attempt in $(seq 1 60); do
+          if [ "$sys_arch" = "Darwin" ] && ! is_macfuse_enabled; then
+            df -P "$CVMFS_MOUNT_DIR/$fqrn" 2>&1 | grep -q "$fqrn"
+          else
+            df -P "$CVMFS_MOUNT_DIR/$fqrn" 2>&1 | grep -q ^cvmfs2
+          fi
+          RC=$?
+          if [ $RC -eq 0 ]; then
+            break
+          else
+            sleep 1
+          fi
+        done
+        if [ $RC -ne 0 ]; then
           echo "Failed!"
           RETVAL=1
         else
