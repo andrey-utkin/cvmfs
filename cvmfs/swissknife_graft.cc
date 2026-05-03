@@ -20,7 +20,7 @@
 #include "util/posix.h"
 
 bool swissknife::CommandGraft::ChecksumFdWithChunks(
-                 const std::string &input_file, zip::Compressor *compressor,
+                 const int fd, zip::Compressor *compressor,
                  uint64_t *file_size, shash::Any *file_hash,
                  std::vector<uint64_t> *chunk_offsets,
                  std::vector<shash::Any> *chunk_checksums) {
@@ -29,8 +29,8 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
   }
   *file_size = 0;
   shash::Any chunk_hash(hash_alg_);
-  zip::InputPath in_path(input_file);
-  if (!in_path.IsValid()) {
+  zip::InputFd input(fd);
+  if (!input.IsValid()) {
     LogCvmfs(kLogCvmfs, kLogStderr, "Failure when opening file %s: %s",
               input_file.c_str(), strerror(errno));
     return false;
@@ -41,13 +41,13 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
   if (!do_chunk) {
     cvmfs::NullSink out_null;
 
-    zip::StreamStates ret = compressor->Compress(&in_path, &out_null,
+    zip::StreamStates ret = compressor->Compress(&input, &out_null,
                                                                      file_hash);
     if (ret != zip::kStreamEnd) {
       return false;
     }
 
-    *file_size = in_path.bytes_read();
+    *file_size = input.bytes_read();
     return true;
   }
 
@@ -73,7 +73,7 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
     out_comp.Adopt(compressor->kZChunk(), 0,
                               reinterpret_cast<unsigned char*>(out_buf), false);
 
-    ret_compress = compressor->CompressStream(&in_path, &out_comp, true);
+    ret_compress = compressor->CompressStream(&input, &out_comp, true);
 
     assert(ret_compress == zip::kStreamOutBufFull
            || ret_compress == zip::kStreamEnd
@@ -98,7 +98,7 @@ bool swissknife::CommandGraft::ChecksumFdWithChunks(
   shash::Final(chunk_hash_context, &chunk_hash);
   chunk_checksums->push_back(chunk_hash);
 
-  *file_size = in_path.bytes_read();
+  *file_size = input.bytes_read();
 
   // Zero-size chunks are not allowed; except if there is only one chunk
   if ((chunk_offsets->back() == *file_size) && (chunk_offsets->size() > 1)) {
@@ -258,7 +258,7 @@ int swissknife::CommandGraft::Publish(const std::string &input_file,
   const UniquePtr<zip::Compressor>
                        compressor(zip::Compressor::Construct(compression_alg_));
   bool retval =
-      ChecksumFdWithChunks(input_file, compressor.weak_ref(), &processed_size,
+      ChecksumFdWithChunks(fd, compressor.weak_ref(), &processed_size,
                            &file_hash, &chunk_offsets, &chunk_checksums);
 
   if (!input_file_is_stdin) {
