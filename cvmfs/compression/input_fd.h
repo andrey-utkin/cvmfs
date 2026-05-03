@@ -6,6 +6,7 @@
 #define CVMFS_COMPRESSION_INPUT_FD_H_
 
 #include "input_abstract.h"
+#include "compression.h"
 
 namespace zip {
 
@@ -14,7 +15,7 @@ namespace zip {
  */
 class InputFd : public InputAbstract {
  public:
-  InputFd(const int fd, const size_t max_chunk_size,
+  InputFd(const int fd, const size_t max_chunk_size = zip::kZChunk,
             const bool is_owner = false);
   virtual ~InputFd();
 
