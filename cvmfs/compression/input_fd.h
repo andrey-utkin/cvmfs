@@ -7,6 +7,7 @@
 
 #include "input_abstract.h"
 #include "compression.h"
+#include "compression/util.h"
 
 namespace zip {
 
