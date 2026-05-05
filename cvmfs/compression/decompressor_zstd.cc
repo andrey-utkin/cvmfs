@@ -79,6 +79,9 @@ StreamStates ZstdDecompressor::DecompressStream(InputAbstract *input,
         return kStreamDataError;
       }
       const size_t have = outBuffer.pos;
+      if (have == 0) {
+        break;
+      }
       const int64_t written = output->Write(out, have);
 
       if (written < 0) {
@@ -86,6 +89,9 @@ StreamStates ZstdDecompressor::DecompressStream(InputAbstract *input,
         return kStreamIOError;
       }
       input->SetIdxInsideChunk(inBuffer.pos);
+      if (z_ret == 0) {
+        break;
+      }
     } while (
         inBuffer.pos < inBuffer.size // input buffer has something to process
         );
