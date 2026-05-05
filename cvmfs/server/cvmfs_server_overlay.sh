@@ -88,7 +88,7 @@ cvmfs_server_overlay() {
     $(get_swissknife_proxy)                      \
     $(get_follow_http_redirects_flag)             \
     $([ -n "$oci_config" ] && echo "-c $oci_config") \
-    $([ $skip_singularity -eq 1 ] && echo "-S")"
+    $([ "$skip_singularity" -eq 1 ] && echo "-S")"
 
   # ---> do it!
   publish_before_hook $name
