@@ -84,7 +84,7 @@ cvmfs_server_overlay() {
     -l $layers                                   \
     -d $dest_path                                \
     -e $hash_algorithm                           \
-    -Z "$compression_alg"                        \
+    -Z $compression_alg                          \
     $(get_swissknife_proxy)                      \
     $(get_follow_http_redirects_flag)             \
     $([ -n "$oci_config" ] && echo "-c $oci_config") \
