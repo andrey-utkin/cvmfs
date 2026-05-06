@@ -78,6 +78,7 @@ StreamStates ZstdDecompressor::DecompressStream(InputAbstract *input,
         is_healthy_ = false;
         return kStreamDataError;
       }
+      input->SetIdxInsideChunk(inBuffer.pos);
       const size_t have = outBuffer.pos;
       if (have == 0) {
         break;
@@ -88,7 +89,6 @@ StreamStates ZstdDecompressor::DecompressStream(InputAbstract *input,
         is_healthy_ = false;
         return kStreamIOError;
       }
-      input->SetIdxInsideChunk(inBuffer.pos);
       if (z_ret == 0) {
         break;
       }

@@ -82,6 +82,7 @@ StreamStates ZlibDecompressor::DecompressStream(InputAbstract *input,
           return kStreamIOError;
         break;
       }
+      input->SetIdxInsideChunk(input->chunk_size() - stream_.avail_in);
       const size_t have = kZChunk_ - stream_.avail_out;
       if (have == 0) {
         break;
@@ -92,7 +93,6 @@ StreamStates ZlibDecompressor::DecompressStream(InputAbstract *input,
         is_healthy_ = false;
         return kStreamIOError;
       }
-      input->SetIdxInsideChunk(input->chunk_size() - stream_.avail_in);
       if (z_ret == Z_STREAM_END) {
         break;
       }
