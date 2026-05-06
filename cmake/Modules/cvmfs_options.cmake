@@ -67,7 +67,7 @@ option (ENABLE_ASAN             "Enable the Address Sanitizer"                  
 option (CHECK_SYSTEM_HEADERS    "Check System for required headers"                                 OFF)
 
 list(APPEND COMPRESSION_OPTIONS zlib zstd none)
-set(COMPRESSION_DEFAULT_IF_UNSET "zlib" CACHE STRING "Assumed value for default `compression" FORCE)
+set(COMPRESSION_DEFAULT_IF_UNSET "zstd" CACHE STRING "Assumed value for default `compression" FORCE)
 set(COMPRESSION_DEFAULT "${COMPRESSION_DEFAULT_IF_UNSET}" CACHE STRING "Which compression to use by default. Valid values: ${COMPRESSION_OPTIONS}. If unset, assumed ${COMPRESSION_DEFAULT_IF_UNSET}")
 
 if ("${COMPRESSION_DEFAULT}" STREQUAL "")
