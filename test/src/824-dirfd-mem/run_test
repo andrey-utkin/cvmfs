@@ -1,0 +1,262 @@
+#!/usr/bin/env bash
+
+[[ -v TEST_ROOT ]]
+
+source "$TEST_ROOT"/test_functions
+
+set -euo pipefail
+#set -x
+# Based on struct fuse_libent, see include/fuse_kernel.h in libfuse repo.
+# struct fuse_dirent {
+# 	uint64_t	ino;
+# 	uint64_t	off;
+# 	uint32_t	namelen;
+# 	uint32_t	type;
+# 	char name[];
+# };
+# We use same-length (NAMELEN-1)-chars-long filenames, and assume null terminator is stored.
+# NAMELEN is chosen so that EXPECTED_BYTES_PER_DIRENT=128, for convenient calculation.
+NAMELEN=104
+EXPECTED_BYTES_PER_DIRENT=$(( 8 + 8 + 4 + 4 + NAMELEN ))
+[[ "$EXPECTED_BYTES_PER_DIRENT" == 128 ]]
+echo Expected BYTES_PER_DIRENT: $EXPECTED_BYTES_PER_DIRENT
+WOULD_BE_TOO_MUCH=$(( EXPECTED_BYTES_PER_DIRENT * 130 / 100 ))
+echo This would be too much per dirent: $WOULD_BE_TOO_MUCH
+
+# The design of BigVector is that it's doubling in capacity.
+# BigVector used to store data pertaining to directory stream is of char
+# content type, and is initialized with 512 bytes size.
+# In particular, 0.5, 1, 2 and 4 MiB are some of the points which capacity
+# "visits" on its growth trajectory.
+# Let's design the big dir so that it's as far from these points as possible.
+TARGET_DIR_FOOTPRINT_BYTES=$((1024*1024 * 3 / 4))
+#TARGET_DIR_FOOTPRINT_BYTES=$((1024*1024 * 3 / 4 / 64))
+#TARGET_DIR_FOOTPRINT_BYTES=$((1024*1024 * 3 / 4 / 64 / 64))
+#TARGET_DIR_FOOTPRINT_BYTES=$((1024*1024 * 3 / 4))
+NUM_DIRENT=$(( TARGET_DIR_FOOTPRINT_BYTES / EXPECTED_BYTES_PER_DIRENT ))
+NUM_DIRENT=1000
+
+#NUM_DIRS=$(( 13 * 3 ))
+#NUM_DIRS=1
+NUM_DIRS=1000
+
+echo "create a fresh repository named $CVMFS_TEST_REPO with user $CVMFS_TEST_USER"
+create_empty_repo "$CVMFS_TEST_REPO" "$CVMFS_TEST_USER" -
+echo "CVMFS_KCACHE_TIMEOUT=0" | sudo tee -a /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf
+
+echo "starting transaction to edit repository"
+start_transaction "$CVMFS_TEST_REPO"
+
+repo_dir=/cvmfs/$CVMFS_TEST_REPO
+
+
+pushd "$repo_dir"
+df -i "$repo_dir"
+df -k "$repo_dir"
+# tar is faster (e.g. 35s vs 75s for whole test), but below code is equivalent:
+if [[ -f "$TEST_ROOT"/src/824-dirfd-mem/big_dir.tar.zst ]]; then
+  tar -xaf "$TEST_ROOT"/src/824-dirfd-mem/big_dir.tar.zst
+  [[ "$(ls big_dir | wc -l)" == "$NUM_DIRENT" ]]
+else
+  mkdir big_dir
+  pushd big_dir
+  for i in $(seq 1 $NUM_DIRENT); do
+    #touch "$(printf %0$((NAMELEN-1))d $i)"
+    dd bs=8 count=1 if=/dev/urandom of="$(printf %0$((NAMELEN-1))d $i)" status=none
+  done
+  popd
+fi
+
+  for i in $(seq 2 $NUM_DIRS); do
+    copy_dir_name=$(printf 'dir-%05d' $i)
+    cp -a big_dir "$copy_dir_name"
+  done
+
+popd
+df -i "$repo_dir"
+
+echo "creating CVMFS snapshot"
+publish_repo "$CVMFS_TEST_REPO" &> /dev/null
+
+sudo umount /cvmfs/"$CVMFS_TEST_REPO"
+sudo umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+sudo sed -i /etc/fstab -e 's/cvmfs_suid,/&disable_watchdog,/'
+#sudo sed -i /etc/fstab -e 's/cvmfs_suid,/&debug,/'
+#echo CVMFS_DEBUGLOG=/tmp/"$CVMFS_TEST_REPO".log >> /var/spool/cvmfs/test.cern.ch/client.local
+echo CVMFS_DEBUGLOG=/dev/null >> /var/spool/cvmfs/test.cern.ch/client.local
+# recommended in doc/valgrind.md:
+echo CVMFS_QUOTA_LIMIT=0 >> /var/spool/cvmfs/test.cern.ch/client.local
+echo CVMFS_SHARED_CACHE=no >> /var/spool/cvmfs/test.cern.ch/client.local
+echo CVMFS_FUSE3_MAX_THREADS=100 >> /var/spool/cvmfs/test.cern.ch/client.local
+echo CVMFS_FUSE3_IDLE_THREADS=100 >> /var/spool/cvmfs/test.cern.ch/client.local
+
+#sudo mount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+#sudo cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid &
+sudo cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,dev,suid &
+# works but the report is problematic to consume
+#sudo igprof -d -t cvmfs2 -pp -z -o /tmp/igprof.log cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing -f &
+#sudo valgrind --tool=massif --pages-as-heap=yes --massif-out-file=/tmp/massif.out --log-file=/tmp/valgrind-massif.log cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing -f &
+# Valgrind DHAT, a dynamic heap analysis tool
+#sudo valgrind --tool=dhat --dhat-out-file=/tmp/dhat.out --log-file=/tmp/valgrind-dhat.log cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing -f &
+#sudo valgrind --tool=memcheck --show-error-list=yes --show-leak-kinds=all --track-origins=yes  --show-leak-kinds=all --leak-check=full --xtree-leak=yes --xtree-leak-file=xtleak.kcg --log-file=/tmp/valgrind-memcheck.log  cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing,gid=0,uid=0 -f &
+#sudo valgrind --tool=memcheck --show-error-list=yes --show-leak-kinds=all --track-origins=yes  --show-leak-kinds=all --leak-check=full  --log-file=/tmp/valgrind-memcheck.log  cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing,gid=0,uid=0 -f &
+#sudo valgrind --tool=massif --time-unit=B --pages-as-heap=yes --massif-out-file=/tmp/massif.out --log-file=/tmp/valgrind-massif.log cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing -f &
+#sudo valgrind --tool=massif --time-unit=ms --detailed-freq=1 --max-snapshots=1000 --pages-as-heap=yes --massif-out-file=/tmp/massif.out --log-file=/tmp/valgrind-massif.log cvmfs2 test.cern.ch /var/spool/cvmfs/test.cern.ch/rdonly -o rw,allow_other,fsname=test.cern.ch,config=/etc/cvmfs/repositories.d/test.cern.ch/client.conf:/var/spool/cvmfs/test.cern.ch/client.local,cvmfs_suid,disable_watchdog,debug,dev,suid,simple_options_parsing -f &
+
+CVMFS_WAIT_PID=$!
+
+#sleep 10
+while ! [[ -d /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly/big_dir ]]; do
+  :
+done
+
+# measure cvmfs2 RSS
+# We need either of
+# VmRSS field of /proc/pid/status
+# `resident` (field 2) of /proc/pid/statm (given in pages)
+# The latter is simpler to parse.
+#CVMFS_PID=$(pgrep cvmfs2)
+CVMFS_PID=$(pgrep --full cvmfs2 | sort -n | tail -n1) # for valgrind. Doesn't matter but lazy to comment everything out
+[[ "$CVMFS_PID" != "" ]]
+
+rss_statm() {
+  # suspected to have delays, messing up the test logic
+  PAGES=$(cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm)
+  echo $(( PAGES * 4096 ))
+}
+
+rss() {
+  #tail -n +2 /proc/self/smaps_rollup  | head -n1 | { IFS=' ' read A B C; echo $A . $B . $C ; }
+  sudo tail -n +2 /proc/"$CVMFS_PID"/smaps_rollup  | head -n1 | {
+    IFS=' ' read measurement number units
+    [[ "$measurement" == Rss: ]]
+    [[ "$units" == kB ]]
+    echo $(( number * 1024 ))
+  }
+}
+
+(while true; do
+  date +%F_%T
+  #cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm
+  rss
+  sleep 1
+done > /tmp/statm.watch.log) &
+WATCH_PID=$!
+
+#RSS_0=$(cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm)
+#RSS_0=$(rss)
+
+# run C program doing opendir("$repo_dir"/big_dir) and keeping it open
+gcc -Wall -o opendir "$TEST_ROOT"/src/824-dirfd-mem/opendir.c
+OPENDIR_EXE=$(readlink -f opendir)
+
+#ERRORS_LOG=$(mktemp --tmpdir=/tmp --suffix=.dirfd-mem.errors.log XXXXXXX)
+ERRORS_LOG=dirfd-mem.errors.log
+
+round() {
+  i=$1
+  OPENDIR_PIDS=()
+  LOGFILES=()
+
+  #sleep 10
+  RSS_BEFORE_OPEN=$(rss)
+  for dir in /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly/*; do
+    #LOGFILE=$(mktemp --suffix=.opendir.log --tmpdir=/tmp XXXXXXX)
+    LOGFILE=/tmp/"$(basename $dir)".opendir.log
+    #strace -ff "$OPENDIR_EXE" "$dir" > "$LOGFILE" &
+    "$OPENDIR_EXE" "$dir" > "$LOGFILE" &
+    OPENDIR_PID=$!
+    OPENDIR_PIDS+=($OPENDIR_PID)
+    LOGFILES+=($LOGFILE)
+  done
+  for OPENDIR_PID in "${OPENDIR_PIDS[@]}"; do
+    if ! [[ -d /proc/"$OPENDIR_PID" ]]; then
+      set +e
+      wait "$OPENDIR_PID"
+      echo $?
+      set -e
+      exit 1
+    fi
+  done
+  for LOGFILE in "${LOGFILES[@]}"; do
+    while ! [[ -s "$LOGFILE" ]]; do
+      sleep 0.1
+      # TODO performant waiting, but make it race-safe: timeout 1 inotifywait --event modify "$LOGFILE"      
+    done
+    rm "$LOGFILE"
+  done
+
+  date
+  #ps axfu
+  RSS_AFTER_OPEN=$(rss)
+  #sleep 10
+  #date
+  # measure cvmfs2 RSS
+  #RSS_BEFORE=$(cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm)
+  #RSS_AFTER_OPEN=$(rss)
+  for OPENDIR_PID in "${OPENDIR_PIDS[@]}"; do
+    kill "$OPENDIR_PID"
+  done
+  for OPENDIR_PID in "${OPENDIR_PIDS[@]}"; do
+    wait "$OPENDIR_PID" || true
+  done
+  #RSS_AFTER=$(cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm)
+  RSS_AFTER_KILL=$(rss)
+
+  echo Round $i: RSS_BEFORE_OPEN=$RSS_BEFORE_OPEN, RSS_AFTER_OPEN=$RSS_AFTER_OPEN, RSS_AFTER_KILL=$RSS_AFTER_KILL
+  #sleep 10
+  #RSS_AFTER_KILL_AND_WAIT=$(rss)
+  #[[ "$RSS_AFTER_KILL" == "$RSS_AFTER_KILL_AND_WAIT" ]]
+
+  #RSS_RISE=$(( RSS_AFTER_OPEN - RSS_BEFORE_OPEN ))
+  #RSS_FALL=$(( RSS_AFTER_OPEN - RSS_AFTER_KILL ))
+  #echo RSS_RISE=$RSS_RISE, RSS_FALL=$RSS_FALL
+  #BYTES_PER_DIRENT_RISE=$(( RSS_RISE / NUM_DIRENT / NUM_DIRS ))
+  #echo Calculated BYTES_PER_DIRENT_RISE, round $i: $BYTES_PER_DIRENT_RISE
+  #BYTES_PER_DIRENT_FALL=$(( RSS_FALL / NUM_DIRENT / NUM_DIRS ))
+  #echo Calculated BYTES_PER_DIRENT_FALL, round $i: $BYTES_PER_DIRENT_FALL
+
+  #if [[ "$BYTES_PER_DIRENT_RISE" -lt "$(( EXPECTED_BYTES_PER_DIRENT - 1 ))" ]]; then
+  #  echo "Bytes per dirent rise $BYTES_PER_DIRENT_RISE (round $i) is too little, must be some measurement mistake" | tee -a "$ERRORS_LOG"
+  #  #exit 1
+  #fi
+  #if [[ "$BYTES_PER_DIRENT_RISE" -gt "$WOULD_BE_TOO_MUCH" ]]; then
+  #  echo "Bytes per dirent rise $BYTES_PER_DIRENT_RISE (round $i) is too much, expected around $EXPECTED_BYTES_PER_DIRENT" | tee -a "$ERRORS_LOG"
+  #  #exit 2
+  #fi
+  #if [[ "$BYTES_PER_DIRENT_FALL" -lt "$(( EXPECTED_BYTES_PER_DIRENT - 1 ))" ]]; then
+  #  echo "Bytes per dirent fall $BYTES_PER_DIRENT_FALL (round $i) is too little, must be some measurement mistake" | tee -a "$ERRORS_LOG"
+  #  #exit 1
+  #fi
+  #if [[ "$BYTES_PER_DIRENT_FALL" -gt "$WOULD_BE_TOO_MUCH" ]]; then
+  #  echo "Bytes per dirent fall $BYTES_PER_DIRENT_FALL (round $i) is too much, expected around $EXPECTED_BYTES_PER_DIRENT" | tee -a "$ERRORS_LOG"
+  #  #exit 2
+  #fi
+}
+#NUM_ROUNDS=$(( 17 * 11 ))
+#NUM_ROUNDS=1000
+#for i in $(seq 1 $NUM_ROUNDS); do
+#  round $i
+#done
+i=0
+while true; do
+  round $i
+  i=$(( i + 1 ))
+done
+
+#RSS_END=$(cut -d ' ' -f 2 /proc/"$CVMFS_PID"/statm)
+#RSS_END=$(rss)
+#echo "Total climb of RSS since startup: " $(( (RSS_END - RSS_0) )) bytes
+
+kill "$WATCH_PID"
+wait "$WATCH_PID" || true
+
+sudo kill "$CVMFS_PID"
+wait "$CVMFS_WAIT_PID" || true
+
+cat "$ERRORS_LOG"
+if [[ -s "$ERRORS_LOG" ]]; then
+  exit 1
+else
+  exit 0
+fi
