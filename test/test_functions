@@ -2540,6 +2540,8 @@ purge_disk_cache() {
 }
 
 try_automount() {
+  (
+  set +e
   local repo=$1
   local retval
   if running_on_osx; then
@@ -2554,6 +2556,7 @@ try_automount() {
   else
     ls /cvmfs/${repo}
   fi
+  )
 }
 
 # figures out where syslog is found on this system and prints it to stdout
