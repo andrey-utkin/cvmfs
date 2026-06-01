@@ -80,6 +80,7 @@ cvmfs_run_test() {
     mkdir /cvmfs/$CVMFS_TEST_REPO/"folder${ii}" || return 31
   done
   echo "*** Publish transaction for testing printing of dots in additons"
+  unset CVMFS_SERVER_DEBUG
   cvmfs_server publish $CVMFS_TEST_REPO | tee logfile4.txt || return 32
 
   add_dots=$(grep -x "....." logfile4.txt | wc -l)
