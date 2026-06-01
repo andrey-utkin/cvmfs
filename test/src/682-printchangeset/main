@@ -35,7 +35,7 @@ cvmfs_run_test() {
   echo "*** Publish transaction for testing addition of entries"
   cvmfs_server publish -v $CVMFS_TEST_REPO | tee logfile1.txt || return 9
 
-  add_value=$(grep "^[[]add[]] " logfile1.txt | wc -l)
+  add_value=$(grep "^[[]\(x-catalog-\)\?add[]] " logfile1.txt | wc -l)
   if [ $add_counter != $add_value ]
   then
     echo "There is a missmatch between the number of additions printed and the ones performed" && return 10
