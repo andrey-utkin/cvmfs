@@ -8,27 +8,31 @@ cvmfs_run_test() {
 
   sudo sh -c "echo CVMFS_SHARED_CACHE=no > /etc/cvmfs/config.d/cms.cern.ch.local"
   cvmfs_mount atlas.cern.ch,lhcb.cern.ch,cms.cern.ch || return 1
-  sudo cvmfs_config fsck -j8 || return 2
-  # run quick check for empty files
-  sudo cvmfs_config fsck -q || return 3
+  # This is checking shared cache so there's no repo or domain context.
+  # But by the test design, we have cern.ch repos only, which we know use zlib right now.
+  export CVMFS_COMPRESSION_ALGORITHM=zlib CVMFS_DECOMPRESSION_ALGORITHM=zlib
+  sudo -E cvmfs_config fsck -j8 || return 2
+  unset CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM
 
   cvmfs_umount atlas.cern.ch,lhcb.cern.ch,cms.cern.ch || return 10
 
-  echo "Destroying data integrity in cachedir"
+  echo "Destroying data integrity in $cms_cachedir"
   cms_cachedir=$(get_cvmfs_cachedir cms.cern.ch)
-  [[ "$cms_cachedir" == "" ]] && return 11
-  for f in $(sudo find "$cms_cachedir" -mindepth 2 -type f); do
-    sudo truncate -s0 "$f"
+  [ "x$cms_cachedir" = "x" ] && return 11
+  for f in $(sudo find $cms_cachedir -mindepth 2 -type f); do
+    sudo sh -c "cat /dev/null > $f"
   done
-  (
-    set +e
-    sudo cvmfs_config fsck -j8 -p
-    if [ $? -ne 1 ]; then
-      return 12
-    fi
-  )
-  sudo mkdir -p "$cms_cachedir"/aa
-  sudo touch "$cms_cachedir"/aa/aaaaaaaa # made-up, too short hash
+  # This is checking shared cache so there's no repo or domain context.
+  # But by the test design, we have cern.ch repos only, which we know use zlib right now.
+  export CVMFS_COMPRESSION_ALGORITHM=zlib CVMFS_DECOMPRESSION_ALGORITHM=zlib
+  sudo -E cvmfs_config fsck -j8 -p
+  RET=$?
+  unset CVMFS_COMPRESSION_ALGORITHM CVMFS_DECOMPRESSION_ALGORITHM
+  if [ $RET -ne 1 ]; then
+    return 12
+  fi
+  sudo mkdir -p $cms_cachedir/aa
+  sudo touch $cms_cachedir/aa/aaaaaaaa # made-up, too short hash
   sudo cvmfs_config fsck -q && return 13
 
   return 0
