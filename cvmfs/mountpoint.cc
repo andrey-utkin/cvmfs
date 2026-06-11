@@ -1359,6 +1359,17 @@ bool MountPoint::CreateCatalogManager() {
 
 bool MountPoint::CreateDownloadManagers() {
   string optarg;
+
+  if (options_mgr_->GetValue("CVMFS_PROXY_CACHE_STATUS_HEADER", &optarg)) {
+#ifdef CVMFS_PROXY_CACHE_METRICS
+    download::ProxyCacheCounters::status_hdr = std::string(optarg);
+#else
+    LogCvmfs(kLogCvmfs, kLogDebug,
+             "CVMFS_PROXY_CACHE_STATUS_HEADER option is ignored as "
+             "CVMFS_PROXY_CACHE_METRICS is not enabled in the build");
+#endif
+  }
+
   download_mgr_ = new download::DownloadManager(
       kDefaultNumConnections,
       perf::StatisticsTemplate("download", statistics_));
@@ -1536,6 +1547,10 @@ void MountPoint::CreateFetchers() {
       external_download_mgr_,
       backoff_throttle_,
       perf::StatisticsTemplate("fetch-external", statistics_));
+#ifdef CVMFS_PROXY_CACHE_METRICS
+  proxy_cache_total_counters = new download::ProxyCacheCounters(
+      perf::StatisticsTemplate("download-total", statistics_));
+#endif
 }
 
 
@@ -1822,6 +1837,9 @@ MountPoint::MountPoint(const string &fqrn,
     , file_system_(file_system)
     , options_mgr_(options_mgr)
     , statistics_(NULL)
+#ifdef CVMFS_PROXY_CACHE_METRICS
+    , proxy_cache_total_counters(NULL)
+#endif
     , telemetry_aggr_(NULL)
     , authz_fetcher_(NULL)
     , authz_session_mgr_(NULL)
@@ -1896,6 +1914,9 @@ MountPoint::~MountPoint() {
   delete authz_session_mgr_;
   delete authz_fetcher_;
   delete telemetry_aggr_;
+#ifdef CVMFS_PROXY_CACHE_METRICS
+  delete proxy_cache_total_counters;
+#endif
   delete statistics_;
   delete uuid_;
 
@@ -2282,3 +2303,33 @@ bool MountPoint::SetupOwnerMaps() {
   return true;
 }
 
+
+#ifdef CVMFS_PROXY_CACHE_METRICS
+void MountPoint::UpdateTotalProxyCachePerformance(void) {
+  proxy_cache_total_counters->n_hit->Set(0
+      + download_mgr_->proxy_cache_counters()->n_hit->Get()
+      + external_download_mgr_->proxy_cache_counters()->n_hit->Get()
+      );
+  proxy_cache_total_counters->n_miss->Set(0
+      + download_mgr_->proxy_cache_counters()->n_miss->Get()
+      + external_download_mgr_->proxy_cache_counters()->n_miss->Get()
+      );
+  proxy_cache_total_counters->n_unc->Set(0
+      + download_mgr_->proxy_cache_counters()->n_unc->Get()
+      + external_download_mgr_->proxy_cache_counters()->n_unc->Get()
+      );
+
+  proxy_cache_total_counters->sz_hit->Set(0
+      + download_mgr_->proxy_cache_counters()->sz_hit->Get()
+      + external_download_mgr_->proxy_cache_counters()->sz_hit->Get()
+      );
+  proxy_cache_total_counters->sz_miss->Set(0
+      + download_mgr_->proxy_cache_counters()->sz_miss->Get()
+      + external_download_mgr_->proxy_cache_counters()->sz_miss->Get()
+      );
+  proxy_cache_total_counters->sz_unc->Set(0
+      + download_mgr_->proxy_cache_counters()->sz_unc->Get()
+      + external_download_mgr_->proxy_cache_counters()->sz_unc->Get()
+      );
+}
+#endif
