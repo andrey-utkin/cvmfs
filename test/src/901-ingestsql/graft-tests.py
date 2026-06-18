@@ -862,11 +862,22 @@ tests = [
         "result": False,
         "dirs": [("foo", 0o755, 0, 0, 0, "user:mharvey:rwx\ngroup:it:r-x\nother::r-x")],
     },
-    # Test a valid ACL
+    # Test a conflicting ACL. The test is intended to fail.
+    # ACL is expressible in pure discretionary system terms (uid, gid, perms).
+    # So ACL xattr won't be created. When ACL is read back from the file, mask
+    # field won't be present, triggering mismatch.
+    {
+        "result": False,
+        "dirs": [
+            ("bar", 0o755, 0, 0, 0, "user::rwx\ngroup::r-x\nmask::rwx\nother::r-x")
+        ],
+        "deletions": [("foo", 1, 1, 1)],
+    },
+    # Same as above, but with mask::rwx removed. Intended to pass.
     {
         "result": True,
         "dirs": [
-            ("bar", 0o755, 0, 0, 0, "user::rwx\ngroup::r-x\nmask::rwx\nother::r-x")
+            ("bar", 0o755, 0, 0, 0, "user::rwx\ngroup::r-x\nother::r-x")
         ],
         "deletions": [("foo", 1, 1, 1)],
     },
