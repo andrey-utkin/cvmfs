@@ -4,7 +4,7 @@
 
 #include "compression/compression.h"
 #include "gtest/gtest.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/smalloc.h"
 
 // TODO(jblomer): typed tests
