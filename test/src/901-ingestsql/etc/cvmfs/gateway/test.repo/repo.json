@@ -1,0 +1,27 @@
+{
+ "keys": [
+  {
+    "admin": true,
+    "id": "test.repo",
+    "secret": "secret",
+    "type": "plain_text"
+  }
+ ],
+ "repos": [
+   {
+     "domain": "test.repo",
+      "http-proxy": {
+        "url": "http://127.0.0.1:8000/test.repo/test.repo"
+      },
+
+     "keys": [
+      {
+        "id": "test.repo",
+        "path": "/"
+      }
+     ]
+   }
+  ],
+  "version": 2
+}
+
