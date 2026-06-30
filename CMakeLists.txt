@@ -579,7 +579,7 @@ if (BUILD_QC_TESTS)
   add_subdirectory (test/quickcheck)
 endif ()
 
-if (BUILD_GATEWAY OR BUILD_DUCC OR BUILD_SNAPSHOTTER)
+if (BUILD_GATEWAY OR BUILD_DUCC OR BUILD_SNAPSHOTTER OR BUILD_POSIX_TOOLS)
   find_program(GO_COMPILER go)
   if(NOT GO_COMPILER)
     message(FATAL_ERROR "go compiler not found")
@@ -598,6 +598,10 @@ endif ()
 
 if (BUILD_SNAPSHOTTER)
   add_subdirectory (snapshotter)
+endif ()
+
+if (BUILD_POSIX_TOOLS)
+  add_subdirectory (cvmfs-posix-tools)
 endif ()
 
 if (BUILD_STRESS_TESTS)
