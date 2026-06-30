@@ -84,6 +84,11 @@ if (BUILD_CVMFS OR BUILD_LIBCVMFS)
        network/sink_mem.cc
        network/sink_path.cc
        options.cc
+       path_filters/dirtab.cc
+       path_filters/inclusion_spec.cc
+       path_filters/relaxed_path_filter.cc
+       pathspec/pathspec.cc
+       pathspec/pathspec_pattern.cc
        quota.cc
        quota_posix.cc
        resolv_conf_event_handler.cc
@@ -234,6 +239,7 @@ if (BUILD_CVMFS)
   set (CVMFS_FUSE_SOURCES
        ${CVMFS_COMMON_CLIENT_SOURCES}
        auto_umount.cc
+       bundle_mgr.cc
        compat.cc
        cvmfs.cc
        fuse_evict.cc
@@ -288,7 +294,7 @@ if (BUILD_CVMFS)
     )
     set_target_properties (cvmfs_fuse_debug PROPERTIES
       VERSION ${CernVM-FS_VERSION_STRING}
-      COMPILE_FLAGS "-DCVMFS_USE_LIBFUSE=2 ${CVMFS_FUSE_CFLAGS} -O0 -DDEBUGMSG"
+      COMPILE_FLAGS "-DCVMFS_USE_LIBFUSE=2 ${CVMFS_FUSE_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG"
       LINK_FLAGS "${CVMFS_FUSE_LDFLAGS}"
     )
     target_link_libraries (cvmfs_fuse
@@ -315,7 +321,7 @@ if (BUILD_CVMFS)
     )
     set_target_properties (cvmfs_fuse3_debug PROPERTIES
       VERSION ${CernVM-FS_VERSION_STRING}
-      COMPILE_FLAGS "-DCVMFS_USE_LIBFUSE=3 ${CVMFS_FUSE_CFLAGS} -O0 -DDEBUGMSG"
+      COMPILE_FLAGS "-DCVMFS_USE_LIBFUSE=3 ${CVMFS_FUSE_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG"
       LINK_FLAGS "${CVMFS_FUSE_LDFLAGS}"
     )
     target_link_libraries (cvmfs_fuse3
@@ -638,6 +644,7 @@ if (BUILD_SERVER)
        pack.cc
        path_filters/dirtab.cc
        path_filters/relaxed_path_filter.cc
+       path_filters/inclusion_spec.cc
        pathspec/pathspec.cc
        pathspec/pathspec_pattern.cc
        reflog.cc
@@ -721,7 +728,7 @@ if (BUILD_SERVER)
   if (BUILD_SERVER_DEBUG)
     add_executable (cvmfs_swissknife_debug ${CVMFS_SWISSKNIFE_SOURCES})
     set_target_properties (cvmfs_swissknife_debug PROPERTIES
-      COMPILE_FLAGS "-O0 -DDEBUGMSG"
+      COMPILE_FLAGS "-O0 -Wno-cpp -DDEBUGMSG"
     )
     target_link_libraries (cvmfs_swissknife_debug
                            cvmfs_crypto_debug
@@ -839,7 +846,7 @@ if (BUILD_SERVER)
     add_library (cvmfs_server_debug SHARED ${LIBCVMFS_SERVER_SOURCES})
     set_target_properties (cvmfs_server_debug PROPERTIES
       VERSION ${CernVM-FS_VERSION_STRING}
-      COMPILE_FLAGS "${LIBCVMFS_SERVER_CFLAGS} -O0 -DDEBUGMSG")
+      COMPILE_FLAGS "${LIBCVMFS_SERVER_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG")
     target_link_libraries (cvmfs_server_debug
                            cvmfs_crypto_debug
                            cvmfs_util_debug
@@ -873,6 +880,7 @@ if (BUILD_SERVER)
        publish/cmd_info.cc
        publish/cmd_lsof.cc
        publish/cmd_mkfs.cc
+       publish/cmd_tag.cc
        publish/cmd_transaction.cc
        publish/cmd_util.cc
        publish/cmd_zpipe.cc
@@ -899,7 +907,7 @@ if (BUILD_SERVER)
   if (BUILD_SERVER_DEBUG)
     add_executable (cvmfs_publish_debug ${CVMFS_PUBLISH_SOURCES})
     set_target_properties (cvmfs_publish_debug PROPERTIES
-      COMPILE_FLAGS "${CVMFS_PUBLISH_CFLAGS} -O0 -DDEBUGMSG"
+      COMPILE_FLAGS "${CVMFS_PUBLISH_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG"
     )
     target_link_libraries (cvmfs_publish_debug
                            cvmfs_crypto_debug
@@ -1126,7 +1134,7 @@ if(BUILD_RECEIVER)
   if (BUILD_RECEIVER_DEBUG)
     add_executable(cvmfs_receiver_debug ${CVMFS_RECEIVER_SOURCES})
     set_target_properties (cvmfs_receiver_debug PROPERTIES
-      COMPILE_FLAGS "${CVMFS_RECEIVER_CFLAGS} -O0 -DDEBUGMSG")
+      COMPILE_FLAGS "${CVMFS_RECEIVER_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG")
     target_link_libraries(cvmfs_receiver_debug
                           cvmfs_crypto_debug
                           cvmfs_util_debug
@@ -1234,6 +1242,7 @@ if (BUILD_PRELOADER)
                   pack.cc
                   path_filters/dirtab.cc
                   path_filters/relaxed_path_filter.cc
+                  path_filters/inclusion_spec.cc
                   pathspec/pathspec.cc
                   pathspec/pathspec_pattern.cc
                   preload.cc

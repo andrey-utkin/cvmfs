@@ -298,7 +298,7 @@ if (BUILD_SERVER)
   if (BUILD_UNITTESTS_DEBUG)
   add_executable (cvmfs_test_publish_debug ${CVMFS_UNITTEST_SERVER_SOURCES})
   set_target_properties (cvmfs_test_publish_debug PROPERTIES
-                         COMPILE_FLAGS "${CVMFS_UNITTEST_COMMON_CFLAGS} -O0 -DDEBUGMSG"
+                         COMPILE_FLAGS "${CVMFS_UNITTEST_COMMON_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG"
   )
   target_link_libraries (cvmfs_test_publish_debug
                          cvmfs_crypto_debug
@@ -340,6 +340,8 @@ set(CVMFS_UNITTEST_SOURCES
   t_bigqueue.cc
   t_bigvector.cc
   t_blocking_counter.cc
+  t_bundle_mgr.cc
+  t_bundle_file_mgr.cc
   t_cache.cc
   t_cache_extern.cc
   t_cache_ram.cc
@@ -403,11 +405,14 @@ set(CVMFS_UNITTEST_SOURCES
   t_pipe.cc
   t_platforms.cc
   t_polymorphic_construction.cc
+  t_commit_processor.cc
   t_prng.cc
   t_quota.cc
   t_reactor.cc
   t_reflog.cc
+  t_repository_tag.cc
   t_relaxed_path_filter.cc
+  t_inclusion_spec.cc
   t_s3fanout.cc
   t_resolv_conf_event_handler.cc
   t_ring_buffer.cc
@@ -455,6 +460,7 @@ set(CVMFS_UNITTEST_SOURCES
   ${CVMFS_SOURCE_DIR}/authz/authz_fetch.cc
   ${CVMFS_SOURCE_DIR}/authz/authz_session.cc
   ${CVMFS_SOURCE_DIR}/backoff.cc
+  ${CVMFS_SOURCE_DIR}/bundle_mgr.cc
   ${CVMFS_SOURCE_DIR}/cache.cc
   ${CVMFS_SOURCE_DIR}/cache_extern.cc
   ${CVMFS_SOURCE_DIR}/cache_posix.cc
@@ -521,6 +527,7 @@ set(CVMFS_UNITTEST_SOURCES
   ${CVMFS_SOURCE_DIR}/options.cc
   ${CVMFS_SOURCE_DIR}/pack.cc
   ${CVMFS_SOURCE_DIR}/path_filters/dirtab.cc
+  ${CVMFS_SOURCE_DIR}/path_filters/inclusion_spec.cc
   ${CVMFS_SOURCE_DIR}/path_filters/relaxed_path_filter.cc
   ${CVMFS_SOURCE_DIR}/pathspec/pathspec.cc
   ${CVMFS_SOURCE_DIR}/pathspec/pathspec_pattern.cc
@@ -625,6 +632,7 @@ set(CVMFS_UNITTEST_MOCKFUSE_SOURCES
   ${CVMFS_SOURCE_DIR}/authz/authz_session.cc
   ${CVMFS_SOURCE_DIR}/auto_umount.cc
   ${CVMFS_SOURCE_DIR}/backoff.cc
+  ${CVMFS_SOURCE_DIR}/bundle_mgr.cc
   ${CVMFS_SOURCE_DIR}/cache.cc
   ${CVMFS_SOURCE_DIR}/cache_extern.cc
   ${CVMFS_SOURCE_DIR}/cache_posix.cc
@@ -696,6 +704,7 @@ set(CVMFS_UNITTEST_MOCKFUSE_SOURCES
   ${CVMFS_SOURCE_DIR}/options.cc
   ${CVMFS_SOURCE_DIR}/pack.cc
   ${CVMFS_SOURCE_DIR}/path_filters/dirtab.cc
+  ${CVMFS_SOURCE_DIR}/path_filters/inclusion_spec.cc
   ${CVMFS_SOURCE_DIR}/path_filters/relaxed_path_filter.cc
   ${CVMFS_SOURCE_DIR}/pathspec/pathspec.cc
   ${CVMFS_SOURCE_DIR}/pathspec/pathspec_pattern.cc
@@ -795,7 +804,7 @@ if (BUILD_UNITTESTS_DEBUG)
   add_executable (cvmfs_unittests_debug ${CVMFS_UNITTEST_SOURCES})
   add_dependencies (cvmfs_unittests_debug cache.pb.generated-unittests)
   set_target_properties (cvmfs_unittests_debug PROPERTIES
-                         COMPILE_FLAGS "${CVMFS_UNITTEST_COMMON_CFLAGS} -O0 -DDEBUGMSG"
+                         COMPILE_FLAGS "${CVMFS_UNITTEST_COMMON_CFLAGS} -O0 -Wno-cpp -DDEBUGMSG"
   )
   target_link_libraries (cvmfs_unittests_debug
                          cvmfs_crypto_debug
