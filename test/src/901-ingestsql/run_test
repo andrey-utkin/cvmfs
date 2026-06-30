@@ -115,4 +115,10 @@ ls -l "$CVMFS_TEST_MOUNTPOINT"
 
 export PYTHONUNBUFFERED=1
 #"$this_script_dir"/graft-tests.py --no-mount standard file-read |& tee /var/log/graft-tests.log
-sudo "$this_script_dir"/graft-tests.py --no-mount standard |& sudo tee /var/log/graft-tests.log
+
+# Fix
+# UnicodeEncodeError: 'ascii' codec can't encode characters...
+# on Almalinux 8
+export PYTHONENCODING=UTF-8
+
+sudo -E "$this_script_dir"/graft-tests.py --no-mount standard |& sudo tee /var/log/graft-tests.log
