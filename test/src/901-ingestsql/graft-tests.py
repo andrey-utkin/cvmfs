@@ -829,7 +829,9 @@ tests = [
         ],
         "dirs": [("foo", 0o755, 0, 0, 0, "")],
     },
+    # Dir foo already exists, can't create file with the same name
     {
+        "result": False,
         "files": [
             (
                 "foo",
@@ -842,7 +844,9 @@ tests = [
             )
         ]
     },
+    # Dir foo already exists, can't create file with the same name
     {
+        "result": False,
         "files": [
             (
                 "foo",
