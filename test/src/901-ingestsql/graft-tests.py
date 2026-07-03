@@ -376,7 +376,8 @@ def check_files(files, prefix):
         if prefix:
             p = os.path.join(prefix, p)
         p = os.path.join(MOUNT_POINT, p)
-        if not os.path.exists(p):
+        p_bytes = p.encode('utf-8')
+        if not os.path.exists(p_bytes):
             appeared = False
             print(f"File {p} not found.")
             if WAIT_SECONDS_TO_APPEAR == 0:
@@ -384,7 +385,7 @@ def check_files(files, prefix):
             print(f"Giving {p} time to appear.")
             for i in range(1, WAIT_SECONDS_TO_APPEAR):
                 time.sleep(1)
-                if os.path.exists(p):
+                if os.path.exists(p_bytes):
                     print(f"File {p} strangely appeared after {i} seconds!!!")
                     appeared = True
                     break
@@ -393,7 +394,7 @@ def check_files(files, prefix):
             if not appeared:
                 return False
 
-        s = os.stat(p)
+        s = os.stat(p_bytes)
         if f[1] | stat.S_IFREG != s.st_mode:
             print(f"mode mismatch {f[1]}!={s.st_mode}")
             return False
@@ -410,7 +411,7 @@ def check_files(files, prefix):
             print("size mismatch")
             return False
         # compare hashes
-        chunks = xattr.getxattr(p, "user.chunk_list").decode("ascii")
+        chunks = xattr.getxattr(p_bytes, "user.chunk_list").decode("ascii")
         chunks = chunks.strip().split("\n")
         c = []
         for cc in chunks[1:]:
@@ -438,7 +439,8 @@ def check_dirs(dirs, prefix):
         if prefix:
             p = os.path.join(prefix, p)
         p = os.path.join(MOUNT_POINT, p)
-        if not os.path.exists(p):
+        p_bytes = p.encode('utf-8')
+        if not os.path.exists(p_bytes):
             appeared = False
             print(f"Dir {p} not found.")
             if WAIT_SECONDS_TO_APPEAR == 0:
@@ -446,7 +448,7 @@ def check_dirs(dirs, prefix):
             print(f"Giving {p} time to appear.")
             for i in range(1, WAIT_SECONDS_TO_APPEAR):
                 time.sleep(1)
-                if os.path.exists(p):
+                if os.path.exists(p_bytes):
                     print(f"Dir {p} strangely appeared after {i} seconds!!!")
                     appeared = True
                     break
@@ -454,7 +456,7 @@ def check_dirs(dirs, prefix):
                     print(f"Dir {p} still hasn't appeared after {i} seconds.")
             if not appeared:
                 return False
-        s = os.stat(p)
+        s = os.stat(p_bytes)
         if f[1] | stat.S_IFDIR != s.st_mode:
             print(f"mode mismatch {f[1]}!={s.st_mode}")
             return False
@@ -467,12 +469,12 @@ def check_dirs(dirs, prefix):
         if f[4] != s.st_gid:
             print("gid mismatch")
             return False
-        acl = posix1e.ACL(file=p).to_any_text().strip().decode("ascii")
+        acl = posix1e.ACL(file=p_bytes).to_any_text().strip().decode("ascii")
         if f[5].strip() != "" and f[5].strip() != acl:
             print(f"acl mismatch {f[5]}!={acl}")
             return False
         try:
-            os.scandir(p)
+            os.scandir(p_bytes)
         except Exception:
             print(f"Error reading directory {p}")
             return False
@@ -486,13 +488,14 @@ def check_links(links, prefix):
         if prefix:
             f[0] = os.path.join(prefix, f[0])
         p = os.path.join(MOUNT_POINT, f[0])
-        if not os.path.islink(p):
+        p_bytes = p.encode('utf-8')
+        if not os.path.islink(p_bytes):
             return False
-        target = os.readlink(p)
-        if f[1] != target:
-            print("Target mismatch")
+        target = os.readlink(p_bytes)
+        if f[1].encode('utf-8') != target:
+            print(f"Target mismatch {f[1]}!={target}")
             return False
-        st = os.lstat(p)
+        st = os.lstat(p_bytes)
         if f[2] != int(st.st_mtime * 1000000000):
             print(f"mtime mismatch {f[2]}!={st.st_mtime}")
             return False
@@ -521,7 +524,8 @@ def check_deletions(tests, prefix):
         if prefix:
             f[0] = os.path.join(prefix, f[0])
         p = os.path.join(MOUNT_POINT, f[0])
-        if os.path.exists(p) and f[0] not in files:
+        p_bytes = p.encode('utf-8')
+        if os.path.exists(p_bytes) and f[0] not in files:
             print(f"File {p} exists")
             return False
     return True
