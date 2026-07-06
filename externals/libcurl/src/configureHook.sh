@@ -20,6 +20,7 @@ sh configure $FIX_COMP CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64" \
   --enable-symbol-hiding \
   --disable-shared \
   --enable-static \
+  --enable-headers-api \
   --enable-http \
   --enable-http-auth \
   --enable-proxy \
@@ -59,7 +60,6 @@ sh configure $FIX_COMP CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64" \
   --disable-progress-meter \
   --disable-get-easy-options \
   --disable-alt-svc \
-  --disable-headers-api \
   --disable-hsts \
   --disable-websockets \
   ${curl_ssl_config} \
