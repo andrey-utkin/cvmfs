@@ -9,6 +9,7 @@ import os
 import stat
 import xattr
 import posix1e
+import tempfile
 import time
 import multiprocessing
 import requests
@@ -20,6 +21,8 @@ WAIT_SECONDS_TO_APPEAR = 0
 MOUNT_POINT = os.getenv("CVMFS_TEST_MOUNTPOINT") or "/tmp/ingestsql_test_mount"
 REPO_NAME = os.getenv("CVMFS_TEST_REPO") or "test.repo"
 
+CVMFS_TEST_HTTP_BASE=os.getenv("CVMFS_TEST_HTTP_BASE") or f"http://127.0.0.1:8000/{REPO_NAME}"
+CVMFS_TEST_S3_CONFIG=os.getenv("CVMFS_TEST_S3_CONFIG")
 
 def clear_db(connection):
     con = connection[0]
@@ -161,28 +164,29 @@ def _do_graft_test(dbfile, prefix=None, lease=None, priority=None):
     #  -a    Allow additions (default true, false if -d specified) (optional)
     #  -d    Allow deletions (optional)
     try:
+        tmpdir = tempfile.TemporaryDirectory()
         cmd = [
             "cvmfs_swissknife",
             "ingestsql",
             "-v",
-            "-@",
-            "http://127.0.0.1:8088",
+            #"-@",
+            #"http://127.0.0.1:8088",
             "-N",
             REPO_NAME,
             "-D",
             dbfile,
             "-w",
-            f"http://127.0.0.1:8000/{REPO_NAME}/{REPO_NAME}",
+            f"{CVMFS_TEST_HTTP_BASE}/{REPO_NAME}",
             "-k",
             f"/etc/cvmfs-gateway-client/{REPO_NAME}/pubkey",
             "-3",
-            f"/etc/cvmfs-gateway-client/{REPO_NAME}/s3.conf",
+            f"{CVMFS_TEST_S3_CONFIG}",
             "-s",
             f"/etc/cvmfs-gateway-client/{REPO_NAME}/gatewaykey",
             "-g",
             "http://127.0.0.1:4929/api/v1",
             "-t",
-            "/tmp",
+            tmpdir.name,
             "-a",
             "-d",
             "-T",

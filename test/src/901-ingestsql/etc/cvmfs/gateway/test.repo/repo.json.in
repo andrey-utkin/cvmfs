@@ -11,7 +11,7 @@
    {
      "domain": "test.repo",
       "http-proxy": {
-        "url": "http://127.0.0.1:8000/test.repo/test.repo"
+        "url": "$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO"
       },
 
      "keys": [
