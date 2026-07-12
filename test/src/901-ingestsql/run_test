@@ -180,7 +180,7 @@ CVMFS_SERVER_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_EXTERNAL_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_HTTP_PROXY=DIRECT
 EOF
-    sudo /usr/lib/systemd/system-generators/systemd-fstab-generator /run/systemd/generator '' ''
+    sudo /usr/lib/systemd/system-generators/systemd-fstab-generator /run/systemd/generator '' '' || true
     sudo systemctl daemon-reload
     sudo -E bash -x cvmfs_server resign "$CVMFS_TEST_REPO"
 fi
