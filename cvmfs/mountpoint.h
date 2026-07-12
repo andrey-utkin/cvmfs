@@ -23,6 +23,7 @@
 #include "file_watcher.h"
 #include "loader.h"
 #include "magic_xattr.h"
+#include "statistics.h"
 #include "util/algorithm.h"
 
 class AuthzAttachment;
@@ -41,6 +42,7 @@ class Uuid;
 }  // namespace cvmfs
 namespace download {
 class DownloadManager;
+class ProxyCacheCounters;
 }
 namespace glue {
 class InodeTracker;
@@ -57,6 +59,7 @@ class OptionsManager;
 namespace perf {
 class Counter;
 class Statistics;
+class StatisticsTemplate;
 class TelemetryAggregator;
 }  // namespace perf
 namespace signature {
@@ -499,6 +502,10 @@ class MountPoint : SingleCopy, public BootFactory {
   static const unsigned kShortTermTTL = 180;
   static const time_t kIndefiniteDeadline = time_t(-1);
 
+#ifdef CVMFS_PROXY_CACHE_METRICS
+  download::ProxyCacheCounters *proxy_cache_total_counters;
+#endif
+
   static MountPoint *Create(const std::string &fqrn,
                             FileSystem *file_system,
                             OptionsManager *options_mgr = NULL);
@@ -507,6 +514,9 @@ class MountPoint : SingleCopy, public BootFactory {
   // Check whether permission is needed to read from user process environment
   static bool NeedsReadEnviron(OptionsManager *omgr);
 
+#ifdef CVMFS_PROXY_CACHE_METRICS
+  void UpdateTotalProxyCachePerformance(void);
+#endif
   unsigned GetMaxTtlMn();
   unsigned GetEffectiveTtlSec();
   void SetMaxTtlMn(unsigned value_minutes);
