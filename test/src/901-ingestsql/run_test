@@ -99,6 +99,7 @@ run_gateway() {
 	if gateway_up; then break; fi
 	sleep 1
     done
+    trap stop_gateway ERR
 }
 stop_gateway() {
     rm "$GW_SHOULD_RESTART_FILE" || true
@@ -107,6 +108,7 @@ stop_gateway() {
 	sleep 0.1
     done
     ! gateway_up
+    trap - ERR
 }
 
 sudo rsync -rtv "$this_script_dir"/etc/cvmfs/gateway  /etc/cvmfs
