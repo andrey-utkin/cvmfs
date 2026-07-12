@@ -1,0 +1,27 @@
+{
+ "keys": [
+  {
+    "admin": true,
+    "id": "test.repo",
+    "secret": "secret",
+    "type": "plain_text"
+  }
+ ],
+ "repos": [
+   {
+     "domain": "test.repo",
+      "http-proxy": {
+        "url": "$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO"
+      },
+
+     "keys": [
+      {
+        "id": "test.repo",
+        "path": "/"
+      }
+     ]
+   }
+  ],
+  "version": 2
+}
+
