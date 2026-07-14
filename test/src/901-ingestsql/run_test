@@ -112,6 +112,8 @@ fi
 #     trap - ERR
 # }
 
+sudo sed -i /etc/cvmfs/gateway/user.json -e s/'"max_lease_time" : 7200,'/'"max_lease_time" : 60,'/
+grep -q '"max_lease_time" : 60,' /etc/cvmfs/gateway/user.json
 (
     source "$TEST_ROOT"/test_functions
     set_up_repository_gateway "$CVMFS_TEST_REPO" -o "$CVMFS_TEST_USER" -w "$CVMFS_TEST_HTTP_BASE" -s "$CVMFS_TEST_S3_CONFIG"
