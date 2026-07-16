@@ -592,7 +592,7 @@ endif ()
 # Builds of golang components
 # First check if we have golang available
 #
-if (BUILD_GATEWAY OR BUILD_DUCC OR BUILD_SNAPSHOTTER)
+if (BUILD_GATEWAY OR BUILD_DUCC OR BUILD_SNAPSHOTTER OR BUILD_POSIX_TOOLS)
   find_program(GO_COMPILER go)
   if(NOT GO_COMPILER)
     message(FATAL_ERROR "go compiler not found")
@@ -613,6 +613,9 @@ if (BUILD_SNAPSHOTTER)
   add_subdirectory (snapshotter)
 endif ()
 
+if (BUILD_POSIX_TOOLS)
+  add_subdirectory (cvmfs-posix-tools)
+endif ()
 
 #
 # Documentation
