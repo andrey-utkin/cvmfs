@@ -112,8 +112,8 @@ fi
 #     trap - ERR
 # }
 
-sudo sed -i /etc/cvmfs/gateway/user.json -e s/'"max_lease_time" : 7200,'/'"max_lease_time" : 60,'/
-grep -q '"max_lease_time" : 60,' /etc/cvmfs/gateway/user.json
+sudo sed -i /etc/cvmfs/gateway/user.json -e s/'"max_lease_time" : 7200,'/'"max_lease_time" : 10,'/
+grep -q '"max_lease_time" : 10,' /etc/cvmfs/gateway/user.json
 (
     source "$TEST_ROOT"/test_functions
     set_up_repository_gateway "$CVMFS_TEST_REPO" -o "$CVMFS_TEST_USER" -w "$CVMFS_TEST_HTTP_BASE" -s "$CVMFS_TEST_S3_CONFIG"
@@ -181,11 +181,13 @@ EOF
 CVMFS_SERVER_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_EXTERNAL_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_HTTP_PROXY=DIRECT
+CVMFS_MAX_TTL_SECS=1
 EOF
     sudo tee -a /etc/cvmfs/config.d/"$CVMFS_TEST_REPO".local <<EOF
 CVMFS_SERVER_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_EXTERNAL_URL=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
 CVMFS_HTTP_PROXY=DIRECT
+CVMFS_MAX_TTL_SECS=1
 EOF
     sudo /usr/lib/systemd/system-generators/systemd-fstab-generator /run/systemd/generator '' '' || true
     sudo systemctl daemon-reload
