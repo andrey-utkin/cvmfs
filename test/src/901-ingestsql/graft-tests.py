@@ -304,7 +304,7 @@ def do_file_read_test(connection):
         print("Graft failed")
         return False
     # now read the files
-    remount_repo()
+    #remount_repo()
     for f in [
         "file-internal-compressed-implicit",
         "file-internal-uncompressed",
@@ -354,7 +354,7 @@ def do_test(connection, test, prefix=None, lease=None):
     for a in ["files", "dirs", "links", "deletions"]:
         if a not in testresult:
             testresult[a] = []
-    remount_repo()
+    #remount_repo()
     if ret:
         ret = check_files(testresult["files"], prefix)
     if ret:
