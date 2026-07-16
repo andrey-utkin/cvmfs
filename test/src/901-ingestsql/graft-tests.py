@@ -166,7 +166,7 @@ def _do_graft_test(dbfile, prefix=None, lease=None, priority=None):
     try:
         tmpdir = tempfile.TemporaryDirectory()
         cmd = [
-            "cvmfs_swissknife",
+            "cvmfs_swissknife_debug",
             "ingestsql",
             "-v",
             #"-@",
