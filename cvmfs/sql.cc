@@ -168,7 +168,7 @@ std::string Sql::GetLastErrorMsg() const {
 }
 
 static void ErrorLogCallback(void *pArg, int iErrCode, const char *zMsg) {
-  LogCvmfs(kLogSql, kLogDebug, "(%d) %s\n", iErrCode, zMsg);
+  LogCvmfs(kLogSql, kLogStderr | kLogSyslogErr, "(%d) %s\n", iErrCode, zMsg);
 }
 
 bool Sql::SetupGlobalLogging() {
