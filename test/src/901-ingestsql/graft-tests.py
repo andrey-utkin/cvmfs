@@ -168,6 +168,7 @@ def _do_graft_test(dbfile, prefix=None, lease=None, priority=None):
         cmd = [
             "cvmfs_swissknife_debug",
             "ingestsql",
+            "-c",
             "-v",
             #"-@",
             #"http://127.0.0.1:8088",
