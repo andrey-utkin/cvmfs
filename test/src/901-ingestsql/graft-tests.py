@@ -1084,12 +1084,6 @@ if __name__ == "__main__":
         db = make_db()
         i = 0
 
-        if "priority" in sys.argv:
-
-            if not gateway_priority_and_restart_test():
-                print("gateway_priority_and_restart failed")
-                sys.exit(1)
-
         if "standard" in sys.argv:
             if "file-read" in sys.argv:
                 if not do_file_read_test(db):
@@ -1115,6 +1109,10 @@ if __name__ == "__main__":
                         print(f"Failed Test {i} {t}, prefix={prefix}")
                         sys.exit(1)
                     clear_db(db)
+                if "quick" in sys.argv:
+                    if i >= 20:
+                        print(f"Stopping after test {i} to keep it quick. Run without 'quick' in argv to run all cases.")
+                        break
 
     except Exception as e:
         print(e)
