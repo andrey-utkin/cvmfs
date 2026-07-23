@@ -1,7 +1,7 @@
 #!/bin/bash
 cvmfs_test_name="swissknife ingestsql"
 cvmfs_test_autofs_on_startup=false
-cvmfs_test_suites="ingestsql quick"
+cvmfs_test_suites="ingestsql"
 
 cleanup() {
   true
