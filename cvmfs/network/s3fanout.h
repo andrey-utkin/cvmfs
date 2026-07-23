@@ -21,7 +21,7 @@
 #include "ssl.h"
 #include "util/concurrency.h"
 #include "util/file_backed_buffer.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/prng.h"
 #include "util/single_copy.h"
 #include "util/smalloc.h"
@@ -108,7 +108,7 @@ struct JobInfo : SingleCopy {
 
   const std::string object_key;
   void *callback;  // Callback to be called when job is finished
-  UniquePtr<FileBackedBuffer> origin;
+  std::unique_ptr<FileBackedBuffer> origin;
 
   // One constructor per destination
   JobInfo(const std::string &object_key,

@@ -27,7 +27,7 @@
 #include "swissknife_history.h"
 #include "util/algorithm.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/raii_temp_dir.h"
 #include "util/string.h"
@@ -80,7 +80,7 @@ bool EditTags(const RepositoryTag &repo_tag, const std::string &repo_name,
     args['c'].Reset(new std::string(StringifyInt(auto_tag_threshold)));
   }
 
-  const UniquePtr<swissknife::CommandEditTag> edit_cmd(
+  const std::unique_ptr<swissknife::CommandEditTag> edit_cmd(
       new swissknife::CommandEditTag());
   const int ret = edit_cmd->Main(args);
 
@@ -221,7 +221,7 @@ CommitProcessor::Result CommitProcessor::Process(
     return kError;
   }
 
-  const UniquePtr<ServerTool> server_tool(new ServerTool());
+  const std::unique_ptr<ServerTool> server_tool(new ServerTool());
 
   if (!server_tool->InitDownloadManager(true, params.proxy)) {
     LogCvmfs(
@@ -242,12 +242,12 @@ CommitProcessor::Result CommitProcessor::Process(
   }
 
   const shash::Any manifest_base_hash;
-  const UniquePtr<manifest::Manifest> manifest_tgt(
+  const std::unique_ptr<manifest::Manifest> manifest_tgt(
       server_tool->FetchRemoteManifest(params.stratum0, repo_name,
                                        manifest_base_hash));
 
   // Current catalog from the gateway machine
-  if (!manifest_tgt.IsValid()) {
+  if (manifest_tgt.get()==nullptr) {
     LogCvmfs(kLogReceiver, kLogSyslogErr,
              "CommitProcessor - error: Could not open repository manifest");
     return kError;
@@ -288,7 +288,7 @@ CommitProcessor::Result CommitProcessor::Process(
              "(skipping DiffRec)",
              lease_path.c_str());
 
-    const UniquePtr<RaiiTempDir> graft_temp_dir(
+    const std::unique_ptr<RaiiTempDir> graft_temp_dir(
         RaiiTempDir::Create(temp_dir_root));
     const std::string graft_temp = graft_temp_dir->dir();
 
@@ -304,13 +304,13 @@ CommitProcessor::Result CommitProcessor::Process(
         params.generate_legacy_bulk_chunks, params.use_file_chunking,
         params.min_chunk_size, params.avg_chunk_size, params.max_chunk_size,
         "dummy_token", "dummy_key");
-    const UniquePtr<upload::Spooler> spooler(
+    const std::unique_ptr<upload::Spooler> spooler(
         upload::Spooler::Construct(definition, &stats_tmpl));
 
-    const UniquePtr<catalog::WritableCatalogManager> output_mgr(
+    const std::unique_ptr<catalog::WritableCatalogManager> output_mgr(
         new catalog::WritableCatalogManager(
             manifest_tgt->catalog_hash(), params.stratum0, graft_temp,
-            spooler.weak_ref(), server_tool->download_manager(),
+            spooler.get(), server_tool->download_manager(),
             params.enforce_limits, params.nested_kcatalog_limit,
             params.root_kcatalog_limit, params.file_mbyte_limit,
             statistics_, params.use_autocatalogs, params.max_weight,
@@ -377,7 +377,7 @@ CommitProcessor::Result CommitProcessor::Process(
     }
 
     // Commit updates manifest_tgt in-place (new root hash, revision++, etc.)
-    if (!output_mgr->Commit(false, 0, manifest_tgt.weak_ref())) {
+    if (!output_mgr->Commit(false, 0, manifest_tgt.get())) {
       LogCvmfs(kLogReceiver, kLogSyslogErr,
                "CommitProcessor - error: Could not commit grafted catalog");
       return kMergeFailure;
@@ -403,7 +403,7 @@ CommitProcessor::Result CommitProcessor::Process(
                      catalog::SimpleCatalogManager>
         merge_tool(params.stratum0, old_root_hash, new_root_hash,
                    relative_lease_path, temp_dir_root,
-                   server_tool->download_manager(), manifest_tgt.weak_ref(),
+                   server_tool->download_manager(), manifest_tgt.get(),
                    statistics_, cache_dir_);
     if (!merge_tool.Init()) {
       LogCvmfs(kLogReceiver, kLogSyslogErr,
@@ -418,7 +418,7 @@ CommitProcessor::Result CommitProcessor::Process(
     }
   }
 
-  const UniquePtr<RaiiTempDir> raii_temp_dir(
+  const std::unique_ptr<RaiiTempDir> raii_temp_dir(
       RaiiTempDir::Create(temp_dir_root));
   const std::string temp_dir = raii_temp_dir->dir();
 
@@ -489,7 +489,7 @@ CommitProcessor::Result CommitProcessor::Process(
   std::vector<shash::Any> reflog_catalogs;
   reflog_catalogs.push_back(new_root_hash);
 
-  SigningTool signing_tool(server_tool.weak_ref());
+  SigningTool signing_tool(server_tool.get());
   const SigningTool::Result res = signing_tool.Run(
       new_manifest_path, params.stratum0, params.spooler_configuration,
       temp_dir, certificate, private_key, repo_name, "", "",

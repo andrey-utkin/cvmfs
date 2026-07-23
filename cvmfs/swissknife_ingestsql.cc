@@ -764,10 +764,10 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
   upload::SpoolerDefinition const spooler_definition_catalogs(
       spooler_definition.Dup2DefaultCompression());
 
-  UniquePtr<upload::Spooler> const spooler_catalogs(
+  std::unique_ptr<upload::Spooler> const spooler_catalogs(
       upload::Spooler::Construct(spooler_definition_catalogs, nullptr));
 
-  if (!spooler_catalogs.IsValid()) {
+  if (spooler_catalogs.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogStderr, "spooler_catalogs invalid");
     cancel_lease();
     return 1;
@@ -783,11 +783,11 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
     return 1;
   }
 
-  UniquePtr<manifest::Manifest> manifest;
+  std::unique_ptr<manifest::Manifest> manifest;
 
-  manifest = FetchRemoteManifest(stratum0, repo_name, shash::Any());
+  manifest .reset(  FetchRemoteManifest(stratum0, repo_name, shash::Any()) );
 
-  if (!manifest.IsValid()) {
+  if (manifest.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogStderr, "manifest invalid");
     cancel_lease();
     return 1;
@@ -839,7 +839,7 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
   bool const is_balanced = false;
 
   catalog::WritableCatalogManager catalog_manager(
-      base_hash, stratum0, dir_temp, spooler_catalogs.weak_ref(),
+      base_hash, stratum0, dir_temp, spooler_catalogs.get(),
       download_manager(), false, SyncParameters::kDefaultNestedKcatalogLimit,
       SyncParameters::kDefaultRootKcatalogLimit,
       SyncParameters::kDefaultFileMbyteLimit, statistics(), is_balanced,
@@ -867,7 +867,7 @@ int swissknife::IngestSQL::Main(const swissknife::ArgumentList &args) {
 
   // commit changes
   LogCvmfs(kLogCvmfs, kLogStdout, "Committing changes...");
-  if (!catalog_manager.Commit(false, false, manifest.weak_ref())) {
+  if (!catalog_manager.Commit(false, false, manifest.get())) {
     LogCvmfs(kLogCvmfs, kLogStderr, "something went wrong during sync");
     cancel_lease();
     return 1;

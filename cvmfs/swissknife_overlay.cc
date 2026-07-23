@@ -38,7 +38,7 @@
 #include "upload_spooler_definition.h"
 #include "upload_spooler_result.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/string.h"
 #include "xattr.h"
@@ -697,8 +697,8 @@ bool CommandOverlay::InjectSingularityDotfiles(
   }
   close(fd);
 
-  const UniquePtr<JsonDocument> json(JsonDocument::Create(config_json));
-  if (!json.IsValid()) {
+  const std::unique_ptr<JsonDocument> json(JsonDocument::Create(config_json));
+  if (json.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogStderr,
              "Failed to parse OCI config JSON from %s",
              oci_config_path.c_str());
@@ -1164,16 +1164,16 @@ int CommandOverlay::Main(const ArgumentList &args) {
   const upload::SpoolerDefinition spooler_definition_catalogs(
       spooler_definition.Dup2DefaultCompression());
 
-  const UniquePtr<upload::Spooler> spooler_files(
+  const std::unique_ptr<upload::Spooler> spooler_files(
       upload::Spooler::Construct(spooler_definition, &publish_statistics));
-  if (!spooler_files.IsValid()) {
+  if (spooler_files.get()==nullptr) {
     PrintError("Failed to create file spooler");
     return 3;
   }
-  const UniquePtr<upload::Spooler> spooler_catalogs(
+  const std::unique_ptr<upload::Spooler> spooler_catalogs(
       upload::Spooler::Construct(spooler_definition_catalogs,
                                  &publish_statistics));
-  if (!spooler_catalogs.IsValid()) {
+  if (spooler_catalogs.get()==nullptr) {
     PrintError("Failed to create catalog spooler");
     return 3;
   }
@@ -1191,9 +1191,9 @@ int CommandOverlay::Main(const ArgumentList &args) {
   }
 
   // Fetch repository manifest
-  const UniquePtr<manifest::Manifest> manifest(
+  const std::unique_ptr<manifest::Manifest> manifest(
       FetchRemoteManifest(stratum0, repo_name, base_hash));
-  if (!manifest.IsValid()) {
+  if (manifest.get()==nullptr) {
     PrintError("Failed to load repository manifest");
     return 3;
   }
@@ -1305,7 +1305,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
   // Inject Singularity dotfiles if requested
   if (!oci_config_path.empty() && !skip_singularity) {
     if (!InjectSingularityDotfiles(oci_config_path,
-                                   spooler_files.weak_ref(), &merged)) {
+                                   spooler_files.get(), &merged)) {
       PrintError("Failed to inject Singularity dotfiles");
       return 4;
     }
@@ -1318,7 +1318,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
 
   catalog::WritableCatalogManager catalog_manager(
       base_hash, stratum0, temp_dir,
-      spooler_catalogs.weak_ref(), download_manager(),
+      spooler_catalogs.get(), download_manager(),
       false /* enforce_limits */,
       0 /* nested_kcatalog_limit */,
       0 /* root_kcatalog_limit */,
@@ -1335,7 +1335,7 @@ int CommandOverlay::Main(const ArgumentList &args) {
 
   // Commit catalog changes and produce updated manifest
   catalog_manager.PrecalculateListings();
-  if (!catalog_manager.Commit(false, 0, manifest.weak_ref())) {
+  if (!catalog_manager.Commit(false, 0, manifest.get())) {
     PrintError("Failed to commit catalog changes");
     return 5;
   }

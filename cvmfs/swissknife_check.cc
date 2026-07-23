@@ -27,7 +27,7 @@
 #include "shortstring.h"
 #include "util/exception.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 
 using namespace std;  // NOLINT
@@ -231,8 +231,8 @@ bool CommandCheck::InspectReflog(const shash::Any &reflog_hash,
     return false;
   }
 
-  const UniquePtr<manifest::Reflog> reflog(manifest::Reflog::Open(reflog_path));
-  assert(reflog.IsValid());
+  const std::unique_ptr<manifest::Reflog> reflog(manifest::Reflog::Open(reflog_path));
+  assert(reflog.get()!=nullptr);
   reflog->TakeDatabaseFileOwnership();
 
   if (!reflog->ContainsCatalog(manifest->catalog_hash())) {
@@ -1056,21 +1056,21 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
   }
 
   // Load Manifest
-  UniquePtr<manifest::Manifest> manifest;
+  std::unique_ptr<manifest::Manifest> manifest;
   bool successful = true;
 
   if (is_remote_) {
-    manifest = FetchRemoteManifest(repo_base_path_, repo_name);
+    manifest .reset(  FetchRemoteManifest(repo_base_path_, repo_name) );
   } else {
     if (chdir(repo_base_path_.c_str()) != 0) {
       LogCvmfs(kLogCvmfs, kLogStderr, "failed to switch to directory %s",
                repo_base_path_.c_str());
       return 1;
     }
-    manifest = OpenLocalManifest(".cvmfspublished");
+    manifest .reset(  OpenLocalManifest(".cvmfspublished") );
   }
 
-  if (!manifest.IsValid()) {
+  if (manifest.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogStderr, "failed to load repository manifest");
     return 1;
   }
@@ -1107,7 +1107,7 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
                ".cvmfsreflog present but no checksum provided, aborting");
       return 1;
     }
-    const bool retval = InspectReflog(reflog_hash, manifest.weak_ref());
+    const bool retval = InspectReflog(reflog_hash, manifest.get());
     if (!retval) {
       LogCvmfs(kLogCvmfs, kLogStderr, "failed to verify reflog");
       return 1;
@@ -1126,7 +1126,7 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
   }
 
   // Load history
-  UniquePtr<history::History> tag_db;
+  std::unique_ptr<history::History> tag_db;
   if (!manifest->history().IsNull()) {
     string tmp_file;
     if (!is_remote_)
@@ -1138,14 +1138,14 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
                manifest->history().ToString().c_str());
       return 1;
     }
-    tag_db = history::SqliteHistory::Open(tmp_file);
-    if (!tag_db.IsValid()) {
+    tag_db .reset(  history::SqliteHistory::Open(tmp_file) );
+    if (tag_db.get()==nullptr) {
       LogCvmfs(kLogCvmfs, kLogStderr, "failed to open history database %s",
                manifest->history().ToString().c_str());
       return 1;
     }
     tag_db->TakeDatabaseFileOwnership();
-    successful = InspectHistory(tag_db.weak_ref()) && successful;
+    successful = InspectHistory(tag_db.get()) && successful;
   }
 
   if (manifest->has_alt_catalog_path()) {
@@ -1166,7 +1166,7 @@ int CommandCheck::Main(const swissknife::ArgumentList &args) {
   shash::Any root_hash = manifest->catalog_hash();
   uint64_t root_size = manifest->catalog_size();
   if (tag_name != "") {
-    if (!tag_db.IsValid()) {
+    if (tag_db.get()==nullptr) {
       LogCvmfs(kLogCvmfs, kLogStderr, "no history");
       return 1;
     }

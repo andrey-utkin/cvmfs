@@ -105,7 +105,7 @@
 #include "util/exception.h"
 #include "util/logging.h"
 #include "util/mutex.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/smalloc.h"
 #include "util/string.h"
@@ -1280,9 +1280,9 @@ static void cvmfs_open(fuse_req_t req, fuse_ino_t ino,
       chunk_tables->Unlock();
 
       // Retrieve File chunks from the catalog
-      UniquePtr<FileChunkList> chunks(new FileChunkList());
+      std::unique_ptr<FileChunkList> chunks(new FileChunkList());
       if (!catalog_mgr->ListFileChunks(path, dirent.hash_algorithm(),
-                                       chunks.weak_ref())
+                                       chunks.get())
           || chunks->IsEmpty()) {
         fuse_remounter_->fence()->Leave();
         LogCvmfs(kLogCvmfs, kLogDebug | kLogSyslogErr,
@@ -1299,7 +1299,7 @@ static void cvmfs_open(fuse_req_t req, fuse_ino_t ino,
       // Check again to avoid race
       if (!chunk_tables->inode2chunks.Contains(unique_inode)) {
         chunk_tables->inode2chunks.Insert(
-            unique_inode, FileChunkReflist(chunks.Release(), path,
+            unique_inode, FileChunkReflist(chunks.release(), path,
                                            dirent.compression_algorithm(),
                                            dirent.IsExternalFile()));
         chunk_tables->inode2references.Insert(unique_inode, 1);

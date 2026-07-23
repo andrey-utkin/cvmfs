@@ -50,7 +50,7 @@
 #include "statistics.h"
 #include "tracer.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "wpad.h"
 
 using namespace std;  // NOLINT
@@ -75,7 +75,7 @@ void TalkManager::AnswerStringList(int con_fd, const vector<string> &list) {
 TalkManager *TalkManager::Create(const string &socket_path,
                                  MountPoint *mount_point,
                                  FuseRemounter *remounter) {
-  UniquePtr<TalkManager> talk_manager(
+  std::unique_ptr<TalkManager> talk_manager(
       new TalkManager(socket_path, mount_point, remounter));
 
   talk_manager->socket_fd_ = MakeSocket(socket_path, 0660);
@@ -87,7 +87,7 @@ TalkManager *TalkManager::Create(const string &socket_path,
   LogCvmfs(kLogTalk, kLogDebug, "socket created at %s (fd %d)",
            socket_path.c_str(), talk_manager->socket_fd_);
 
-  return talk_manager.Release();
+  return talk_manager.release();
 }
 
 

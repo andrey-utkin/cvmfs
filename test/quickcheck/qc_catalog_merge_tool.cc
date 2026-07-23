@@ -191,7 +191,7 @@ void CatalogMergeInOut(const std::vector<EntrySpec> &base_entries,
   DirSpec spec2 = ModifySpec(spec1, changes);
   ASSERT_TRUE(tester.Apply("target", spec2));
 
-  UniquePtr<ServerTool> server_tool(new ServerTool());
+  std::unique_ptr<ServerTool> server_tool(new ServerTool());
   ASSERT_TRUE(server_tool->InitDownloadManager(true, ""));
 
   receiver::Params params = MakeMergeToolParams("test");
@@ -214,7 +214,7 @@ void CatalogMergeInOut(const std::vector<EntrySpec> &base_entries,
   ASSERT_TRUE(merge_tool.Run(params, &output_manifest_path,
                              &output_manifest_hash, &final_rev));
 
-  UniquePtr<manifest::Manifest> output_manifest(
+  std::unique_ptr<manifest::Manifest> output_manifest(
       manifest::Manifest::LoadFile(output_manifest_path));
 
   ASSERT_TRUE(output_manifest.IsValid());

@@ -5,15 +5,15 @@
 #include "json_document.h"
 
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 
 using namespace std;  // NOLINT
 
 JsonDocument *JsonDocument::Create(const string &text) {
-  UniquePtr<JsonDocument> json(new JsonDocument());
+  std::unique_ptr<JsonDocument> json(new JsonDocument());
   if (!json->Parse(text))
     return NULL;
-  return json.Release();
+  return json.release();
 }
 
 JsonDocument::JsonDocument() : root_(JSON::value_t::null) { }

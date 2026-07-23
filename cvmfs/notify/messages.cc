@@ -8,7 +8,7 @@
 
 #include "json_document.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/string.h"
 
 namespace {
@@ -41,8 +41,8 @@ void Activity::ToJSONString(std::string *s) {
 }
 
 bool Activity::FromJSONString(const std::string &s) {
-  const UniquePtr<JsonDocument> m(JsonDocument::Create(s));
-  if (!m.IsValid()) {
+  const std::unique_ptr<JsonDocument> m(JsonDocument::Create(s));
+  if (m.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogError, "Could not create JSON document.");
     return false;
   }

@@ -14,7 +14,7 @@
 #include "repository_tag.h"
 #include "util/concurrency.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/string.h"
 
 using namespace receiver;  // NOLINT
@@ -138,8 +138,8 @@ TEST_F(T_Reactor, kGenerateToken_kQuit) {
   std::string reply;
   ASSERT_TRUE(Reactor::ReadReply(from_reactor_[0], &reply));
 
-  UniquePtr<JsonDocument> json_reply(JsonDocument::Create(reply));
-  ASSERT_TRUE(json_reply.IsValid());
+  std::unique_ptr<JsonDocument> json_reply(JsonDocument::Create(reply));
+  ASSERT_TRUE(json_reply.get()!=nullptr);
 
   // Send kQuit request
   ASSERT_TRUE(Reactor::WriteRequest(to_reactor_[1], Reactor::kQuit, ""));
@@ -164,8 +164,8 @@ TEST_F(T_Reactor, FullCycle) {
 
   std::string token, public_id, secret;
   {
-    UniquePtr<JsonDocument> json_reply(JsonDocument::Create(reply));
-    ASSERT_TRUE(json_reply.IsValid());
+    std::unique_ptr<JsonDocument> json_reply(JsonDocument::Create(reply));
+    ASSERT_TRUE(json_reply.get()!=nullptr);
 
     // Extract the token, public_id and secret from the reply
     const JSON *token_json = JsonDocument::SearchInObject(json_reply->root(),
@@ -191,8 +191,8 @@ TEST_F(T_Reactor, FullCycle) {
   reply.clear();
   ASSERT_TRUE(Reactor::ReadReply(from_reactor_[0], &reply));
   {
-    UniquePtr<JsonDocument> json_reply(JsonDocument::Create(reply));
-    ASSERT_TRUE(json_reply.IsValid());
+    std::unique_ptr<JsonDocument> json_reply(JsonDocument::Create(reply));
+    ASSERT_TRUE(json_reply.get()!=nullptr);
 
     // Extract the token, public_id and secret from the reply
     const JSON *id_json = JsonDocument::SearchInObject(json_reply->root(), "id",
@@ -213,8 +213,8 @@ TEST_F(T_Reactor, FullCycle) {
   reply.clear();
   ASSERT_TRUE(Reactor::ReadReply(from_reactor_[0], &reply));
   {
-    UniquePtr<JsonDocument> json_reply(JsonDocument::Create(reply));
-    ASSERT_TRUE(json_reply.IsValid());
+    std::unique_ptr<JsonDocument> json_reply(JsonDocument::Create(reply));
+    ASSERT_TRUE(json_reply.get()!=nullptr);
 
     // Extract the token, public_id and secret from the reply
     const JSON *path_json = JsonDocument::SearchInObject(json_reply->root(),
@@ -296,8 +296,8 @@ TEST_F(T_Reactor, CommitForwardsDeleteTags) {
   std::string reply;
   ASSERT_TRUE(Reactor::ReadReply(from_reactor_[0], &reply));
   {
-    UniquePtr<JsonDocument> json_reply(JsonDocument::Create(reply));
-    ASSERT_TRUE(json_reply.IsValid());
+    std::unique_ptr<JsonDocument> json_reply(JsonDocument::Create(reply));
+    ASSERT_TRUE(json_reply.get()!=nullptr);
     const JSON *status_json = JsonDocument::SearchInObject(
         json_reply->root(), "status", JSON_STRING);
     ASSERT_TRUE(status_json);

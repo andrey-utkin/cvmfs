@@ -133,7 +133,7 @@ int CommandGc::Main(const ArgumentList &args) {
                                download_manager(),
                                signature_manager());
 
-  UniquePtr<manifest::Manifest> manifest;
+  std::unique_ptr<manifest::Manifest> manifest;
   const ObjectFetcher::Failures retval = object_fetcher.FetchManifest(
       &manifest);
   if (retval != ObjectFetcher::kFailOk) {
@@ -153,15 +153,15 @@ int CommandGc::Main(const ArgumentList &args) {
     return 1;
   }
 
-  UniquePtr<manifest::Reflog> reflog;
-  reflog = FetchReflog(&object_fetcher, repo_name, reflog_hash);
-  assert(reflog.IsValid());
+  std::unique_ptr<manifest::Reflog> reflog;
+  reflog .reset(  FetchReflog(&object_fetcher, repo_name, reflog_hash) );
+  assert(reflog.get()!=nullptr);
 
   const upload::SpoolerDefinition spooler_definition(spooler, shash::kAny);
-  const UniquePtr<upload::AbstractUploader> uploader(
+  const std::unique_ptr<upload::AbstractUploader> uploader(
       upload::AbstractUploader::Construct(spooler_definition));
 
-  if (!uploader.IsValid()) {
+  if (uploader.get()==nullptr) {
     LogCvmfs(kLogCvmfs, kLogStderr, "failed to initialize spooler for '%s'",
              spooler.c_str());
     return 1;
@@ -185,13 +185,13 @@ int CommandGc::Main(const ArgumentList &args) {
   reflog->BeginTransaction();
 
   GcConfig config;
-  config.uploader = uploader.weak_ref();
+  config.uploader = uploader.get();
   config.keep_history_depth = revisions;
   config.keep_history_timestamp = timestamp;
   config.dry_run = dry_run;
   config.verbose = list_condemned_objects;
   config.object_fetcher = &object_fetcher;
-  config.reflog = reflog.weak_ref();
+  config.reflog = reflog.get();
   config.deleted_objects_logfile = deletion_log_file;
   config.statistics = statistics();
   config.extended_stats = extended_stats;
@@ -223,7 +223,7 @@ int CommandGc::Main(const ArgumentList &args) {
     if (!dry_run) {
       stats_db->StoreGCStatistics(this->statistics(), start_time, false);
       if (upload_statsdb) {
-        stats_db->UploadStatistics(uploader.weak_ref());
+        stats_db->UploadStatistics(uploader.get());
       }
     }
     uploader->TearDown();
@@ -244,7 +244,7 @@ int CommandGc::Main(const ArgumentList &args) {
     if (!dry_run) {
       stats_db->StoreGCStatistics(this->statistics(), start_time, false);
       if (upload_statsdb) {
-        stats_db->UploadStatistics(uploader.weak_ref());
+        stats_db->UploadStatistics(uploader.get());
       }
     }
     uploader->TearDown();
@@ -267,7 +267,7 @@ int CommandGc::Main(const ArgumentList &args) {
   assert(success);
   reflog->DropDatabaseFileOwnership();
   const std::string reflog_db = reflog->database_file();
-  reflog.Destroy();
+  reflog.reset();
 
   if (!dry_run) {
     uploader->UploadFile(reflog_db, ".cvmfsreflog");
@@ -283,7 +283,7 @@ int CommandGc::Main(const ArgumentList &args) {
 
     stats_db->StoreGCStatistics(this->statistics(), start_time, false);
     if (upload_statsdb) {
-      stats_db->UploadStatistics(uploader.weak_ref());
+      stats_db->UploadStatistics(uploader.get());
     }
 
     uploader->TearDown();
@@ -293,7 +293,7 @@ int CommandGc::Main(const ArgumentList &args) {
   if (!dry_run) {
     stats_db->StoreGCStatistics(this->statistics(), start_time, true);
     if (upload_statsdb) {
-      stats_db->UploadStatistics(uploader.weak_ref());
+      stats_db->UploadStatistics(uploader.get());
     }
   }
   uploader->TearDown();

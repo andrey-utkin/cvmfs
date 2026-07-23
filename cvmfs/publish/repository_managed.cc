@@ -10,7 +10,7 @@
 #include "publish/except.h"
 #include "publish/repository.h"
 #include "publish/repository_util.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/string.h"
 
@@ -108,12 +108,12 @@ int Publisher::ManagedNode::Check(bool is_quiet) {
 
   // expected_hash is left null when manifest is not available (e.g. abort
   // with exists=false), in which case the root hash comparison is skipped.
-  const UniquePtr<CheckoutMarker> marker(CheckoutMarker::CreateFrom(
+  const std::unique_ptr<CheckoutMarker> marker(CheckoutMarker::CreateFrom(
       publisher_->settings_.transaction().spool_area().checkout_marker()));
   shash::Any expected_hash;
   if (publisher_->manifest() != NULL)
     expected_hash = publisher_->manifest()->catalog_hash();
-  if (marker.IsValid())
+  if (marker.get()!=nullptr)
     expected_hash = marker->hash();
 
   if (!IsMountPoint(rdonly_mnt)) {
@@ -128,7 +128,7 @@ int Publisher::ManagedNode::Check(bool is_quiet) {
         const shash::Any root_hash = shash::MkFromHexPtr(
             shash::HexPtr(root_hash_str), shash::kSuffixCatalog);
         if (expected_hash != root_hash) {
-          if (marker.IsValid()) {
+          if (marker.get()!=nullptr) {
             result |= kFailRdOnlyWrongRevision;
           } else {
             result |= kFailRdOnlyOutdated;

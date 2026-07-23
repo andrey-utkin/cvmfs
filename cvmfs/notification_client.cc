@@ -52,11 +52,11 @@ class ActivitySubscriber : public notify::SubscriberSSE {
       return notify::Subscriber::kError;
     }
 
-    const UniquePtr<manifest::Manifest> manifest(manifest::Manifest::LoadMem(
+    const std::unique_ptr<manifest::Manifest> manifest(manifest::Manifest::LoadMem(
         reinterpret_cast<const unsigned char *>(msg.manifest_.data()),
         msg.manifest_.size()));
 
-    if (!manifest.IsValid()) {
+    if (manifest.get() == nullptr) {
       LogCvmfs(kLogCvmfs, kLogSyslogErr,
                "NotificationClient - could not parse manifest.");
       return notify::Subscriber::kError;
@@ -115,7 +115,7 @@ NotificationClient::NotificationClient(const std::string &config,
     , spawned_(false) { }
 
 NotificationClient::~NotificationClient() {
-  if (subscriber_.IsValid()) {
+  if (subscriber_.get() != nullptr) {
     subscriber_->Unsubscribe();
   }
   if (spawned_) {
@@ -137,8 +137,8 @@ void NotificationClient::Spawn() {
 void *NotificationClient::Run(void *data) {
   NotificationClient *cl = static_cast<NotificationClient *>(data);
 
-  cl->subscriber_ = new ActivitySubscriber(cl->config_, cl->remounter_,
-                                           cl->dl_mgr_, cl->sig_mgr_);
+  cl->subscriber_.reset(new ActivitySubscriber(cl->config_, cl->remounter_,
+                                           cl->dl_mgr_, cl->sig_mgr_));
 
   LogCvmfs(
       kLogCvmfs, kLogSyslog,
@@ -149,7 +149,7 @@ void *NotificationClient::Run(void *data) {
   const int num_retries = 10;
   const uint64_t interval = 60;
   notify::SubscriberSupervisor supervisor(
-      cl->subscriber_.weak_ref(), cl->repo_name_, num_retries, interval);
+      cl->subscriber_.get(), cl->repo_name_, num_retries, interval);
   supervisor.Run();
 
   return NULL;

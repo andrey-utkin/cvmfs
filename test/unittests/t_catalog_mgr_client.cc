@@ -36,7 +36,7 @@
 #include "testutil.h"
 #include "upload.h"
 #include "upload_spooler_definition.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/uuid.h"
 
@@ -216,16 +216,16 @@ void CreateCMCMiniRepository(SimpleOptionsParser *options_mgr_,
 TEST_F(T_CatalogManagerClient, LoadByHash) {
   CreateCMCMiniRepository(&options_mgr_, &repo_path_);
   ASSERT_TRUE(HasSuffix(repo_path_, "repo", false));
-  const UniquePtr<FileSystem> fs(FileSystem::Create(fs_info_));
+  const std::unique_ptr<FileSystem> fs(FileSystem::Create(fs_info_));
   ASSERT_EQ(loader::kFailOk, fs->boot_status());
 
   string root_hash_str;
   EXPECT_TRUE(options_mgr_.GetValue("CVMFS_ROOT_HASH", &root_hash_str));
   options_mgr_.UnsetValue("CVMFS_ROOT_HASH");
 
-  const UniquePtr<MountPoint> mp(
+  const std::unique_ptr<MountPoint> mp(
       MountPoint::Create(options_mgr_.GetValueOrDie("TEST_REPO_NAME"),
-                         fs.weak_ref(),
+                         fs.get(),
                          &options_mgr_));
   EXPECT_EQ(loader::kFailOk, mp->boot_status());
   EXPECT_EQ(root_hash_str, mp->catalog_mgr()->GetRootHash().ToString());
@@ -259,16 +259,16 @@ TEST_F(T_CatalogManagerClient, LoadByHash) {
 TEST_F(T_CatalogManagerClient, LoadByHashNetworkFailure) {
   CreateCMCMiniRepository(&options_mgr_, &repo_path_);
   ASSERT_TRUE(HasSuffix(repo_path_, "repo", false));
-  const UniquePtr<FileSystem> fs(FileSystem::Create(fs_info_));
+  const std::unique_ptr<FileSystem> fs(FileSystem::Create(fs_info_));
   ASSERT_EQ(loader::kFailOk, fs->boot_status());
 
   string root_hash_str;
   EXPECT_TRUE(options_mgr_.GetValue("CVMFS_ROOT_HASH", &root_hash_str));
   options_mgr_.UnsetValue("CVMFS_ROOT_HASH");
 
-  const UniquePtr<MountPoint> mp(
+  const std::unique_ptr<MountPoint> mp(
       MountPoint::Create(options_mgr_.GetValueOrDie("TEST_REPO_NAME"),
-                         fs.weak_ref(),
+                         fs.get(),
                          &options_mgr_));
   EXPECT_EQ(loader::kFailOk, mp->boot_status());
   EXPECT_EQ(root_hash_str, mp->catalog_mgr()->GetRootHash().ToString());
@@ -318,16 +318,16 @@ TEST_F(T_CatalogManagerClient, LoadByHashNetworkFailure) {
 TEST_F(T_CatalogManagerClient, LoadRootCatalog) {
   CreateCMCMiniRepository(&options_mgr_, &repo_path_);
   ASSERT_TRUE(HasSuffix(repo_path_, "repo", false));
-  const UniquePtr<FileSystem> fs(FileSystem::Create(fs_info_));
+  const std::unique_ptr<FileSystem> fs(FileSystem::Create(fs_info_));
   ASSERT_EQ(loader::kFailOk, fs->boot_status());
 
   string root_hash_str;
   EXPECT_TRUE(options_mgr_.GetValue("CVMFS_ROOT_HASH", &root_hash_str));
   options_mgr_.UnsetValue("CVMFS_ROOT_HASH");
 
-  const UniquePtr<MountPoint> mp(
+  const std::unique_ptr<MountPoint> mp(
       MountPoint::Create(options_mgr_.GetValueOrDie("TEST_REPO_NAME"),
-                         fs.weak_ref(),
+                         fs.get(),
                          &options_mgr_));
   EXPECT_EQ(loader::kFailOk, mp->boot_status());
   EXPECT_EQ(root_hash_str, mp->catalog_mgr()->GetRootHash().ToString());

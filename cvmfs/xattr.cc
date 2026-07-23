@@ -14,7 +14,7 @@
 #include <cstring>
 
 #include "util/platform.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/smalloc.h"
 #include "util/string.h"
 
@@ -85,7 +85,7 @@ XattrList *XattrList::Deserialize(const unsigned char *inbuf,
   if (inbuf == NULL)
     return new XattrList();
 
-  UniquePtr<XattrList> result(new XattrList());
+  std::unique_ptr<XattrList> result(new XattrList());
   if (size < sizeof(XattrHeader))
     return NULL;
   XattrHeader header;
@@ -113,7 +113,7 @@ XattrList *XattrList::Deserialize(const unsigned char *inbuf,
     remain -= nbytes;
     bufpos += nbytes;
   }
-  return result.Release();
+  return result.release();
 }
 
 

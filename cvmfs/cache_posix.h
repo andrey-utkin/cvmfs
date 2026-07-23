@@ -9,10 +9,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <memory>
 #include <string>
 
 #include "cache.h"
-#include "util/pointer.h"
 #include "duplex_testing.h"
 #include "fd_refcount_mgr.h"
 #include "manifest_fetch.h"
@@ -180,12 +180,12 @@ class PosixCacheManager : public CacheManager {
   static const char kMagicRefcount = 123;
   static const char kMagicNoRefcount = '\0';
   struct SavedState {
-    SavedState() : magic_number(kMagicRefcount), version(0), fd_mgr(NULL) { }
+    SavedState() : magic_number(kMagicRefcount), version(0), fd_mgr(nullptr) { }
     /// this helps to distinguish from the SavedState of the normal
     /// posix cache manager
     char magic_number;
     unsigned int version;
-    UniquePtr<FdRefcountMgr> fd_mgr;
+    std::unique_ptr<FdRefcountMgr> fd_mgr;
   };
 
   /**
@@ -212,7 +212,7 @@ class PosixCacheManager : public CacheManager {
    * Refcount and return only unique file descriptors
    */
   bool do_refcount_;
-  UniquePtr<FdRefcountMgr> fd_mgr_;
+  std::unique_ptr<FdRefcountMgr> fd_mgr_;
 
   bool cleanup_unused_first_;
 };  // class PosixCacheManager

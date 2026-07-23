@@ -17,7 +17,7 @@
 #include "publish/repository.h"
 #include "publish/settings.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/string.h"
 
 namespace {
@@ -223,7 +223,7 @@ int CmdDiff::Main(const Options &options) {
   SettingsBuilder builder;
 
   if (options.Has("worktree")) {
-    const UniquePtr<SettingsPublisher> settings(builder.CreateSettingsPublisher(
+    const std::unique_ptr<SettingsPublisher> settings(builder.CreateSettingsPublisher(
         options.plain_args().empty() ? "" : options.plain_args()[0].value_str));
     settings->SetIsSilent(true);
     settings->GetTransaction()->SetDryRun(true);

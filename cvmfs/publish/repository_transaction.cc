@@ -16,14 +16,14 @@
 #include "publish/settings.h"
 #include "util/exception.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 
 namespace publish {
 
 
 void Publisher::TransactionRetry() {
-  if (managed_node_.IsValid()) {
+  if (managed_node_.get()!=nullptr) {
     const int rvi = managed_node_->Check(false /* is_quiet */);
     if (rvi != 0)
       throw EPublish("cannot establish writable mountpoint");
@@ -61,7 +61,7 @@ void Publisher::TransactionRetry() {
     }  // try-catch
   }  // while (true)
 
-  if (managed_node_.IsValid())
+  if (managed_node_.get()!=nullptr)
     managed_node_->Open();
 }
 
@@ -93,7 +93,7 @@ void Publisher::TransactionImpl() {
   if (settings_.storage().type() == upload::SpoolerDefinition::Gateway) {
     DownloadRootObjects(settings_.url(), settings_.fqrn(),
                         settings_.transaction().spool_area().tmp_dir());
-    if (managed_node_.IsValid()) {
+    if (managed_node_.get()!=nullptr) {
       const int rvi = managed_node_->Check(true /* is_quiet */);
       if (rvi != 0)
         throw EPublish("cannot establish writable mountpoint");
@@ -121,7 +121,7 @@ void Publisher::TransactionImpl() {
     }
   }
 
-  const UniquePtr<CheckoutMarker> marker(CheckoutMarker::CreateFrom(
+  const std::unique_ptr<CheckoutMarker> marker(CheckoutMarker::CreateFrom(
       settings_.transaction().spool_area().checkout_marker()));
 
   in_transaction_.Set();
@@ -129,7 +129,7 @@ void Publisher::TransactionImpl() {
   // if the disk fills up before abort is called.
   is_publishing_.Touch();
   ConstructSpoolers();
-  if (marker.IsValid())
+  if (marker.get()!=nullptr)
     settings_.GetTransaction()->SetBaseHash(marker->hash());
   else
     settings_.GetTransaction()->SetBaseHash(manifest_->catalog_hash());

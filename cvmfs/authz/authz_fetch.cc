@@ -22,7 +22,7 @@
 #include "util/concurrency.h"
 #include "util/logging.h"
 #include "util/platform.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/smalloc.h"
 #include "util/string.h"
@@ -385,8 +385,8 @@ bool AuthzExternalFetcher::ParseMsg(const std::string &json_msg,
                                     AuthzExternalMsg *binary_msg) {
   assert(binary_msg != NULL);
 
-  const UniquePtr<JsonDocument> json_document(JsonDocument::Create(json_msg));
-  if (!json_document.IsValid()) {
+  const std::unique_ptr<JsonDocument> json_document(JsonDocument::Create(json_msg));
+  if (json_document.get()==nullptr) {
     LogCvmfs(kLogAuthz, kLogSyslogErr | kLogDebug,
              "invalid json from authz helper %s: %s", progname_.c_str(),
              json_msg.c_str());

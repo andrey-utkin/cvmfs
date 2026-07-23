@@ -122,7 +122,7 @@
 #include "upload_spooler_definition.h"
 #include "upload_spooler_result.h"
 #include "util/concurrency.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/shared_ptr.h"
 
 namespace upload {
@@ -344,8 +344,8 @@ class Spooler : public Observable<SpoolerResult> {
   // Status Information
   const SpoolerDefinition spooler_definition_;
 
-  UniquePtr<IngestionPipeline> ingestion_pipeline_;
-  UniquePtr<AbstractUploader> uploader_;
+  std::unique_ptr<IngestionPipeline> ingestion_pipeline_;
+  std::unique_ptr<AbstractUploader> uploader_;
 };
 
 }  // namespace upload

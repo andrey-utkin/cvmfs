@@ -55,7 +55,7 @@
 #include "util/concurrency.h"
 #include "util/exception.h"
 #include "util/logging.h"
-#include "util/pointer.h"
+#include <memory>
 #include "util/posix.h"
 #include "util/smalloc.h"
 #include "util/string.h"
@@ -1253,9 +1253,9 @@ int PosixQuotaManager::MainCacheManager(int argc, char **argv) {
     assert(SetLimitCore(0));
   }
 
-  const UniquePtr<Watchdog> watchdog(
+  const std::unique_ptr<Watchdog> watchdog(
       Watchdog::Create(NULL, false /* needs_read_environ */));
-  assert(watchdog.IsValid());
+  assert(watchdog.get()!=nullptr);
   watchdog->Spawn("./stacktrace.cachemgr");
 
   // Initialize pipe, open non-blocking as cvmfs is not yet connected

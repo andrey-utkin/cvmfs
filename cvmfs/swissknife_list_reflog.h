@@ -13,7 +13,7 @@
 #include "crypto/hash.h"
 #include "smallhash.h"
 #include "swissknife.h"
-#include "util/pointer.h"
+#include <memory>
 
 namespace swissknife {
 
@@ -29,7 +29,7 @@ class CommandListReflog : public Command {
   int Main(const ArgumentList &args);
 
  protected:
-  UniquePtr<SmallHashDynamic<shash::Any, bool> > objects_;
+  std::unique_ptr<SmallHashDynamic<shash::Any, bool> > objects_;
 
   template<class ObjectFetcherT>
   bool Run(ObjectFetcherT *object_fetcher, std::string repo_name,
