@@ -53,12 +53,28 @@ grep -q '"max_lease_time" : '$LEASE_DURATION',' /etc/cvmfs/gateway/user.json
     set_up_repository_gateway "$CVMFS_TEST_REPO" -o "$CVMFS_TEST_USER" -w "$CVMFS_TEST_HTTP_BASE" -s "$CVMFS_TEST_S3_CONFIG"
 )
 
+if [[ -v DEBUG ]]; then
+    sudo ngrep -t -e -d any -q -O "$this_script_dir"/ngrep.pcap >/dev/null &
+    NGREP_PID=$!
+fi
+
 sudo -E cvmfs_server transaction "$CVMFS_TEST_REPO"
+KEEP_REFRESHING_FLAG=$(mktemp)
+(
+    while [[ -f "$KEEP_REFRESHING_FLAG" ]]; do
+        cvmfs_swissknife lease -a refresh -u http://localhost:4929/api/v1 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -p "$CVMFS_TEST_REPO"/
+        sleep 2
+    done
+) &
+LEASE_REFRESH_SUBPROC_PID=$!
 pushd /cvmfs/"$CVMFS_TEST_REPO"
 # --use-compress-program=unzstd neeeded on Almalinux 8
 sudo tar --use-compress-program=unzstd -xaf "$this_script_dir"/repo.tar.zst
 popd
 sudo -E cvmfs_server publish "$CVMFS_TEST_REPO"
+rm "$KEEP_REFRESHING_FLAG"
+pkill -P "$LEASE_REFRESH_SUBPROC_PID" || true
+wait "$LEASE_REFRESH_SUBPROC_PID" || true
 
 sudo tee -a /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<EOF
 CVMFS_MAX_TTL_SECS=1
@@ -93,4 +109,13 @@ export PYTHONUNBUFFERED=1
 export PYTHONIOENCODING=UTF-8
 export LANG=C.UTF-8
 
+set +e
 sudo -E "$this_script_dir"/graft-tests.py --no-mount standard file-read |& sudo tee /var/log/graft-tests.log
+RC=$?
+if [[ -v DEBUG ]]; then
+    sleep 2
+    kill $NGREP_PID
+    wait
+    sudo mv "$this_script_dir"/ngrep.pcap "$this_script_dir"/ngrep.prev.pcap
+fi
+exit $RC
