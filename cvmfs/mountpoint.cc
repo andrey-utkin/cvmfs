@@ -378,7 +378,6 @@ FileSystem::PosixCacheSettings FileSystem::DeterminePosixCacheSettings(
   return settings;
 }
 
-
 bool FileSystem::DetermineNfsMode() {
   string optarg;
 
@@ -681,11 +680,11 @@ CacheManager *FileSystem::SetupExternalCacheMgr(const string &instance) {
   return cache_mgr;
 }
 
-
 CacheManager *FileSystem::SetupPosixCacheMgr(const string &instance) {
   const PosixCacheSettings settings = DeterminePosixCacheSettings(instance);
   if (!CheckPosixCacheSettings(settings))
     return NULL;
+
   UniquePtr<PosixCacheManager> cache_mgr(PosixCacheManager::Create(
       settings.cache_path, settings.is_alien,
       settings.avoid_rename ? PosixCacheManager::kRenameLink
@@ -1409,7 +1408,7 @@ bool MountPoint::CreateDownloadManagers() {
     download_mgr_->SetFailoverIndefinitely();
   }
 
-  if (options_mgr_->GetValue("CVMFS_METALINK_URL", &optarg)) {
+  if (options_mgr_->GetValue("CVMFS_METALINK_URL", &optarg) && (optarg != "")) {
     download_mgr_->SetMetalinkChain(optarg);
     // host chain will be set later when the metalink server is contacted
     download_mgr_->SetHostChain("");
@@ -1922,6 +1921,7 @@ bool MountPoint::FetchHistory(std::string *history_path) {
   CacheManager::Label label;
   label.flags = CacheManager::kLabelHistory;
   label.path = fqrn_;
+  label.zip_algorithm = zip::DecompressionAlg::kGuessDecompression;
   const int fd = fetcher_->Fetch(
       CacheManager::LabeledObject(history_hash, label));
   if (fd < 0) {
@@ -2274,7 +2274,8 @@ bool MountPoint::SetupExternalDownloadMgr(bool dogeosort) {
   }
   external_download_mgr_->SetTimeout(timeout, timeout_direct);
 
-  if (options_mgr_->GetValue("CVMFS_EXTERNAL_METALINK", &optarg)) {
+  if (options_mgr_->GetValue("CVMFS_EXTERNAL_METALINK", &optarg) &&
+      (optarg != "")) {
     external_download_mgr_->SetMetalinkChain(optarg);
     // host chain will be set later when the metalink server is contacted
     external_download_mgr_->SetHostChain("");
