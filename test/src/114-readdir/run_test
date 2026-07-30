@@ -108,10 +108,18 @@ create_repo() {
 	[[ "$AFTER_1_PASS" == 1 ]]
 	find "$CVMFS_TEST_MOUNTPOINT"
 	AFTER_2_PASSES=$(cvmfs_talk -p /var/spool/cvmfs/"$CVMFS_TEST_REPO"/cvmfs_io internal affairs | grep 'cvmfs.n_fs_readdir_0_offset\>' | cut -d'|' -f 2)
-	[[ "$AFTER_2_PASSES" == 2 ]]
+	if [[ "$EXTRA_CONFIG" == 'CVMFS_FUSE_KEEP_DIR_CACHE=1' ]]; then
+		[[ "$AFTER_2_PASSES" == 1 ]]
+	else
+		[[ "$AFTER_2_PASSES" == 2 ]]
+	fi
+
 	sudo umount /cvmfs/"$CVMFS_TEST_REPO"
 	sudo umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 }
 
 export CVMFS_TEST_REPO=test.repo.readdir-normal
 create_repo '' ''
+
+export CVMFS_TEST_REPO=test.repo.readdir-cached
+create_repo '' 'CVMFS_FUSE_KEEP_DIR_CACHE=1'
