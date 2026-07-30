@@ -7,6 +7,7 @@ CRYPTO_VERSION=3.5.3
 IPADDRESS_VERSION=1.0.22
 LIBARCHIVE_VERSION=3.3.2
 GOLANG_VERSION=1.24.2
+ZSTD_VERSION=1.5.6
 
 if [ x"$EXTERNALS_LIB_LOCATION" = x"" ]; then
   echo "Bootstrap - Missing environment variable: EXTERNALS_LIB_LOCATION"
@@ -196,6 +197,10 @@ build_lib() {
         do_download_go
         do_build "golang_rev2"
       ;;
+    zstd)
+      do_extract "zstd"         "zstd-${ZSTD_VERSION}.tar.gz"
+      do_build "zstd"
+      ;;
     *)
       echo "Unknown library name. Exiting."
       exit 1
@@ -212,7 +217,7 @@ if [[ -v BUILTIN_EXTERNALS_LIST ]] && ! echo ";${BUILTIN_EXTERNALS_LIST};" | gre
     missing_libs=$(echo "$BUILTIN_EXTERNALS_LIST" | tr ';' ' ')
     echo "Bootstrap - Using custom externals list: $missing_libs"
 else
-    missing_libs="libcrypto sha3"
+    missing_libs="libcrypto sha3 zstd"
 
     if [[ "$BUILD_GATEWAY" != '' ]] || [[ "$BUILD_DUCC" != '' ]] || [[ "$BUILD_SNAPSHOTTER" != '' ]]; then
         required_go_minor_version="23"
