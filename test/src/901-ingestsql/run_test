@@ -62,7 +62,7 @@ sudo -E cvmfs_server transaction "$CVMFS_TEST_REPO"
 KEEP_REFRESHING_FLAG=$(mktemp)
 (
     while [[ -f "$KEEP_REFRESHING_FLAG" ]]; do
-        cvmfs_swissknife lease -a refresh -u http://localhost:4929/api/v1 -k /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw -p "$CVMFS_TEST_REPO"/
+        cvmfs_server refresh-lease "$CVMFS_TEST_REPO"
         sleep 2
     done
 ) &
