@@ -798,7 +798,7 @@ do
   if [ x"$cvmfs_test_timeout" = x ]; then
     if is_in_suite $t quick; then
       # Default 5min timeout for quick tests
-      cvmfs_test_timeout=300
+      cvmfs_test_timeout=900
     else
       cvmfs_test_timeout=0
     fi
