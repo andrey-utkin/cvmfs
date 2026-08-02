@@ -105,7 +105,7 @@ export PYTHONIOENCODING=UTF-8
 export LANG=C.UTF-8
 
 set +e
-sudo -E "$this_script_dir"/graft-tests.py --no-mount standard file-read quick |& sudo tee /var/log/graft-tests.log
+sudo -E "$this_script_dir"/graft-tests.py --no-mount standard file-read |& sudo tee /var/log/graft-tests.log
 RC=$?
 if [[ -v DEBUG ]]; then
     sleep 2
