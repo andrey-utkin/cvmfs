@@ -700,6 +700,9 @@ get_iso8601_timestamp > ${scratch_basedir}/starttime
 
 to_syslog "Test Suite started"
 
+reversed=$(for t in $testsuite; do echo $t; done | tac)
+testsuite=$reversed
+
 for t in $testsuite
 do
   TEST_DISPLAY_ID="$(test_display_id "$t")"
