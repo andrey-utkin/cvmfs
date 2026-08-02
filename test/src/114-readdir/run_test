@@ -25,6 +25,29 @@ sudo mkdir -p /var/{spool,run}/cvmfs/
 sudo cp -a /etc/fstab{,.orig}
 sudo truncate --size=0 /etc/fstab
 
+repo_set_layout_ingestsql() {
+    sudo umount /cvmfs/"$CVMFS_TEST_REPO"
+    sudo umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+    while pgrep cvmfs2 >/dev/null; do sudo pkill cvmfs2 || true; sleep 1; done
+
+    sudo cp /etc/fstab.hack /etc/fstab
+    sudo systemctl daemon-reload
+
+    sudo mount /cvmfs/"$CVMFS_TEST_REPO"
+}
+
+repo_set_layout_mkfs() {
+    # return it to the layout created by mkfs
+    sudo umount /cvmfs/"$CVMFS_TEST_REPO"
+    while pgrep cvmfs2 >/dev/null; do sudo pkill cvmfs2 || true; sleep 1; done
+
+    sudo cp /etc/fstab.non-hacky /etc/fstab
+    sudo systemctl daemon-reload
+
+    sudo mount /cvmfs/"$CVMFS_TEST_REPO"
+    sudo mount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
+}
+
 create_repo() {
 	MOUNT_OPTS=$1
 	EXTRA_CONFIG=$2
@@ -108,10 +131,25 @@ create_repo() {
 	[[ "$AFTER_1_PASS" == 1 ]]
 	find "$CVMFS_TEST_MOUNTPOINT"
 	AFTER_2_PASSES=$(cvmfs_talk -p /var/spool/cvmfs/"$CVMFS_TEST_REPO"/cvmfs_io internal affairs | grep 'cvmfs.n_fs_readdir_0_offset\>' | cut -d'|' -f 2)
-	if [[ "$EXTRA_CONFIG" == 'CVMFS_FUSE_KEEP_DIR_CACHE=1' ]]; then
+	if [[ "$EXTRA_CONFIG" =~ 'CVMFS_FUSE_KEEP_DIR_CACHE=1' ]]; then
 		[[ "$AFTER_2_PASSES" == 1 ]]
 	else
 		[[ "$AFTER_2_PASSES" == 2 ]]
+	fi
+
+	if which cvmfs_touch; then
+	    repo_set_layout_ingestsql
+	    cvmfs_touch "$CVMFS_TEST_MOUNTPOINT"/touched
+	    [[ -f "$CVMFS_TEST_MOUNTPOINT"/touched ]]
+
+	    cvmfs_mkdir "$CVMFS_TEST_MOUNTPOINT"/dir
+	    [[ -d "$CVMFS_TEST_MOUNTPOINT"/dir ]]
+	    cvmfs_touch "$CVMFS_TEST_MOUNTPOINT"/dir/touched
+	    [[ -f "$CVMFS_TEST_MOUNTPOINT"/dir/touched ]]
+	    repo_set_layout_mkfs
+	else
+	    CVMFS_GENERAL_WARNING_FLAG=1
+	    echo "Warning: no cvmfs_touch, can't run some checks"
 	fi
 
 	sudo umount /cvmfs/"$CVMFS_TEST_REPO"
@@ -122,4 +160,4 @@ export CVMFS_TEST_REPO=test.repo.readdir-normal
 create_repo '' ''
 
 export CVMFS_TEST_REPO=test.repo.readdir-cached
-create_repo '' 'CVMFS_FUSE_KEEP_DIR_CACHE=1'
+create_repo '' 'CVMFS_FUSE_KEEP_DIR_CACHE=1'"\n"'CVMFS_FULL_READDIR_CACHING=1'
