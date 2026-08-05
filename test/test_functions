@@ -2650,6 +2650,8 @@ set_up_repository_gateway() {
 
     echo "Setting up repository gateway"
 
+    gateway_rr enable
+
     gateway_script=/usr/libexec/cvmfs-gateway/scripts/run_cvmfs_gateway.sh
     if [ -f /usr/lib/cvmfs-gateway/scripts/run_cvmfs_gateway.sh ]; then
       gateway_script=/usr/lib/cvmfs-gateway/scripts/run_cvmfs_gateway.sh
