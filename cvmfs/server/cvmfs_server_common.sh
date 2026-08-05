@@ -1050,6 +1050,12 @@ EOF
 
   cat > $client_conf << EOF
 # Created by cvmfs_server.  Don't touch.
+
+CVMFS_FUSE_KEEP_DIR_CACHE=1
+CVMFS_FULL_READDIR_CACHING=1
+
+CVMFS_FUSE_PASSTHROUGH=1
+
 CVMFS_CACHE_BASE=$cache_dir
 CVMFS_RELOAD_SOCKETS=$cache_dir
 CVMFS_QUOTA_LIMIT=4000
