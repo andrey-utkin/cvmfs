@@ -28,7 +28,7 @@ has_jq() {
 }
 
 get_last_gc() {
-  curl -f -s "$(get_repo_url $1)/.cvmfs_status.json"|grep last_gc
+  curl -f -v "$(get_repo_url $1)/.cvmfs_status.json"|grep last_gc
 }
 
 cvmfs_run_test() {
