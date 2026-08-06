@@ -103,6 +103,7 @@ cvmfs_run_test() {
   echo "trigger synchronized remount"
   sudo cvmfs_talk -p ${cache_dir}/${CVMFS_TEST_REPO}/cvmfs_io.${CVMFS_TEST_REPO} \
     remount sync
+  sleep $sleep_time # shouldn't be needed but without, first ls fails to show attrs of newfile
   ls -lisa $TEST_611_MOUNTPOINT || return 33
   ls -lisa $TEST_611_MOUNTPOINT/nested || return 33
   stat $TEST_611_MOUNTPOINT/newfile || return 34
