@@ -216,6 +216,10 @@ if ! [[ -v CVMFS_TEST_S3_CONFIG ]]; then
     exit 0
 fi
 source "$CVMFS_TEST_S3_CONFIG"
+S3_HOST=${CVMFS_S3_HOST%:*}
+S3_PORT=${CVMFS_S3_HOST#*:}
+S3_WEB_HOST=cvmfs.web.garage.internal
+S3_WEB_PORT=3902
 
 export CVMFS_TEST_REPO=test.repo.readdir-normal
 create_repo '' ''
