@@ -50,6 +50,43 @@ repo_set_layout_mkfs() {
     sudo mount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 }
 
+configure_tools() {
+    PROXY_SPEC=DIRECT
+    sudo mkdir -p /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"
+    sudo cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".pub /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/pubkey
+
+    sudo tee /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/config <<EOF
+CVMFS_GATEWAY=http://127.0.0.1:4929/api/v1
+CVMFS_STRATUM0=$CVMFS_TEST_HTTP_BASE/$CVMFS_TEST_REPO
+CVMFS_HTTP_PROXY=$PROXY_SPEC
+EOF
+    sudo cp /etc/cvmfs/keys/"$CVMFS_TEST_REPO".gw /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/gatewaykey
+    sudo cp "$CVMFS_TEST_S3_CONFIG" /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/s3.conf
+    sudo tee /etc/cvmfs/gateway-client/"$CVMFS_TEST_REPO"/cvmfs-rsync.yaml <<EOF
+repos:
+  $CVMFS_TEST_REPO:
+    dot-scheme: false
+    content-addressable: true
+    groups:
+      DEFAULT:
+	DEFAULT:
+	  allow-delete: true
+	  allow-purge: true
+	  allow-upload: true
+	  allow-acl: true
+	  check-permissions: true
+	  directory-mode: 511
+	  file-mode: 438
+	  group: 0
+	  user: 0
+    proxy: "$PROXY_SPEC"
+    external-url-prefix: "http://$S3_HOST:$S3_PORT/$CVMFS_S3_BUCKET/$CVMFS_TEST_REPO/external"
+    internal-url-prefix: "http://$S3_HOST:$S3_PORT/$CVMFS_S3_BUCKET/$CVMFS_TEST_REPO/data"
+    s3_access_key: $CVMFS_S3_ACCESS_KEY
+    s3_secret_key: $CVMFS_S3_SECRET_KEY
+EOF
+}
+
 create_repo() {
 	MOUNT_OPTS=$1
 	EXTRA_CONFIG=$2
@@ -57,11 +94,16 @@ create_repo() {
 	if [[ -v DEBUG ]]; then
 	    sudo mv /etc/fstab{,.bkp}
 	fi
+	#(
+	#    source $TEST_ROOT/test_functions
+	#    apache_switch on
+	#)
+	#sudo -E cvmfs_server mkfs -o "$CVMFS_TEST_USER" "$CVMFS_TEST_REPO"
+
 	(
-	    source $TEST_ROOT/test_functions
-	    apache_switch on
+	    source "$TEST_ROOT"/test_functions
+	    set_up_repository_gateway "$CVMFS_TEST_REPO" -o "$CVMFS_TEST_USER" -w "$CVMFS_TEST_HTTP_BASE" -s "$CVMFS_TEST_S3_CONFIG"
 	)
-	sudo -E cvmfs_server mkfs -o "$CVMFS_TEST_USER" "$CVMFS_TEST_REPO"
 
 	sudo cp -a /etc/fstab{,.non-hacky}
 	grep -E '^(cvmfs2#)?'"$CVMFS_TEST_REPO" /etc/fstab | sed -e s:/var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly:/cvmfs/"$CVMFS_TEST_REPO": | sudo tee /etc/fstab.hack
@@ -92,6 +134,8 @@ create_repo() {
 	CVMFS_USE_FILE_CHUNKING=false
 	CVMFS_QUOTA_LIMIT=-1
 	EOF
+
+	configure_tools
 
 	sudo mount  /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 	sudo mount  /cvmfs/"$CVMFS_TEST_REPO"
@@ -165,6 +209,13 @@ create_repo() {
 	sudo umount /cvmfs/"$CVMFS_TEST_REPO"
 	sudo umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
 }
+
+if ! [[ -v CVMFS_TEST_S3_CONFIG ]]; then
+    echo 'Warning: test requires CVMFS_TEST_S3_CONFIG which is not set. Skipping.'
+    CVMFS_GENERAL_WARNING_FLAG=1
+    exit 0
+fi
+source "$CVMFS_TEST_S3_CONFIG"
 
 export CVMFS_TEST_REPO=test.repo.readdir-normal
 create_repo '' ''
