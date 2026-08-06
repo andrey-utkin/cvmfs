@@ -22,7 +22,9 @@ sudo mkdir -p /var/{spool,run}/cvmfs/
 #rsyslogd &
 #systemctl enable --now httpd
 
-sudo cp -a /etc/fstab{,.orig}
+# CentOS 9, Almalinux 8 container just doesn't have /etc/fstab
+sudo cp -a /etc/fstab{,.orig} || sudo touch /etc/fstab{,.orig}
+
 sudo truncate --size=0 /etc/fstab
 
 repo_set_layout_ingestsql() {
@@ -52,12 +54,18 @@ create_repo() {
 	MOUNT_OPTS=$1
 	EXTRA_CONFIG=$2
 	export CVMFS_USE_FILE_CHUNKING=false
-	sudo mv /etc/fstab{,.bkp}
+	if [[ -v DEBUG ]]; then
+	    sudo mv /etc/fstab{,.bkp}
+	fi
 	(
 	    source $TEST_ROOT/test_functions
 	    apache_switch on
 	)
 	sudo -E cvmfs_server mkfs -o "$CVMFS_TEST_USER" "$CVMFS_TEST_REPO"
+
+	sudo cp -a /etc/fstab{,.non-hacky}
+	grep -E '^(cvmfs2#)?'"$CVMFS_TEST_REPO" /etc/fstab | sed -e s:/var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly:/cvmfs/"$CVMFS_TEST_REPO": | sudo tee /etc/fstab.hack
+
 	! grep CVMFS_ROOT_HASH /var/spool/cvmfs/"$CVMFS_TEST_REPO"/client.local
 	export CVMFS_TEST_MOUNTPOINT=/cvmfs/$CVMFS_TEST_REPO
 	cat "$CVMFS_TEST_MOUNTPOINT"/new_repository
@@ -65,10 +73,12 @@ create_repo() {
 	pgrep cvmfs2
 	sudo umount /cvmfs/"$CVMFS_TEST_REPO"
 	sudo umount /var/spool/cvmfs/"$CVMFS_TEST_REPO"/rdonly
-	sudo sed -i /etc/fstab -e "s/,noauto /,simple_options_parsing,disable_watchdog,noauto,debug,$MOUNT_OPTS /"
-	sudo mv /etc/fstab{,.new}
-	cat /etc/fstab.new /etc/fstab.bkp | sudo tee /etc/fstab
-	sudo systemctl daemon-reload
+	if [[ -v DEBUG ]]; then
+	    sudo sed -i /etc/fstab -e "s/,noauto /,simple_options_parsing,disable_watchdog,noauto,debug,$MOUNT_OPTS /"
+	    sudo mv /etc/fstab{,.new}
+	    cat /etc/fstab.new /etc/fstab.bkp | sudo tee /etc/fstab
+	    sudo systemctl daemon-reload
+	fi
 	sudo tee -a /etc/cvmfs/repositories.d/"$CVMFS_TEST_REPO"/client.conf <<-EOF
 	CVMFS_HTTP_PROXY=DIRECT
 	CVMFS_KCACHE_TIMEOUT=0
