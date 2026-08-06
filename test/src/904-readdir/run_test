@@ -69,16 +69,16 @@ repos:
     content-addressable: true
     groups:
       DEFAULT:
-	DEFAULT:
-	  allow-delete: true
-	  allow-purge: true
-	  allow-upload: true
-	  allow-acl: true
-	  check-permissions: true
-	  directory-mode: 511
-	  file-mode: 438
-	  group: 0
-	  user: 0
+        DEFAULT:
+          allow-delete: true
+          allow-purge: true
+          allow-upload: true
+          allow-acl: true
+          check-permissions: true
+          directory-mode: 511
+          file-mode: 438
+          group: 0
+          user: 0
     proxy: "$PROXY_SPEC"
     external-url-prefix: "http://$S3_HOST:$S3_PORT/$CVMFS_S3_BUCKET/$CVMFS_TEST_REPO/external"
     internal-url-prefix: "http://$S3_HOST:$S3_PORT/$CVMFS_S3_BUCKET/$CVMFS_TEST_REPO/data"
