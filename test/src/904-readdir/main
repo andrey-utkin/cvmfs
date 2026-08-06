@@ -8,7 +8,7 @@ cleanup() {
 }
 
 cvmfs_run_test() {
-  this_script_dir=$TEST_ROOT/src/114-readdir
+  this_script_dir=$TEST_ROOT/src/904-readdir
   # We want strict mode here, to catch any failure.
   # But turning on errexit (set -e) inside a function has no effect.
   # So we exec our script to keep its error handling mode independent from test/run.sh.
