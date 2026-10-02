@@ -28,12 +28,14 @@ cvmfs_run_test() {
   produce_tarball "$tarfile" || return 10
 
   echo "*** ingest tarball without a publisher mount"
+  base=base
+  cvmfs_server ingest --tar_file "$tarfile" --base_dir "$base" "$repo"
   local n=10
   DIRS_CERATED=()
   for i in $(seq 1 $n); do
     dir=$(printf %05d $i)
     DIRS_CREATED+=("$dir")
-    cvmfs_server ingest --tar_file "$tarfile" --base_dir "$dir" "$repo"  &
+    cvmfs_server ingest --tar_file "$tarfile" --base_dir "$base/$dir" "$repo"  &
   done
   wait
 
@@ -48,7 +50,7 @@ cvmfs_run_test() {
   check_repo_integrity "$repo"
 
   sudo mount "$CVMFS_SPOOL_DIR"/rdonly
-  DIRS_PRESENT=( $(ls "$CVMFS_SPOOL_DIR"/rdonly) )
+  DIRS_PRESENT=( $(ls "$CVMFS_SPOOL_DIR"/rdonly/"$base") )
   for i in $(seq 0 $(( n - 1 )) ); do
     [[ ${DIRS_CREATED[$i]} == ${DIRS_PRESENT[$i]} ]]
   done
