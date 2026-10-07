@@ -1,0 +1,87 @@
+#!/bin/bash
+cvmfs_test_name="Mountless repository gateway ingest: parallel stress test"
+cvmfs_test_autofs_on_startup=false
+cvmfs_test_suites="quick"
+
+
+produce_db() {
+  local db_path=$1
+  local dir_name=$2
+  cvmfs_swissknife ingestsql -D '' -N '' -n "$db_path"
+#  sqlite3 "$db_path" <<EOF
+#  CREATE TABLE IF NOT EXISTS dirs (
+#      name  TEXT    PRIMARY KEY,
+#      mode  INTEGER NOT NULL DEFAULT 493, -- 0755 in octal
+#      mtime INTEGER NOT NULL DEFAULT (unixepoch()), -- Unix seconds
+#      owner INTEGER NOT NULL DEFAULT 0,
+#      grp   INTEGER NOT NULL DEFAULT 0,
+#      acl   TEXT    NOT NULL DEFAULT "",
+#      nested INTEGER NOT NULL DEFAULT 1,
+#      override_stat TEXT NOT NULL DEFAULT ""
+#  );
+#  INSERT INTO dirs (name) VALUES ('base/$dir_name');
+#EOF
+  sqlite3 "$db_path" <<EOF
+  INSERT INTO dirs (name) VALUES ('base/$dir_name');
+EOF
+}
+
+
+produce_tarball() {
+  local tarball_name=$(readlink -f "$1")
+  mkdir empty
+  pushd empty
+  tar -cf "$tarball_name" .
+  popd
+  rm -rf empty
+}
+
+
+cvmfs_run_test() {
+  local repo="test.repo.org"
+
+  set_up_repository_gateway -P || return 1
+  load_repo_config "$repo" || return 2
+
+  echo "*** check bootstrap leaves the repository unmounted"
+  cat /proc/mounts | grep -e " /cvmfs/${repo} " && return 3
+  cat /proc/mounts | grep -e " ${CVMFS_SPOOL_DIR}/rdonly " && return 4
+
+
+  echo "*** ingest SQL without a publisher mount"
+  base=base
+  local tarfile=$PWD/tarball.tar
+  produce_tarball "$tarfile"
+  cvmfs_server ingest --tar_file "$tarfile" --base_dir "$base" "$repo"
+  local n=1000
+  DIRS_CERATED=()
+  JOBS=()
+  for i in $(seq 1 $n); do
+    dir=$(printf %05d $i)
+    DIRS_CREATED+=("$dir")
+    db_path=$dir.sql
+    produce_db "$db_path" "$dir"
+    tmp_dir=$dir.tmp
+    mkdir "$tmp_dir"
+    #cvmfs_server ingest --tar_file "$tarfile" --base_dir "$base/$dir" "$repo" &
+    cvmfs_swissknife_debug ingestsql -c -v -@ "$CVMFS_TEST_PROXY" -N "$repo" -D "$db_path" -w "$CVMFS_TEST_HTTP_BASE/$repo" -k "/etc/cvmfs/keys/$repo.pub" -3 "$CVMFS_TEST_S3_CONFIG" -s /etc/cvmfs/keys/"$repo".gw -g http://127.0.0.1:4929/api/v1 -t "$tmp_dir" -a -d -T 2 -B "$CVMFS_SPOOL_DIR"/rdonly & #  -W 10
+    JOBS+=( $! )
+  done
+  for job in ${JOBS[@]}; do
+    wait $job
+  done
+
+  echo "*** mountless ingest should not remount the publisher view"
+  cat /proc/mounts | grep -e " /cvmfs/${repo} " && return 21
+  cat /proc/mounts | grep -e " ${CVMFS_SPOOL_DIR}/rdonly " && return 22
+  [ ! -f ${CVMFS_SPOOL_DIR}/session_token ] || return 23
+
+  echo "*** verify published ingest artifacts without remounting the publisher view"
+
+  sudo mount "$CVMFS_SPOOL_DIR"/rdonly
+  DIRS_PRESENT=( $(ls "$CVMFS_SPOOL_DIR"/rdonly/"$base") )
+  for i in $(seq 0 $(( n - 1 )) ); do
+    [[ ${DIRS_CREATED[$i]} == ${DIRS_PRESENT[$i]} ]]
+  done
+
+}
