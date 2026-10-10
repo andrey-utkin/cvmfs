@@ -35,6 +35,7 @@ cvmfs_run_test() {
 
   echo "*** ingest tarball without a publisher mount"
   cvmfs_server ingest --tar_file "$tarfile" --base_dir foo "$repo" || return 20
+  cvmfs_server ingest --tar_file "$tarfile" --base_dir foo/foo "$repo" || return 20
 
   echo "*** mountless ingest should not remount the publisher view"
   cat /proc/mounts | grep -e " /cvmfs/${repo} " && return 21
