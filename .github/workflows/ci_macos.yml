@@ -17,9 +17,15 @@ jobs:
 
       - name: Debug output 
         run: |
+          set -x
           csrutil status
           sw_vers 
           brew install coreutils
+          brew install bash
+          brew info bash
+          sudo ln -s `brew --prefix`/bin/bash /usr/local/bin/bash
+          echo $PATH
+          bash --version
           sudo ln -s /usr/local/bin/gtimeout /usr/local/bin/timeout
           sudo ln -s /opt/homebrew/bin/greadlink /usr/local/bin/greadlink
           sudo mkdir /usr/local/include
