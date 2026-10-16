@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # bash self-test against outdated bash shipped with macos
 if ! bash -c ': |& cat'; then
