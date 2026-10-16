@@ -40,7 +40,8 @@ jobs:
           #mv /bin/bash /bin/bash.old
           #ln -svnf `brew --prefix`/bin/bash /bin/bash
           #mv: rename /bin/bash to /bin/bash.old: Read-only file system
-          mount --bind `brew --prefix`/bin/bash /bin/bash
+          # bind-mount is not a thing on macos
+          #mount --bind `brew --prefix`/bin/bash /bin/bash
 
           sudo ln -s /usr/local/bin/gtimeout /usr/local/bin/timeout
           sudo ln -s /opt/homebrew/bin/greadlink /usr/local/bin/greadlink
