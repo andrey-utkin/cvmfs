@@ -26,6 +26,15 @@ jobs:
           sudo ln -s `brew --prefix`/bin/bash /usr/local/bin/bash
           echo $PATH
           bash --version
+          /bin/bash --version
+          which bash || true
+          env bash
+          `brew --prefix`/bin/bash --version
+          cd ${GITHUB_WORKSPACE}
+          bash ci/bash-test
+          /bin/bash ci/bash-test
+          `brew --prefix`/bin/bash ci/bash-test
+          env
           sudo ln -s /usr/local/bin/gtimeout /usr/local/bin/timeout
           sudo ln -s /opt/homebrew/bin/greadlink /usr/local/bin/greadlink
           sudo mkdir /usr/local/include

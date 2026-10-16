@@ -1,0 +1,8 @@
+set -x
+tmpfile=$(mktemp)
+echo "tmpfile is '$tmpfile'"
+date |& tee "$tmpfile"
+[[ -v CVMFS_TEST_DOCKER ]]
+
+source test/test_functions
+get_millisecond_epoch
