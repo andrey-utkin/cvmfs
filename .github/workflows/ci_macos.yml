@@ -21,28 +21,6 @@ jobs:
           csrutil status
           sw_vers 
           brew install coreutils
-          brew install bash
-          brew info bash
-          sudo ln -s `brew --prefix`/bin/bash /usr/local/bin/bash
-          echo $PATH
-          bash --version
-          /bin/bash --version
-          which bash || true
-          env bash
-          `brew --prefix`/bin/bash --version
-          cd ${GITHUB_WORKSPACE}
-          bash ci/bash-test || true # epic failures expected
-          /bin/bash ci/bash-test || true # epic failures expected
-          `brew --prefix`/bin/bash ci/bash-test
-          env
-
-          # Overwriting /bin/bash doesn't work:
-          #mv /bin/bash /bin/bash.old
-          #ln -svnf `brew --prefix`/bin/bash /bin/bash
-          #mv: rename /bin/bash to /bin/bash.old: Read-only file system
-          # bind-mount is not a thing on macos
-          #mount --bind `brew --prefix`/bin/bash /bin/bash
-
           sudo ln -s /usr/local/bin/gtimeout /usr/local/bin/timeout
           sudo ln -s /opt/homebrew/bin/greadlink /usr/local/bin/greadlink
           sudo mkdir /usr/local/include
