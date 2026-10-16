@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 # Common configuration tasks for CernVM-FS
 
 SCRIPT_LOCATION=$(dirname "$(command -v "$0")")
