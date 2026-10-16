@@ -25,7 +25,24 @@ jobs:
           sudo ln -s /opt/homebrew/bin/greadlink /usr/local/bin/greadlink
           sudo mkdir /usr/local/include
           sudo xcode-select -s "/Applications/Xcode_16.app"
-          
+
+      - name: Install modern bash
+        run: |
+          brew install bash
+          brew info bash
+          sudo ln -s `brew --prefix`/bin/bash /usr/local/bin/bash
+          echo $PATH
+          bash --version
+          /bin/bash --version
+          which bash || true
+          env bash
+          `brew --prefix`/bin/bash --version
+          cd ${GITHUB_WORKSPACE}
+          bash ci/bash-test || true # epic failures expected
+          /bin/bash ci/bash-test || true # epic failures expected
+          `brew --prefix`/bin/bash ci/bash-test
+          env
+
       - name: Install Fuse-t and dependencies
         run: |
           brew install python-setuptools
@@ -47,23 +64,6 @@ jobs:
           meson setup build --prefix=/usr/local
           ninja -C build
           sudo ninja -C build install
-
-      - name: Install modern bash
-        run: |
-          brew install bash
-          brew info bash
-          sudo ln -s `brew --prefix`/bin/bash /usr/local/bin/bash
-          echo $PATH
-          bash --version
-          /bin/bash --version
-          which bash || true
-          env bash
-          `brew --prefix`/bin/bash --version
-          cd ${GITHUB_WORKSPACE}
-          bash ci/bash-test || true # epic failures expected
-          /bin/bash ci/bash-test || true # epic failures expected
-          `brew --prefix`/bin/bash ci/bash-test
-          env
 
       - name: Build CVMFS
         run: |
