@@ -84,7 +84,10 @@ services:
     # Garage setup – runs once after Garage is healthy
     # -----------------------------------------------------------------------
     garage-setup:
-        image: alpine:3
+        image: cvmfs-dev:garage-setup
+        build:
+            context: ../../../..
+            dockerfile: test/common/container/s3-integration/Containerfile.garage-setup
         depends_on:
             garage:
                 condition: service_healthy
