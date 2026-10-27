@@ -75,6 +75,7 @@ check_file_path() {
 
     # Cleaning up
     kill -9 $tail_pid
+    wait "$tail_pid"
     clean_work_dir $@
 
     return $(check_status $status)
