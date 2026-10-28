@@ -194,8 +194,8 @@ if [ $CVMFS_SERVER_DEBUG -ne 0 ]; then
         CVMFS_SERVER_PUBLISH_DEBUG="/usr/bin/cvmfs_publish_debug"
       ;;
       4|rr)
-        # publish shells out to mount tools which fails with fspick being a syscall unsupported by rr
-        CVMFS_SERVER_PUBLISH_DEBUG="/usr/bin/cvmfs_publish_debug"
+        # rr >= 5.10.0. Publish shells out to mount which uses fspick syscall.
+        CVMFS_SERVER_PUBLISH_DEBUG="_RR_TRACE_DIR=/tmp sudo -EP rr record --setuid-sudo cvmfs_publish_debug"
       ;;
     esac
   else
