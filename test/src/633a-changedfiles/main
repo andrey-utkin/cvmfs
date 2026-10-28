@@ -14,7 +14,7 @@ private_mount() {
                  "$CVMFS_TEST_REPO" \
                  "$(get_repo_url $CVMFS_TEST_REPO)" \
                  "" \
-                 "CVMFS_KCACHE_TIMEOUT=20" || return 1
+                 "CVMFS_KCACHE_TIMEOUT=999999" || return 1
 }
 
 private_unmount() {
