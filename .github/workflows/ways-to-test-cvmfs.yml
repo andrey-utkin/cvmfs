@@ -1,0 +1,199 @@
+# To provide the speedup to this job, run this on a local build server:
+# podman login --verbose --username andrey-utkin --password ghp_... ghcr.io
+# podman push cvmfs-autkin:almalinux_8 ghcr.io/andrey-utkin/cvmfs-autkin:almalinux_8
+# Every new image name must be set to publicly accessible at
+# https://github.com/andrey-utkin?tab=packages
+# For some reason, exactly for Ubuntu, podman containers need to belong to root to successfully run autofs service.
+# When root launches containers created by user, sudo reads wrong permissions on itself and fails to operate.
+
+name: ways-to-test-cvmfs
+
+on:
+  workflow_dispatch
+  #push:
+  #    branches: ['devel', 'cvmfs*']
+  #pull_request:
+  #    branches: ['devel', 'cvmfs*']
+
+jobs:
+  podman:
+    name: "ways-to-test-cvmfs"
+    runs-on: ubuntu-26.04
+    #runs-on: [self-hosted, linux, x64]
+
+    steps:
+
+      # # For unknown reason, autofs automount doesn't work in GHA Ubuntu 26.04 non-root podman containers.
+      # # We still want to fetch or build container images as non-root.
+      # - name: Make root see runner user podman images
+      #   run: |
+      #     set -x
+      #     id
+      #     sudo mkdir -p /root/.config/containers/
+      #     echo [storage.options] | sudo tee -a /root/.config/containers/storage.conf
+      #     echo 'additionalimagestores = [ "/home/runner/.local/share/containers/storage" ]' | sudo tee -a /root/.config/containers/storage.conf
+      #     # podman 5.7.0 shipped with Ubuntu 26.04 does not look at /root/.config/containers/storage.conf
+      #     sudo cp /root/.config/containers/storage.conf /etc/containers/storage.conf
+
+      - name: Install podman-compose
+        run: |
+          set -x
+          id
+          if ! which podman-compose; then
+            which pip3 || sudo apt install -y python3-pip
+            # Depending on env, one or another is necessary
+            sudo pip3 install podman-compose || sudo pip3 install --break-system-packages podman-compose
+          fi
+
+      # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
+      - name: Delete huge unnecessary tools folder
+        run: rm -rf /opt/hostedtoolcache
+
+      - name: Checkout repository - cvmfs
+        uses: actions/checkout@v7
+        with:
+          path: cvmfs.git
+          fetch-depth: 0
+
+      - name: Checkout repository - wtt
+        # actions/checkout won't work on reused self-hosted runner:
+        # ccache subdir will get in the way when it attempts to remove it
+        #
+        #uses: actions/checkout@v7
+        #with:
+        #  repository: andrey-utkin/ways-to-test-cvmfs
+        #  path: ways-to-test-cvmfs
+        #  #fetch-depth: 0
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/
+          if [[ -d ways-to-test-cvmfs ]]; then
+            cd ways-to-test-cvmfs
+            git fetch origin
+            git reset --hard origin/master
+          else
+            git clone https://github.com/andrey-utkin/ways-to-test-cvmfs.git ways-to-test-cvmfs
+          fi
+
+
+      - name: Setup WTT
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          uptime
+          free -m
+          nproc
+          cd "${GITHUB_WORKSPACE}"/cvmfs.git
+          git branch -f WTT_FIXED_REF HEAD
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs
+          mkdir -p ccache # will end up having files not removable by runner user
+          ln -svnf "${GITHUB_WORKSPACE}"/cvmfs.git cvmfs.git
+          mkdir -p this/podman/almalinux_8
+          cd       this/podman/almalinux_8
+          ln -svnf ../../../common_makefile Makefile
+          > local.mk
+          echo "GIT_BRANCH := WTT_FIXED_REF" >> local.mk # i know GITHUB_REF_NAME, still
+          echo "GIT_ORIGIN := ${GITHUB_WORKSPACE}/cvmfs.git" >> local.mk
+          echo "CMAKE_EXTRA_OPTS := -DENABLE_WERROR=OFF" >> local.mk
+          echo "NPROC ?= $(( 2 * $(nproc) ))" >> local.mk
+          echo "POOLSIZE ?= $(( $(nproc) / 2 + 1 ))" >> local.mk
+          echo "LOAD ?= $(( 2 * $(nproc) ))" >> local.mk
+
+      - name: Stop any existing containers or suspicious processes
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          sudo podman stop --time=0 $(sudo podman ps --format='{{.ID}}') || true
+          sudo pkill --exact make || true
+
+      - name: Obtain builder container image
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          sudo make clean
+          sudo podman pull ghcr.io/andrey-utkin/cvmfs-autkin:almalinux_8 \
+          && sudo podman tag ghcr.io/andrey-utkin/cvmfs-autkin:almalinux_8 cvmfs-autkin:almalinux_8 \
+          && touch builder.image.done \
+          || sudo make wipe-build git-fetch-reset builder.image.done
+          sudo podman image ls cvmfs-autkin:almalinux_8
+
+      - name: Build CVMFS
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          sudo make wipe-build git-fetch-reset
+          sudo make -j$(( 2 * $(nproc) )) -l$(( 2 * $(nproc) )) build.done
+
+      - name: Unittests
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          UNITTESTS_FAILING=T_GlueBuffer.PageCacheTrackerBasics:T_Libcvmfs.InitFailures:T_Libcvmfs.Initv2:T_Libcvmfs.OptionAliases:T_MagicXattr.TestLogBuffer:T_Util.ManagedExecExecuteBinaryDoubleFork:T_ParseRelativeTimespan.CalendarUnitsAreCalendarAware
+          UNITTESTS_FLAKY=T_Dns.CaresResolverFinalDot
+          UNITTESTS_FAILING_WHEN_NOT_SERIALIZED="T_Download.*:T_IngestionStress.*:T_Uploaders/0.*:T_Util.Lsof"
+          UNITTESTS_FAILING_WHEN_PID1=T_TestUtilities.GetParentPid
+          UNITTESTS_SLOW=T_CatalogMergeTool.CRUD:T_StatisticsSql.SchemaMigration1To3:T_CatalogManagerClient.LoadByHash:T_CatalogMergeTool.Symlink:T_CatalogMgrRw.CloneTree:T_CatalogManagerClient.LoadByHashNetworkFailure:T_Libcvmfs.StatNestedCatalog:T_CatalogSql.SchemaMigration:T_CatalogManagerClient.LoadRootCatalog:T_CatalogMgrRw.SwapNestedCatalog:T_Catalog.Lookup:T_Libcvmfs.ListNestedCatalogs
+          # T_GlueBuffer.StringHeap allocates upwards of 4 GiB and hangs on failure.
+          UNITTESTS_MEMORY_HOGS=T_GlueBuffer.StringHeap
+          UNITTESTS_FILTER_DEFAULT="-*Slow:T_Smalloc.Big*:${UNITTESTS_FAILING}:${UNITTESTS_FAILING_WHEN_PID1}:${UNITTESTS_MEMORY_HOGS}"
+          rm -f unittests-parallel.done
+          timeout --kill-after=10 300 sudo make unittests-parallel.done UNITTESTS_FILTER="$UNITTESTS_FILTER_DEFAULT" || touch unittests-parallel.done.FAILED
+
+
+      - name: Single test CI test
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          rm -f test.002-probe.with-systemd.done
+          sudo make test.002-probe.with-systemd.done \
+          || touch test.002-probe.with-systemd.done.FAILED
+
+      - name: Install qalc for pooled.ci.status
+        run: |
+          set -x
+          id
+          which qalc || sudo apt install -y qalc
+
+      - name: Pooled S3 CI
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          cat ../../../this/podman/almalinux_8/cvmfs/test/s3_tests.excludes.list >> s3_tests.excludes.list || true
+          sudo make pooled.s3_ci.clean || true
+          timeout 3600 sudo make pooled.s3_ci.quick.done-and-torndown \
+          || touch pooled.s3_ci.quick.done.FAILED
+          sudo make pooled.s3_ci.status
+
+      - name: Franken pooled CI
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          cat ../../../this/podman/almalinux_8/cvmfs/test/tests.excludes.list >> tests.excludes.list || true
+          sudo make pooled.ci.clean
+          timeout 7200 sudo make pooled.ci.done-and-torndown \
+          || touch pooled.ci.done.FAILED
+          sudo make pooled.ci.status POOLSIZE=$(( $(nproc) / 2 + 1 ))
+
+      - name: Count failures
+        run: |
+          set -x
+          set -e # apparently is already on, but just to be explicit
+          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
+          if ls ./*.FAILED; then exit 1; else exit 0; fi
+
+      - name: Upload logs as artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ways-to-test-cvmfs
+          if-no-files-found: warn
+          path: |
+              ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.done*
+              ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/pooled.ci.pool-boot.log*
