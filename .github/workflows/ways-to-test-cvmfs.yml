@@ -129,26 +129,16 @@ jobs:
           id
           which qalc || sudo apt install -y qalc || true
 
-      - name: Pooled S3 CI
+      - name: Pooled regular and S3 CI
         run: |
           set -x
           set -e # apparently is already on, but just to be explicit
           cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
           cat ../../../this/podman/almalinux_8/cvmfs/test/s3_tests.excludes.list >> s3_tests.excludes.list || true
-          sudo make pooled.s3_ci.clean || true
-          timeout 3600 sudo make pooled.s3_ci.quick.done-and-torndown \
-          || touch pooled.s3_ci.quick.done.FAILED
-          sudo make pooled.s3_ci.status
-
-      - name: Pooled CI
-        run: |
-          set -x
-          set -e # apparently is already on, but just to be explicit
-          cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs/this/podman/almalinux_8
           cat ../../../this/podman/almalinux_8/cvmfs/test/tests.excludes.list >> tests.excludes.list || true
-          sudo make pooled.ci.clean
-          timeout 7200 sudo make pooled.ci.done-and-torndown \
-          || touch pooled.ci.done.FAILED
+          sudo make pooled.s3_ci.clean pooled.ci.clean -j$(nproc)
+          timeout 3600 sudo make --keep-going pooled.s3_ci.quick.done-and-torndown pooled.ci.done-and-torndown || touch some.ci.FAILED
+          sudo make pooled.s3_ci.status
           sudo make pooled.ci.status
 
       - name: Count failures
