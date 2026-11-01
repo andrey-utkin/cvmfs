@@ -164,6 +164,8 @@ jobs:
           if-no-files-found: warn
           path: |
               ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.done*
+              ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.FAILED
+              ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.PASSED
               ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.pool-boot.log*
 
       - name: Save CI cache from trusted runs
