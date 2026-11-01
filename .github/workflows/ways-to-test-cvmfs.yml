@@ -75,7 +75,6 @@ jobs:
           cd "${GITHUB_WORKSPACE}"/cvmfs.git
           git branch -f WTT_FIXED_REF HEAD
           cd "${GITHUB_WORKSPACE}"/ways-to-test-cvmfs
-          mkdir -p ccache # will end up having files not removable by runner user
           ln -svnf "${GITHUB_WORKSPACE}"/cvmfs.git cvmfs.git
           mkdir -p this/podman/almalinux_8
           cd       this/podman/almalinux_8
@@ -87,6 +86,15 @@ jobs:
           echo "NPROC ?= $(( 2 * $(nproc) ))" >> local.mk
           echo "POOLSIZE ?= $(( $(nproc) ))" >> local.mk
           echo "LOAD ?= $(( 2 * $(nproc) ))" >> local.mk
+          echo "CCACHE_IN_HOST ?= ${GITHUB_WORKSPACE}/ccache" >> local.mk
+          mkdir -p ${GITHUB_WORKSPACE}/ccache # will end up having files not removable by runner user
+
+      - name: Restore CI cache
+        uses: actions/cache/restore@v4
+        id: cvmfs-ci-cache-restore
+        with:
+          path: ${GITHUB_WORKSPACE}/ccache
+          key: wtt-ccache
 
       - name: Stop any existing containers or suspicious processes
         run: |
@@ -157,3 +165,11 @@ jobs:
           path: |
               ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.done*
               ${{ github.workspace }}/ways-to-test-cvmfs/*/*/*/*.pool-boot.log*
+
+      - name: Save CI cache from trusted runs
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        id: cvmfs-ci-cache-save
+        with:
+          path: ${GITHUB_WORKSPACE}/ccache
+          key: wtt-ccache
