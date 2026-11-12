@@ -65,7 +65,7 @@ create_repo() {
 	sha1sum * > CHECKSUMS
 	popd
 
-	time sudo -E cvmfs_server publish "$CVMFS_TEST_REPO"
+	time sudo -E bash -x cvmfs_server publish "$CVMFS_TEST_REPO"
 	mount | grep "$CVMFS_TEST_REPO"
 	cat "$CVMFS_TEST_MOUNTPOINT"/hello.txt
 	grep HELLO "$CVMFS_TEST_MOUNTPOINT"/hello.txt
