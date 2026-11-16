@@ -92,7 +92,7 @@ services:
         depends_on:
             - garage
         environment:
-            GARAGE_ADMIN_URL: http://cvmfs-garage:3903
+            GARAGE_ADMIN_URL: http://cvmfs.s3.garage.internal:3903
             GARAGE_ADMIN_TOKEN: garage-admin-token
             SETUP_GARAGE_DEBUG: "1"
             <<: *s3-env

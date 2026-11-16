@@ -67,7 +67,7 @@ services:
             garage:
                 condition: service_healthy
         environment:
-            GARAGE_ADMIN_URL: http://cvmfs-garage:3903
+            GARAGE_ADMIN_URL: http://cvmfs.s3.garage.internal:3903
             GARAGE_ADMIN_TOKEN: garage-admin-token
             <<: *s3-env
         volumes:
