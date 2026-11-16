@@ -96,7 +96,7 @@ services:
         environment:
             REPO_NAME: test.repo.org
             REPO_OWNER: root
-            GARAGE_HOST: cvmfs-garage
+            GARAGE_HOST: cvmfs.s3.garage.internal
             GARAGE_S3_PORT: "3900"
             STRATUM0_URL: http://cvmfs-apache
             GW_KEY_ID: mykey

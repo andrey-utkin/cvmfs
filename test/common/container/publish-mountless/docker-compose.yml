@@ -125,7 +125,7 @@ services:
         environment:
             REPO_NAME: test.repo.org
             REPO_OWNER: root
-            GARAGE_HOST: cvmfs-garage
+            GARAGE_HOST: cvmfs.s3.garage.internal
             GARAGE_S3_PORT: "3900"
             # Stratum-0 URL points directly at Garage's web endpoint.
             # The hostname must match <bucket>.web.garage.localhost so that
