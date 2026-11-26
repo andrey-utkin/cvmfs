@@ -44,7 +44,7 @@ func Mock_graft(db DB, repo string, debug bool, baseDir string) (GraftMetrics, e
 	configPrefix := "/etc/cvmfs/gateway-client/" + repo + "/"
 	args_add := []string{
 		"-B", fmt.Sprintf("/cvmfs/%s", repo),
-		"-W", "61", /* seconds timeout for waiting */
+		"-W", "300", /* seconds timeout for waiting */
 	}
 	if !FullyContainerized() {
 		configPrefix = baseDir + "/pkg/etc/cvmfs-gateway-client/" + repo + "/"
