@@ -80,7 +80,7 @@ cvmfs_run_test() {
     tarfile="$PWD/tarball.tar"
 
     export CVMFS_TEST_REPO=test.repo.readdir-normal
-    test_case
+    test_case CVMFS_FUSE_KEEP_DIR_CACHE=0
 
     export CVMFS_TEST_REPO=test.repo.readdir-cached
     test_case CVMFS_FUSE_KEEP_DIR_CACHE=1
