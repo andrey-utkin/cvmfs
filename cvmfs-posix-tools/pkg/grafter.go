@@ -96,7 +96,7 @@ func GraftWithOptions(db DB, repo string, options GraftOptions) (graftingMetrics
 		"-a",                                          /* Allow additions */
 		"-d",                                          /* Allow deletions */
 		"-B", fmt.Sprintf("/cvmfs/%s", repo),
-		"-W", "61", /* seconds timeout for waiting */
+		"-W", "300", /* seconds timeout for waiting */
 		"-P", strconv.FormatInt(options.PriorityVal, 10),
 	}
 
