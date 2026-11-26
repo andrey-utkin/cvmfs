@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 create_evict_repo() {
   echo ""
   echo "*** CREATE a fresh repository named $CVMFS_TEST_REPO with user $CVMFS_TEST_USER"
@@ -22,8 +22,7 @@ private_mount() {
   do_local_mount_as_root "$mntpnt"          \
                  "$CVMFS_TEST_REPO" \
                  "$(get_repo_url $CVMFS_TEST_REPO)" \
-                 "" \
-                 "CVMFS_KCACHE_TIMEOUT=1" || return 1
+                 || return 1
 }
 
 
