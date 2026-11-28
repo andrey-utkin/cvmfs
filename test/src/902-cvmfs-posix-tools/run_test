@@ -145,7 +145,7 @@ EOF
     fi
 
     # speed up lease expiraction
-    LEASE_DURATION=60
+    LEASE_DURATION=300
     if [[ -v DEBUG ]]; then
 	LEASE_DURATION=600 # it's slower with rr
     fi
